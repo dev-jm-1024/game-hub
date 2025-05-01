@@ -10,4 +10,5 @@ public class GameHubApplication {
 		SpringApplication.run(GameHubApplication.class, args);
 	}
 
+	//Hello
 }

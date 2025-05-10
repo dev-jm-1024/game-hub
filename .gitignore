@@ -40,3 +40,6 @@ build/
 # Others
 *.lock
 *.bin
+
+# application 설정 파일 제외
+/src/main/resources/application.properties

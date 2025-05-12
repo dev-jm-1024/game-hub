@@ -1,10 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+<!--main-frag-->
+<main class="content-main">
+    <!-- 환영 문구 또는 플랫폼 소개 -->
+    <section class="welcome">
+        <h2 th:text="${welcomeTitle}">환영합니다!</h2>
+        <p th:text="${welcomeMessage}">플랫폼 소개 문구가 들어갈 자리입니다.</p>
+    </section>
 
-</body>
-</html>
+    <!-- 주요 게임 추천 목록 -->
+    <section class="featured-games">
+        <h2>주요 게임 추천</h2>
+        <ul>
+            <li th:each="game : ${featuredGames}">
+                <a th:href="@{/games/{id}(id=${game.id})}" th:text="${game.title}">게임 제목</a>
+                <p th:text="${game.description}">게임 설명</p>
+            </li>
+        </ul>
+    </section>
+
+    <!-- 신규 등록 게임/업데이트된 게임 -->
+    <section class="new-games">
+        <h2>신규 등록 게임</h2>
+        <ul>
+            <li th:each="game : ${newGames}">
+                <a th:href="@{/games/{id}(id=${game.id})}" th:text="${game.title}">게임 제목</a>
+                <span th:text="${#temporals.format(game.uploadDate, 'yyyy-MM-dd')}">업로드 날짜</span>
+            </li>
+        </ul>
+    </section>
+
+    <!-- 커뮤니티 최신 글 요약 -->
+    <section class="community-posts">
+        <h2>커뮤니티 최신 글</h2>
+        <ul>
+            <li th:each="post : ${communityPosts}">
+                <a th:href="@{/boards/{id}(id=${post.id})}" th:text="${post.title}">글 제목</a>
+                <span th:text="${post.author}">작성자</span>
+                <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">작성일</span>
+            </li>
+        </ul>
+    </section>
+</main>

@@ -1,10 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+<!--header-frag-->
+<header>
+    <!-- 사이트 로고 -->
+    <h1 class="site-logo">
+        <a href="/" title="홈으로">
+            <!-- <img src="/static/logo.png" alt="사이트 로고"> -->
+            사이트명
+        </a>
+    </h1>
 
-</body>
-</html>
+    <!-- 글로벌 내비게이션 -->
+    <nav th:replace="~{nav-frag/nav.html}"></nav>
+
+    <!-- 검색창 -->
+    <form class="search-form" action="/search" method="get">
+        <input type="text" name="q" placeholder="검색어를 입력하세요">
+        <button type="submit">검색</button>
+    </form>
+
+    <!-- 사용자 영역 -->
+    <div class="user-area">
+        <!-- 로그인 상태가 아닐 때 -->
+        <div th:if="${not isLoggedIn}">
+            <a href="/login">로그인</a>
+            <a href="/signup">회원가입</a>
+        </div>
+        <!-- 로그인 상태일 때 -->
+        <div th:if="${isLoggedIn}">
+            <img th:src="${profileImage}" alt="프로필" class="profile-img">
+            <span th:text="${nickname}">닉네임</span>
+            <a href="/logout">로그아웃</a>
+        </div>
+    </div>
+
+    <!-- 다국어 선택 -->
+    <div class="lang-select">
+        <a href="?lang=ko">🇰🇷 한국어</a> | <a href="?lang=en">🇺🇸 English</a>
+    </div>
+</header>

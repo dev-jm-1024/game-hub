@@ -3,7 +3,7 @@ package kr.plusb3b.games.gamehub.data.user;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
+import kr.plusb3b.games.gamehub.data.user.*;
 import java.time.LocalDateTime;
 
 
@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 public class UserLoginInfo {
 
     //외래키
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name="mb_id")
     private User user;
 

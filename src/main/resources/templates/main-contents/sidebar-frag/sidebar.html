@@ -1,10 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+<!--sidebar-frag-->
+<aside class="sidebar">
+    <!-- 인기 게임 순위 -->
+    <section class="popular-games">
+        <h3>인기 게임 순위</h3>
+        <ol>
+            <li th:each="game : ${popularGames}">
+                <a th:href="@{/games/{id}(id=${game.id})}" th:text="${game.title}">게임 제목</a>
+            </li>
+        </ol>
+    </section>
 
-</body>
-</html>
+    <!-- 최근 업로드 게임 -->
+    <section class="recent-games">
+        <h3>최근 업로드 게임</h3>
+        <ul>
+            <li th:each="game : ${recentGames}">
+                <a th:href="@{/games/{id}(id=${game.id})}" th:text="${game.title}">게임 제목</a>
+                <span th:text="${#temporals.format(game.uploadDate, 'yyyy-MM-dd')}">업로드 날짜</span>
+            </li>
+        </ul>
+    </section>
+
+    <!-- 공지사항 요약 -->
+    <section class="notice-summary">
+        <h3>공지사항</h3>
+        <ul>
+            <li th:each="notice : ${notices}">
+                <a th:href="@{/boards/notice/{id}(id=${notice.id})}" th:text="${notice.title}">공지 제목</a>
+            </li>
+        </ul>
+    </section>
+
+    <!-- 이벤트 배너 -->
+    <section class="event-banner">
+        <h3>이벤트</h3>
+        <div th:each="event : ${events}">
+            <a th:href="@{/events/{id}(id=${event.id})}" th:text="${event.title}">이벤트 제목</a>
+            <p th:text="${event.description}">이벤트 설명</p>
+        </div>
+    </section>
+</aside>

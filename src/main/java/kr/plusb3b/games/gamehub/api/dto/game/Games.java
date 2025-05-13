@@ -1,7 +1,7 @@
-package kr.plusb3b.games.gamehub.data.game;
+package kr.plusb3b.games.gamehub.api.dto.game;
 
 import jakarta.persistence.*;
-import kr.plusb3b.games.gamehub.data.board.Board;
+import kr.plusb3b.games.gamehub.api.dto.board.Board;
 import lombok.Getter;
 import lombok.Setter;
 

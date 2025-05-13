@@ -1,4 +1,4 @@
-package kr.plusb3b.games.gamehub.data.user;
+package kr.plusb3b.games.gamehub.api.dto.user;
 
 import jakarta.persistence.*;
 import lombok.Getter;

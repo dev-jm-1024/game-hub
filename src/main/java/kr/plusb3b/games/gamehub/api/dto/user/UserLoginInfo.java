@@ -1,9 +1,9 @@
-package kr.plusb3b.games.gamehub.data.user;
+package kr.plusb3b.games.gamehub.api.dto.user;
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import kr.plusb3b.games.gamehub.data.user.*;
+
 import java.time.LocalDateTime;
 
 

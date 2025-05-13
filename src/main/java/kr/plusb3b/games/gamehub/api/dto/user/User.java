@@ -1,8 +1,8 @@
-package kr.plusb3b.games.gamehub.data.user;
+package kr.plusb3b.games.gamehub.api.dto.user;
 
 import jakarta.persistence.*;
-import kr.plusb3b.games.gamehub.data.board.Comments;
-import kr.plusb3b.games.gamehub.data.board.Posts;
+import kr.plusb3b.games.gamehub.api.dto.board.Comments;
+import kr.plusb3b.games.gamehub.api.dto.board.Posts;
 import lombok.Getter;
 import lombok.Setter;
 

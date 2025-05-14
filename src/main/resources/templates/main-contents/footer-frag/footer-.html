@@ -1,0 +1,33 @@
+<!--footer-frag-->
+<footer class="site-footer">
+    <!-- 회사/팀 소개, 연락처 -->
+    <section class="company-info">
+        <h3>회사/팀 소개</h3>
+        <p th:text="${companyDescription}">회사/팀 소개 문구가 들어갈 자리입니다.</p>
+        <p>연락처: <span th:text="${contactInfo}">contact@example.com</span></p>
+    </section>
+
+    <!-- 이용약관, 개인정보처리방침 링크 -->
+    <section class="legal-links">
+        <h3>법적 정보</h3>
+        <ul>
+            <li><a href="/terms">이용약관</a></li>
+            <li><a href="/privacy">개인정보처리방침</a></li>
+        </ul>
+    </section>
+
+    <!-- 저작권 안내 -->
+    <section class="copyright">
+        <p th:text="${copyrightText}">© 2024 사이트명. All rights reserved.</p>
+    </section>
+
+    <!-- 소셜 링크 -->
+    <section class="social-links">
+        <h3>소셜 미디어</h3>
+        <ul>
+            <li><a href="https://twitter.com/example">Twitter</a></li>
+            <li><a href="https://facebook.com/example">Facebook</a></li>
+            <li><a href="https://instagram.com/example">Instagram</a></li>
+        </ul>
+    </section>
+</footer>

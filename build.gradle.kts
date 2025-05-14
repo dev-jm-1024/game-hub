@@ -29,23 +29,27 @@ extra["vaadinVersion"] = "24.7.3"
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-
-	//implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-web-services")
 	implementation("com.vaadin:vaadin-spring-boot-starter")
-	//implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity6")
+
+	// DB 드라이버 (둘 중 하나만 사용)
+	// MySQL
+	implementation(files("libs/mysql-connector-j-8.0.33.jar"))
+	// 또는 MariaDB
+	// runtimeOnly("org.mariadb.jdbc:mariadb-java-client:3.1.4")
+
 	compileOnly("org.projectlombok:lombok")
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
-	//runtimeOnly("com.mysql:mysql-connector-j")
-	runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
 	annotationProcessor("org.projectlombok:lombok")
+
+	developmentOnly("org.springframework.boot:spring-boot-devtools")
+
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	//testImplementation("org.springframework.security:spring-security-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
+
 
 dependencyManagement {
 	imports {

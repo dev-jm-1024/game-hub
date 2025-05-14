@@ -21,8 +21,7 @@ public class UserAuth {
 
     //고유키
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long auth_user_id;
+    private String auth_user_id;
 
     //사용자 비밀번호 추후 해시화 예정
     private String auth_password;

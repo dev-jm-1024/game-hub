@@ -6,13 +6,18 @@ import kr.plusb3b.games.gamehub.api.dto.board.TestDataBoard;
 import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
 import org.atmosphere.config.service.Get;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/boards")
@@ -26,38 +31,32 @@ public class BoardController {
         this.postsRepository = postsRepository;
     }
 
-    @GetMapping("/{boardId}")
-    public String boardAllpage(@PathVariable Long boardId, Model model) {
-
-        // 🔹 전체 게시판 목록
-        List<Board> boardList = boardRepository.findAll();
-
-        // 🔹 현재 선택한 게시판
-        Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시판입니다."));
-
-        // 🔹 선택된 게시판의 게시글 목록
-        List<Posts> posts = postsRepository.findAllByBoard(board);
-
-        model.addAttribute("boardList", boardList);     // 전체 게시판 목록
-        model.addAttribute("board", board);             // 현재 게시판
-        model.addAttribute("posts", posts);             // 게시글 목록
-        model.addAttribute("boardId", boardId);         // URI 생성용
-
-        return "board/list";
-    }
-
-
-
+    //전체 게시판 보여주는 페이지
     @GetMapping
-    public String showBoardPage() {
+    public String boardMainPage(Model model) {
+
+        // 1. 전체 게시판 목록
+        List<Board> boardList = boardRepository.findAll();
+        model.addAttribute("boardList", boardList);
+
+        // 2. 게시판별 Top 5 게시글 가져오기
+        Map<Long, List<Posts>> postsByBoard = new HashMap<>();
+        Pageable top5 = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        for (Board board : boardList) {
+            List<Posts> topPosts = postsRepository.findByBoardId(board.getBoard_id(), top5);
+            postsByBoard.put(board.getBoard_id(), topPosts);
+        }
+
+        model.addAttribute("postsByBoard", postsByBoard);
+
         return "board/main-board";
     }
 
     //자유 게시판 경로 처리
     @GetMapping("/free")
     public String showFreeBoardPage(){
-        return "board/free-board";
+        return "board/free";
     }
 
     //공지사항 경로 처리

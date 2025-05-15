@@ -27,8 +27,8 @@ public class Posts {
     private User user; // 작성자 외래키
 
     private String post_title;
-    private String post_content;
-    private int view_count;
+    private String post_content; //게시물 내용
+    private int view_count; //조회수
     private LocalDateTime created_at;
     private LocalDateTime updated_at;
     private int post_act;

@@ -12,13 +12,30 @@
     <!-- 게시판 목록: 건의사항 게시판, 신고 게시판 -->
     <main>
         <h1>게시판 목록</h1>
+        <!-- 전체 게시판 목록 표시 -->
+        <nav>
+            <ul>
+                <li th:each="b : ${boardList}">
+                    <a th:href="@{'/boards/' + ${b.board_id}}"
+                       th:text="${b.board_name}">게시판명</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- 현재 게시판명 -->
+        <h2 th:text="'[' + ${board.board_name} + ']'">현재 게시판</h2>
+
+        <!-- 글 목록 -->
         <ul>
-            <li><a href="/boards/free">자유 게시판</a></li>
-            <li><a href="/boards/guide">공략 게시판</a></li>
-            <li><a href="/boards/qna">Q&A 게시판</a></li>
-            <li><a href="/boards/suggestion">건의사항 게시판</a></li>
-            <li><a href="/boards/report">신고 게시판</a></li>
+            <li th:each="post : ${posts}">
+                <a th:href="@{'/boards/' + ${boardId} + '/' + ${post.post_id}}"
+                   th:text="${post.post_title}">제목</a>
+            </li>
         </ul>
+
+        <!-- 글쓰기 버튼 -->
+        <a th:href="@{'/boards/' + ${boardId} + '/new'}">글쓰기</a>
+
     </main>
 </body>
 </html>

@@ -1,0 +1,79 @@
+package kr.plusb3b.games.gamehub.api.controller.board.rest;
+
+
+import jakarta.validation.Valid;
+import kr.plusb3b.games.gamehub.api.dto.board.Board;
+import kr.plusb3b.games.gamehub.api.dto.board.PostFiles;
+import kr.plusb3b.games.gamehub.api.dto.board.Posts;
+import kr.plusb3b.games.gamehub.api.dto.board.PostsRequestDto;
+import kr.plusb3b.games.gamehub.api.dto.user.User;
+import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
+import kr.plusb3b.games.gamehub.repository.boardrepo.PostFilesRepository;
+import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
+import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+
+@RestController("RestBoardController")
+@RequestMapping(path = "/board", produces = "application/json")
+public class RestBoardController {
+
+    private final PostsRepository postsRepo;
+    private final PostFilesRepository postFilesRepo;
+    private final UserAuthRepository userAuthRepo;
+    private final BoardRepository boardRepo;
+
+    public RestBoardController(PostsRepository postsRepo, PostFilesRepository postFilesRepo,
+                               UserAuthRepository userAuthRepo, BoardRepository boardRepo) {
+        this.postsRepo = postsRepo;
+        this.postFilesRepo = postFilesRepo;
+        this.userAuthRepo = userAuthRepo;
+        this.boardRepo = boardRepo;
+    }
+
+    //게시물 작성 후 DB 삽입
+    @PostMapping("/{boardId}/new")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Posts insertPosts(@Valid @RequestBody PostsRequestDto postsRequestDto,
+                             @PathVariable Long board_id,  @AuthenticationPrincipal UserDetails userDetails) {
+
+        String loginId = userDetails.getUsername(); // 예: "jaeminlee123"
+        User user = userAuthRepo.findUserByLoginId(loginId); // 여기서 mb_id 포함된 user 객체 가져옴
+
+        // 게시판 엔티티 조회
+        Board board = boardRepo.findById(board_id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
+
+        String title = postsRequestDto.getPost_title();
+        String content = postsRequestDto.getPost_content();
+        int viewCount = 0;
+        LocalDateTime createdAt = LocalDateTime.now();
+        LocalDateTime updatedAt = null;
+        int post_act = 1;
+
+        // Posts 엔티티 조립
+        Posts post = new Posts();
+        post.setUser(user); //사용자의 고유 아이디인 mb_id
+        post.setBoard(board); //게시판 아이디
+        post.setPost_title(postsRequestDto.getPost_title());
+        post.setPost_content(postsRequestDto.getPost_content());
+        post.setView_count(0);
+        post.setCreated_at(LocalDateTime.now());
+        post.setUpdated_at(LocalDateTime.now());
+        post.setPost_act(1);
+
+        return postsRepo.save(post);
+    }
+
+    //게시물에 첨부파일 있으면 삽입
+    @PostMapping("/{boardId}/new")
+    @ResponseStatus(HttpStatus.CREATED)
+    public PostFiles insertPostFiles(@RequestBody PostFiles postFiles, @PathVariable Long board_id) {
+        return postFilesRepo.save(postFiles);
+    }
+
+}

@@ -1,41 +1,146 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>게시판</title>
+    <title>게시판 목록</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .board-section {
+            margin-bottom: 50px;
+        }
+        .board-section h2 {
+            margin-bottom: 10px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #aaa;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <!-- 실제로는 데이터를 가지고 화면에 뿌려져야함 -->
-    <!-- 우선 예상 게시판 하드코딩 -->
-    <!-- 게시판 목록: 자유 게시판, 공략 게시판, Q&A 게시판 -->
-    <!-- 게시판 목록: 건의사항 게시판, 신고 게시판 -->
-    <main>
-        <h1>게시판 목록</h1>
-        <!-- 전체 게시판 목록 표시 -->
-        <nav>
-            <ul>
-                <li th:each="b : ${boardList}">
-                    <a th:href="@{'/boards/' + ${b.board_id}}"
-                       th:text="${b.board_name}">게시판명</a>
-                </li>
-            </ul>
-        </nav>
+<main>
+    <h1>게시판 목록</h1>
 
-        <!-- 현재 게시판명 -->
-        <h2 th:text="'[' + ${board.board_name} + ']'">현재 게시판</h2>
+    <!-- 전체 게시판 반복 -->
+    <div class="board-section" th:each="board : ${boardList}">
+        <h2 th:text="${board.boardName}">게시판 이름</h2>
 
-        <!-- 글 목록 -->
-        <ul>
-            <li th:each="post : ${posts}">
-                <a th:href="@{'/boards/' + ${boardId} + '/' + ${post.post_id}}"
-                   th:text="${post.post_title}">제목</a>
-            </li>
-        </ul>
+        <table>
+            <thead>
+            <tr>
+                <th>번호</th>
+                <th>제목</th>
+                <th>작성일</th>
+                <th>조회수</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="post : ${postsByBoard[board.board_id]}">
+                <td th:text="${post.id}">1</td>
+                <td>
+                    <a th:href="@{'/boards/' + ${board.board_id} + '/' + ${post.id}}"
+                       th:text="${post.title}">제목</a>
+                </td>
+                <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">2025-05-12</td>
+                <td th:text="${post.viewCount}">55</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시판 목록</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .board-section {
+            margin-bottom: 50px;
+        }
+        .board-section h2 {
+            margin-bottom: 10px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #aaa;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<main>
+    <h1>게시판 목록</h1>
 
-        <!-- 글쓰기 버튼 -->
-        <a th:href="@{'/boards/' + ${boardId} + '/new'}">글쓰기</a>
+    <!-- 전체 게시판 반복 -->
+    <div class="board-section" th:each="board : ${boardList}">
+        <h2 th:text="${board.boardName}">게시판 이름</h2>
 
-    </main>
+        <table>
+            <thead>
+            <tr>
+                <th>번호</th>
+                <th>제목</th>
+                <th>작성일</th>
+                <th>조회수</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="post : ${postsByBoard[board.board_id]}">
+                <td th:text="${post.id}">1</td>
+                <td>
+                    <a th:href="@{'/boards/' + ${board.board_id} + '/' + ${post.id}}"
+                       th:text="${post.title}">제목</a>
+                </td>
+                <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">2025-05-12</td>
+                <td th:text="${post.viewCount}">55</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
 </body>
 </html>

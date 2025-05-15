@@ -40,34 +40,36 @@
 </head>
 <body>
 <main>
-    <h1>게시판 목록</h1>
+    <h1>게시판 홈</h1>
 
-    <!-- 전체 게시판 반복 -->
     <div class="board-section" th:each="board : ${boardList}">
-        <h2 th:text="${board.boardName}">게시판 이름</h2>
+        <h2>
+            <a th:href="@{'/boards/' + ${board.board_id}}"
+               th:text="${board.board_name}">게시판 이름</a>
+        </h2>
 
         <table>
             <thead>
-            <tr>
-                <th>번호</th>
-                <th>제목</th>
-                <th>작성일</th>
-                <th>조회수</th>
-            </tr>
+            <tr><th>제목</th><th>작성일</th><th>조회수</th></tr>
             </thead>
             <tbody>
             <tr th:each="post : ${postsByBoard[board.board_id]}">
-                <td th:text="${post.id}">1</td>
                 <td>
-                    <a th:href="@{'/boards/' + ${board.board_id} + '/' + ${post.id}}"
-                       th:text="${post.title}">제목</a>
+                    <a th:href="@{'/boards/' + ${board.board_id} + '/' + ${post.post_id}}"
+                       th:text="${post.post_title}">제목</a>
                 </td>
-                <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">2025-05-12</td>
-                <td th:text="${post.viewCount}">55</td>
+                <td th:text="${#temporals.format(post.created_at, 'yyyy-MM-dd')}">날짜</td>
+                <td th:text="${post.view_count}">0</td>
             </tr>
             </tbody>
         </table>
+
+        <form th:action="@{'/boards/' + ${board.board_id} + '/new'}" method="get">
+            <input type="hidden" th:value="${board.board_id}" name="boardId" />
+            <button type="submit">글쓰기</button>
+        </form>
     </div>
 </main>
+
 </body>
 </html>

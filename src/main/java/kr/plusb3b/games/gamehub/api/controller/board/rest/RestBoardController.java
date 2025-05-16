@@ -11,16 +11,26 @@ import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostFilesRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
+import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @RestController("RestBoardController")
 @RequestMapping(path = "/board", produces = "application/json")
 public class RestBoardController {
+
+
+//    @Value("${app.api.version}")
+//    private String apiVersion;
 
     private final PostsRepository postsRepo;
     private final PostFilesRepository postFilesRepo;
@@ -36,7 +46,8 @@ public class RestBoardController {
     }
 
     //게시물 작성 후 DB 삽입
-    @PostMapping("/{boardId}/new")
+    //@PostMapping("/api/version/{boardId}/new")
+    @PostMapping("/api/v1/{boardId}/new")
     @ResponseStatus(HttpStatus.CREATED)
     public Posts insertPosts(@Valid @RequestBody PostsRequestDto postsRequestDto,
                              @PathVariable Long board_id,  @AuthenticationPrincipal UserDetails userDetails) {
@@ -69,11 +80,21 @@ public class RestBoardController {
         return postsRepo.save(post);
     }
 
-    //게시물에 첨부파일 있으면 삽입
+    //게시물에 첨부파일 있으면 삽입 -- 미완
     @PostMapping("/{boardId}/new")
     @ResponseStatus(HttpStatus.CREATED)
     public PostFiles insertPostFiles(@RequestBody PostFiles postFiles, @PathVariable Long board_id) {
         return postFilesRepo.save(postFiles);
     }
+
+    //화면에 게시물 데이터 뿌려주기
+    @GetMapping("/api/v1/{boardId}/{postId}/view")
+    public Posts getPosts(@PathVariable Long boardId, @PathVariable Long postId) {
+        return postsRepo.fingByBoardIdAndPostsId(boardId, postId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "해당 게시글을 찾을 수 없습니다."
+                ));
+    }
+
 
 }

@@ -29,4 +29,14 @@ public class UserController {
     public String showFavoritesPage() {
         return "favorites";
     }
+
+    @GetMapping("/myboard") //내가 쓴 글 확인하기
+    public String showMyBoardPage() {
+        return "myboard";
+    }
+
+    @GetMapping("/mycomment") //내가 쓴 댓글 확인하기
+    public String showMyCommentPage() {
+        return "mycomment";
+    }
 }

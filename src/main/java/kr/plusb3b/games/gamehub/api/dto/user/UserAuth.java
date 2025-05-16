@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 public class UserAuth {
 
     //외래키
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne
     @MapsId // auth_mb_id = user.mb_id
     @JoinColumn(name="auth_mb_id")
     private User user;

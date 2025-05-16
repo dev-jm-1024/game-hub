@@ -7,8 +7,8 @@
     <h2>안녕하세요!</h2>
     <h2>로그인 화면입니다.</h2>
 
-    <!-- action 추가가-->
-    <form method="post">
+    <!-- action 추가-->
+    <form method="post" th:action="@{/game-hub/api/v1/login}">
         <input type="text" name="user_id" id="user_id">
         <input type="password" name="user_pw" id="user_pw">
         <button type="submit">로그인</button>

@@ -1,11 +1,65 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${board.board_name} + ' - 게시글 목록'">게시판 이름 - 게시글 목록</title>
+    <title>게시글 상세</title>
 </head>
 <body>
+
+<h1 id="post-title">게시글 제목</h1>
+
+<div>
+    <strong>작성자:</strong>
+    <span id="post-writer">작성자 이름</span>
+</div>
+
+<div>
+    <strong>작성일:</strong>
+    <span id="post-date">날짜</span>
+</div>
+
+<div>
+    <strong>조회수:</strong>
+    <span id="post-views">0</span>
+</div>
+
+<hr>
+
+<div>
+    <p id="post-content">게시글 내용</p>
+</div>
+
+<hr>
+
+<a href="/boards">목록으로 돌아가기</a>
+
+<script>
+    // (1) URL에서 boardId, postId 추출하기
+    const pathParts = window.location.pathname.split('/');
+    const boardId = pathParts[2];  // /boards/{boardId}/{postId}/view → boards가 1, boardId가 2
+    const postId = pathParts[3];
+
+    // (2) API 호출해서 데이터 가져오기
+    fetch(`/board/api/v1/${boardId}/${postId}/view`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('게시글 정보를 불러오지 못했습니다.');
+            }
+            return response.json();
+        })
+        .then(post => {
+            // (3) 받아온 데이터로 DOM 업데이트
+            document.getElementById('post-title').textContent = post.post_title;
+            document.getElementById('post-writer').textContent = post.user.name;
+            document.getElementById('post-date').textContent = new Date(post.created_at).toLocaleString();
+            document.getElementById('post-views').textContent = post.view_count;
+            document.getElementById('post-content').textContent = post.post_content;
+        })
+        .catch(error => {
+            console.error(error);
+            alert('오류가 발생했습니다. 게시글을 불러올 수 없습니다.');
+        });
+</script>
 
 </body>
 </html>

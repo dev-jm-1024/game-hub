@@ -8,8 +8,9 @@
 <body>
     <main>
         <h1>글 작성</h1>
-        <form action="/boards/submit" method="post">
-            <div>
+        <form th:action="@{'/api/v1/' + ${boardId} + '/new'}" method="post">
+
+        <div>
                 <label for="title">제목</label>
                 <input type="text" id="title" name="post_title" required>
             </div>

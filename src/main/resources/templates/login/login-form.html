@@ -8,11 +8,43 @@
     <h2>로그인 화면입니다.</h2>
 
     <!-- action 추가-->
-    <form method="post" th:action="@{/game-hub/api/v1/login}">
-        <input type="text" name="user_id" id="user_id">
-        <input type="password" name="user_pw" id="user_pw">
+    <form method="post" th:action="@{'/game-hub/api/' + ${apiVersion} + '/login'}" id="loginForm">
+        <input type="text" name="auth_user_id" placeholder="아이디">
+        <input type="password" name="auth_password" placeholder="비밀번호">
         <button type="submit">로그인</button>
-        <button type="button">회원가입</button>
     </form>
+
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const userId = document.getElementById("auth_user_id").value;
+            const userPw = document.getElementById("auth_password").value;
+
+            const response = await fetch("/game-hub/api/v1/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                    auth_user_id: userId,
+                    auth_password: userPw
+                })
+            });
+
+            if (response.ok) {
+                const token = response.headers.get("Authorization"); // Bearer 토큰
+                alert("로그인 성공! 토큰: " + token);
+
+                // localStorage 저장 예시
+                localStorage.setItem("jwt", token);
+
+                // 이후 페이지 이동
+                window.location.href = "/game-hub";
+            } else {
+                alert("로그인 실패: 아이디 또는 비밀번호 오류");
+            }
+        });
+    </script>
+
+
 </body>
 </html>

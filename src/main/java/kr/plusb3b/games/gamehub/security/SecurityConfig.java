@@ -1,5 +1,7 @@
 package kr.plusb3b.games.gamehub.security;
 
+import kr.plusb3b.games.gamehub.api.jwt.JwtAuthenticationFilter;
+import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,28 +11,39 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 
 @Configuration
 public class SecurityConfig {
 
     @Autowired
     private UserDetailsService userDetailsService;
-    private DefaultAuthenticationEventPublisher authenticationEventPublisher;
+    private final DefaultAuthenticationEventPublisher authenticationEventPublisher;
+    private final JwtProvider jwtProvider;
 
+    public SecurityConfig(UserDetailsService userDetailsService,
+                          DefaultAuthenticationEventPublisher authenticationEventPublisher,
+                          JwtProvider jwtProvider) {
+        this.userDetailsService = userDetailsService;
+        this.authenticationEventPublisher = authenticationEventPublisher;
+        this.jwtProvider = jwtProvider;
+    }
+
+    // 비밀번호 암호화 방식 설정 (BCrypt 사용)
     @Bean
-    public PasswordEncoder passwordEncoder() {return new BCryptPasswordEncoder();}
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
+    // Spring Security 필터 체인 설정
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 // 1. URL 요청별 권한 설정
                 .authorizeHttpRequests(auth -> auth
                         // 누구나 접근 가능한 경로 (비회원 허용) -- 게시판 이용불가
-                        .requestMatchers( "/game-hub/**").permitAll()
+                        .requestMatchers("/game-hub/**").permitAll()
                         // 그 외 모든 요청은 "USER" 권한을 가진 사용자만 접근 가능
                         .anyRequest().hasRole("USER")
                 )
@@ -57,11 +70,12 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         // CSRF 토큰을 쿠키에 저장하고, JS에서 접근 가능하도록 설정 (HttpOnly=false)
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                );
+                )
+
+                // 5. JWT 인증 필터 등록 (기존 UsernamePasswordAuthenticationFilter 앞에 삽입)
+                .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
 
         // 설정을 기반으로 SecurityFilterChain 객체 생성 및 반환
         return http.build();
     }
-
-
 }

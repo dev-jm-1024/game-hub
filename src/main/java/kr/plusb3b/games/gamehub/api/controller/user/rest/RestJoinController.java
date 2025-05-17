@@ -22,13 +22,16 @@ public class RestJoinController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder; // 🔐 추가
     private final UserAuthRepository userAuthRepository;
+    private final SecurityConfig securityConfig;
 
     public RestJoinController(UserRepository userRepository,
                               PasswordEncoder passwordEncoder,
-                              UserAuthRepository userAuthRepository) {
+                              UserAuthRepository userAuthRepository,
+                              SecurityConfig securityConfig) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userAuthRepository = userAuthRepository;
+        this.securityConfig = securityConfig;
     }
 
 
@@ -38,7 +41,6 @@ public class RestJoinController {
 
         String empty="";
         LocalDateTime noTime = null;
-        SecurityConfig securityConfig = new SecurityConfig();
         LocalDateTime now = LocalDateTime.now();
 
         User user = new User();

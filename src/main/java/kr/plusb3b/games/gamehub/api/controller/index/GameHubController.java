@@ -15,13 +15,13 @@ public class GameHubController {
 
     @GetMapping
     public String showGamePage(){
-        return "/main-contents/index"; //바뀔 수 있음. 확정x
+        return "main-contents/index"; //바뀔 수 있음. 확정x
     }
 
     //회원가입 페이지 이동
     @GetMapping("/join")
     public String showJoinPage(){
-        return "/join/join-form";
+        return "join/join-form";
     }
 
     //로그인 페이지 이동

@@ -21,14 +21,13 @@ public class RestLoginController {
     private String appApiVersion;
 
     private final UserAuthRepository userAuthRepo;
-    private SecurityConfig securityConfig;
+
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
-    public RestLoginController(UserAuthRepository userAuthRepo, SecurityConfig securityConfig,
+    public RestLoginController(UserAuthRepository userAuthRepo,
                                PasswordEncoder passwordEncoder, JwtProvider jwtProvider) {
         this.userAuthRepo = userAuthRepo;
-        this.securityConfig = securityConfig;
         this.passwordEncoder = passwordEncoder;
         this.jwtProvider = jwtProvider;
     }
@@ -54,13 +53,13 @@ public class RestLoginController {
 
     //로그인 체크
     @PostMapping
-    public ResponseEntity checkLogin(@ModelAttribute UserAuth userAuth) {
-        Optional<UserAuth> userOptional = userAuthRepo.findByAuth_user_id(userAuth.getAuth_user_id());
+    public ResponseEntity<?> checkLogin(@ModelAttribute UserAuth userAuth) {
+        Optional<UserAuth> userOptional = userAuthRepo.findByAuthUserId(userAuth.getAuthUserId());
 
         if (userOptional.isPresent()) {
             UserAuth found = userOptional.get();
-            if (passwordEncoder.matches(userAuth.getAuth_password(), found.getAuth_password())) {
-                String token = jwtProvider.createToken(found.getAuth_user_id());
+            if (passwordEncoder.matches(userAuth.getAuthPassword(), found.getAuthPassword())) {
+                String token = jwtProvider.createToken(found.getAuthUserId());
 
                 return ResponseEntity.ok()
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)

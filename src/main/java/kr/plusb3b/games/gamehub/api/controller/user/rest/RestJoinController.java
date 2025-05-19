@@ -22,16 +22,14 @@ public class RestJoinController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder; // 🔐 추가
     private final UserAuthRepository userAuthRepository;
-    private final SecurityConfig securityConfig;
 
     public RestJoinController(UserRepository userRepository,
                               PasswordEncoder passwordEncoder,
-                              UserAuthRepository userAuthRepository,
-                              SecurityConfig securityConfig) {
+                              UserAuthRepository userAuthRepository
+                             ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userAuthRepository = userAuthRepository;
-        this.securityConfig = securityConfig;
     }
 
 
@@ -45,30 +43,30 @@ public class RestJoinController {
 
         User user = new User();
         SnowflakeIdGenerator sfig = new SnowflakeIdGenerator(0,0);
-        user.setMb_id(sfig.nextId());
-        user.setMb_nickname(requestUserJoinInfoDto.getMb_nickname());
-        user.setMb_profile_url(empty);
-        user.setMb_status_message(empty);
-        user.setMb_join_date(now);
-        user.setMb_act(1);
-        user.setMb_role(User.Role.USER);
-        user.setMb_report_cnt(0);
+        user.setMbId(sfig.nextId());
+        user.setMbNickname(requestUserJoinInfoDto.getMb_nickname());
+        user.setMbProfileUrl(empty);
+        user.setMbStatusMessage(empty);
+        user.setMbJoinDate(now);
+        user.setMbAct(1);
+        user.setMbRole(User.Role.ROLE_USER);
+        user.setMbReportCnt(0);
 
         UserAuth userAuth = new UserAuth();
         userAuth.setUser(user);
-        userAuth.setAuth_user_id(requestUserJoinInfoDto.getAuth_user_id());
-        userAuth.setAuth_password(passwordEncoder.encode(
+        userAuth.setAuthUserId(requestUserJoinInfoDto.getAuth_user_id());
+        userAuth.setAuthPassword(passwordEncoder.encode(
                 requestUserJoinInfoDto.getAuth_password())
         );
-        userAuth.setAuth_last_login(noTime);
+        userAuth.setAuthLastLogin(noTime);
 
         UserPrivate userPriv = new UserPrivate();
         SnowflakeIdGenerator sfigPri = new SnowflakeIdGenerator(1,0);
         userPriv.setPriMbId(sfigPri.nextId());
         userPriv.setUser(user);
-        userPriv.setPri_email(requestUserJoinInfoDto.getPri_email());
-        userPriv.setPri_birth(requestUserJoinInfoDto.getPri_birth());
-        userPriv.setPri_gender(requestUserJoinInfoDto.getPri_gender());
+        userPriv.setPriEmail(requestUserJoinInfoDto.getPri_email());
+        userPriv.setPriBirth(requestUserJoinInfoDto.getPri_birth());
+        userPriv.setPriGender(requestUserJoinInfoDto.getPri_gender());
 
         try {
             userRepository.save(user);

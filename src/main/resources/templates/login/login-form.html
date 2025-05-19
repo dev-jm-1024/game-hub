@@ -9,8 +9,8 @@
 
     <!-- action 추가-->
     <form method="post" th:action="@{'/game-hub/api/' + ${apiVersion} + '/login'}" id="loginForm">
-        <input type="text" name="auth_user_id" placeholder="아이디">
-        <input type="password" name="auth_password" placeholder="비밀번호">
+        <input type="text" id="authUserId" name="authUserId" placeholder="아이디">
+        <input type="password" id="authPassword" name="authPassword" placeholder="비밀번호">
         <button type="submit">로그인</button>
     </form>
 
@@ -18,8 +18,8 @@
         document.getElementById("loginForm").addEventListener("submit", async function (e) {
             e.preventDefault();
 
-            const userId = document.getElementById("auth_user_id").value;
-            const userPw = document.getElementById("auth_password").value;
+            const userId = document.getElementById("authUserId").value;
+            const userPw = document.getElementById("authPassword").value;
 
             const response = await fetch("/game-hub/api/v1/login", {
                 method: "POST",

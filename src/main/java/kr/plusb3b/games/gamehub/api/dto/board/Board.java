@@ -16,12 +16,11 @@ public class Board {
 
     // 기본 키(PK) 필드
     @Id // 해당 필드가 엔티티의 기본 키임을 명시합니다.
-    @GeneratedValue(strategy = GenerationType.AUTO) // 자동 증가 전략을 사용합니다.
     @Column(name="board_id")
-    private Long board_id;
+    private String boardId;
 
     // 게시판 이름 (예: 공지사항, 자유게시판 등)
-    private String board_name;
+    private String boardName;
 
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Games> games = new ArrayList<>();
@@ -43,20 +42,20 @@ public class Board {
     // 기본 생성자 (JPA에서 필수로 요구됨)
     public Board() {}
 
-    public Long getBoard_id() {
-        return board_id;
+    public String getBoard_id() {
+        return boardId;
     }
 
-    public void setBoard_id(Long board_id) {
-        this.board_id = board_id;
+    public void setBoard_id(String board_id) {
+        this.boardId = board_id;
     }
 
     public String getBoard_name() {
-        return board_name;
+        return boardName;
     }
 
     public void setBoard_name(String board_name) {
-        this.board_name = board_name;
+        this.boardName = board_name;
     }
 
     public List<Games> getGames() {

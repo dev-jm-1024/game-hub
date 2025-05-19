@@ -3,6 +3,7 @@ package kr.plusb3b.games.gamehub.api.dto.user;
 import jakarta.persistence.*;
 import kr.plusb3b.games.gamehub.api.dto.board.Comments;
 import kr.plusb3b.games.gamehub.api.dto.board.Posts;
+import kr.plusb3b.games.gamehub.api.dto.game.Games;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,43 +18,48 @@ import java.util.List;
 public class User {
 
     @Id
-    private Long mb_id;
+    private Long mbId;
 
-    private String mb_nickname;
-    private String mb_profile_url;
-    private String mb_status_message;
-    private LocalDateTime mb_join_date;
-    private int mb_act;
+    private String mbNickname;
+    private String mbProfileUrl;
+    private String mbStatusMessage;
+    private LocalDateTime mbJoinDate;
+    private int mbAct;
 
+    //Spring Security에서 ROLE_ 접두사 붙여야 인식 가능
     public enum Role {
-        USER, ADMIN, MODERATOR
-    }
+        ROLE_USER, ROLE_ADMIN, ROLE_PRODUCER
+    }//회원, 관리자, 제작자
     @Enumerated(EnumType.STRING)
     @Column(name = "mb_role")
-    private Role mb_role;
+    private Role mbRole;
 
-    private int mb_report_cnt;
+    private int mbReportCnt;
 
 
 
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Posts> mb_posts = new ArrayList<>();
+    private List<Posts> mbPosts = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comments> comments = new ArrayList<Comments>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<UserScore> user_scores = new ArrayList<>();
+    private List<UserScore> userScores = new ArrayList<>();
 
     @OneToMany
-    private List<UserLoginInfo> user_login_info = new ArrayList<>();
+    private List<UserLoginInfo> userLoginInfo = new ArrayList<>();
+
+    @OneToMany
+    private List<Games> games = new ArrayList<>();
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private UserAuth user_auth;
+    private UserAuth userAuth;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private UserPrivate user_private;
+    private UserPrivate userPrivate;
+
 
     //여분컬럼1~10
     /*

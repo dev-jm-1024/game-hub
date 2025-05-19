@@ -16,22 +16,22 @@ public class Posts {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long post_id;
+    private Long postId;
 
     @ManyToOne
-    @JoinColumn(name = "board_id")
+    @JoinColumn(name = "boardId")
     private Board board; // 게시판 외래키
 
     @ManyToOne//여러개가 하나를 참조
-    @JoinColumn(name = "mb_id")
+    @JoinColumn(name = "mbId")
     private User user; // 작성자 외래키
 
-    private String post_title;
-    private String post_content; //게시물 내용
-    private int view_count; //조회수
-    private LocalDateTime created_at;
-    private LocalDateTime updated_at;
-    private int post_act;
+    private String postTitle;
+    private String postContent; //게시물 내용
+    private int viewCount; //조회수
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private int postAct;
 
     public Posts() {}
 }

@@ -25,11 +25,11 @@ public class UserPrivate {
     private User user;
 
     //사용자 이메일
-    private String pri_email;
+    private String priEmail;
     //사용자 생년월일
-    private LocalDateTime pri_birth;
+    private LocalDateTime priBirth;
     //사용자 성별
-    private String pri_gender;
+    private String priGender;
 
     //여분컬럼 1~10
     /*

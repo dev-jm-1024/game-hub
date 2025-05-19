@@ -15,26 +15,26 @@ public class Comments {
     //댓글 고유 아이디
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long comment_id;
+    private Long commentId;
 
     //어떤 게시글의 댓글인지? 외래키임
     @ManyToOne
-    @JoinColumn(name = "post_id")
+    @JoinColumn(name = "postId")
     private Posts posts;
 
     //작성자 아이디 (내부 식별 아이디. 로그인 아이디 아님)
     @ManyToOne
-    @JoinColumn(name="mb_id")
+    @JoinColumn(name="mbId")
     private User user;
 
     //댓글 내용
-    private String comment_content;
+    private String commentContent;
     //좋아요 수
-    private int like_count;
+    private int likeCount;
     //싫어요 수
-    private int dislike_count;
+    private int dislikeCount;
     //신고횟수
-    private int report_count;
+    private int reportCount;
 
     //여분컬럼
     /*

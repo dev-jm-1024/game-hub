@@ -13,21 +13,18 @@ import java.time.LocalDateTime;
 @Table(name = "user_auth")
 public class UserAuth {
 
-    //외래키
+    @Id
+    private String authUserId; // 로그인 ID
+
     @OneToOne
-    @MapsId // auth_mb_id = user.mb_id
-    @JoinColumn(name="auth_mb_id")
+    @JoinColumn(name = "mbid")
     private User user;
 
-    //고유키
-    @Id
-    private String auth_user_id;
+    private String authPassword;
 
-    //사용자 비밀번호 추후 해시화 예정
-    private String auth_password;
+    private LocalDateTime authLastLogin;
 
-    //사용자 마지막 로그인 날짜
-    private LocalDateTime auth_last_login;
+    public UserAuth(){}
 
     //여번컬럼
     /*
@@ -42,6 +39,4 @@ public class UserAuth {
     private String auth_extra9;
     private String auth_extra10;
     */
-    public UserAuth(){}
-
 }

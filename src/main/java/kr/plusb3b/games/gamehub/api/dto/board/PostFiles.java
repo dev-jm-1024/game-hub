@@ -15,21 +15,21 @@ public class PostFiles {
     //파일 고유 아이디
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long file_id;
+    private Long fileId;
 
     //파일이 속한 게시글 아이디 : 외래키
     @ManyToOne
-    @JoinColumn(name="post_id")
+    @JoinColumn(name="postId")
     private Posts post;
 
     //파일경로 또는 이름
-    private String file_url;
+    private String fileUrl;
 
     //파일 유형
-    private String file_type;
+    private String fileType;
 
     //업로드 날짜
-    private LocalDateTime upload_date;
+    private LocalDateTime uploadDate;
 
     //여분컬럼1~10
     /*

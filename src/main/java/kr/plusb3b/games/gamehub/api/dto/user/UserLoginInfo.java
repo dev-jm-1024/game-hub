@@ -15,19 +15,19 @@ public class UserLoginInfo {
 
     //외래키
     @ManyToOne
-    @JoinColumn(name="mb_id")
+    @JoinColumn(name="mbId")
     private User user;
 
     //로그인 기록 고유 아이디
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long login_info_id;
+    private Long loginInfoId;
 
     //로그인 시각
-    private LocalDateTime login_time;
+    private LocalDateTime loginTime;
 
     //접속 IP주소
-    private String ip_address;
+    private String ipAddress;
 
     //여분컬럼
     /*

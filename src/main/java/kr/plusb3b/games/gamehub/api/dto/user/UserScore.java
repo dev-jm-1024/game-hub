@@ -21,13 +21,13 @@ public class UserScore {
     //점수 고유 아이디
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long score_id;
+    private Long scoreId;
 
     //점수 종류 (ex. total, weekly, pvp)
-    private String score_type;
+    private String scoreType;
 
     //최종 업데이트 시각
-    private LocalDateTime updated_at;
+    private LocalDateTime updatedAt;
 
     //여분컬럼
     /*

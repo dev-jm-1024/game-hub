@@ -9,11 +9,13 @@ import org.atmosphere.config.service.Get;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -41,11 +43,11 @@ public class BoardController {
         model.addAttribute("boardList", boardList);
 
         // 2. 게시판별 Top 5 게시글 가져오기
-        Map<Long, List<Posts>> postsByBoard = new HashMap<>();
+        Map<String, List<Posts>> postsByBoard = new HashMap<>();
         Pageable top5 = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         for (Board board : boardList) {
-            List<Posts> topPosts = postsRepository.findByBoardId(board.getBoard_id(), top5);
+            List<Posts> topPosts = postsRepository.findByBoard_BoardId(board.getBoard_id(), top5);
             postsByBoard.put(board.getBoard_id(), topPosts);
         }
 
@@ -96,16 +98,18 @@ public class BoardController {
         return "/board/common/write-content/post-form";
     }
 
-    //게시물 읽기 페이지 처리 -- post-detail.html
-    @GetMapping("/board/{boardId}/view")
-    public String showPostDetailPage(@PathVariable("boardId") Long boardId, Model model){
+    //게시물 데이터 가져오기
+    @GetMapping("/{boardId}/{postId}/view")
+    public String showPostDetailPage(@PathVariable("boardId") String boardId,
+                                     @PathVariable("postId") Long postId,
+                                     Model model) {
 
-        //게시물 데이터 보여주기
-        Optional<Posts> postsData = postsRepository.findById(boardId);
-        model.addAttribute("postsData", postsData);
+        Posts post = postsRepository.findByBoard_BoardIdAndPostId(boardId, postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."));
 
-        return "board/common/post-detail ";
-
+        model.addAttribute("postsData", post);
+        return "board/common/post-detail";
     }
+
 
 }

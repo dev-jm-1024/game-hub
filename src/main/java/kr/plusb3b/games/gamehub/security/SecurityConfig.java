@@ -2,39 +2,42 @@ package kr.plusb3b.games.gamehub.security;
 
 import kr.plusb3b.games.gamehub.api.jwt.JwtAuthenticationFilter;
 import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
+import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Configuration
 public class SecurityConfig {
-
-    @Autowired
-    private UserDetailsService userDetailsService;
-    private final DefaultAuthenticationEventPublisher authenticationEventPublisher;
-    private final JwtProvider jwtProvider;
-
-    public SecurityConfig(UserDetailsService userDetailsService,
-                          DefaultAuthenticationEventPublisher authenticationEventPublisher,
-                          JwtProvider jwtProvider) {
-        this.userDetailsService = userDetailsService;
-        this.authenticationEventPublisher = authenticationEventPublisher;
-        this.jwtProvider = jwtProvider;
-    }
 
     // 비밀번호 암호화 방식 설정 (BCrypt 사용)
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+    @Autowired
+    private JwtProvider jwtProvider;
+
+    public SecurityConfig(JwtProvider jwtProvider) {
+        this.jwtProvider = jwtProvider;
+    }
+
+    List<String> permitPath = new ArrayList<String>();
+
+
 
     // Spring Security 필터 체인 설정
     @Bean
@@ -43,7 +46,15 @@ public class SecurityConfig {
                 // 1. URL 요청별 권한 설정
                 .authorizeHttpRequests(auth -> auth
                         // 누구나 접근 가능한 경로 (비회원 허용) -- 게시판 이용불가
-                        .requestMatchers("/game-hub/**").permitAll()
+                        .requestMatchers(
+                                //"/game-hub/**", "/boards/**", "/mypage/**","/"
+                                "/", "/mypage/**", "/game-hub/**", "/games/**", "/boards/**/**"
+                        ).permitAll()
+
+                        .requestMatchers("/board/*/new").authenticated()
+
+                        .requestMatchers("/admin").hasRole("ADMIN") //관리자 권한만 접근 가능
+
                         // 그 외 모든 요청은 "USER" 권한을 가진 사용자만 접근 가능
                         .anyRequest().hasRole("USER")
                 )

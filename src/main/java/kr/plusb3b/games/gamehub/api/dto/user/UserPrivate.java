@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 
@@ -27,7 +28,7 @@ public class UserPrivate {
     //사용자 이메일
     private String priEmail;
     //사용자 생년월일
-    private LocalDateTime priBirth;
+    private LocalDate priBirth;
     //사용자 성별
     private String priGender;
 

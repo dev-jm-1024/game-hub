@@ -7,6 +7,7 @@ import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
 import kr.plusb3b.games.gamehub.security.SecurityConfig;
 import kr.plusb3b.games.gamehub.security.SnowflakeIdGenerator;
+import org.springframework.cglib.core.Local;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,19 +24,22 @@ public class RestJoinController {
     private final PasswordEncoder passwordEncoder; // 🔐 추가
     private final UserAuthRepository userAuthRepository;
 
+
     public RestJoinController(UserRepository userRepository,
                               PasswordEncoder passwordEncoder,
                               UserAuthRepository userAuthRepository
+
                              ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userAuthRepository = userAuthRepository;
+
     }
 
 
     @PostMapping("/join/new")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity registerUser(@RequestBody RequestUserJoinInfoDto requestUserJoinInfoDto) {
+    public ResponseEntity<?> registerUser(@ModelAttribute RequestUserJoinInfoDto requestUserJoinInfoDto) {
 
         String empty="";
         LocalDateTime noTime = null;
@@ -44,7 +48,7 @@ public class RestJoinController {
         User user = new User();
         SnowflakeIdGenerator sfig = new SnowflakeIdGenerator(0,0);
         user.setMbId(sfig.nextId());
-        user.setMbNickname(requestUserJoinInfoDto.getMb_nickname());
+        user.setMbNickname(requestUserJoinInfoDto.getMbNickname());
         user.setMbProfileUrl(empty);
         user.setMbStatusMessage(empty);
         user.setMbJoinDate(now);
@@ -54,9 +58,9 @@ public class RestJoinController {
 
         UserAuth userAuth = new UserAuth();
         userAuth.setUser(user);
-        userAuth.setAuthUserId(requestUserJoinInfoDto.getAuth_user_id());
+        userAuth.setAuthUserId(requestUserJoinInfoDto.getAuthUserId());
         userAuth.setAuthPassword(passwordEncoder.encode(
-                requestUserJoinInfoDto.getAuth_password())
+                requestUserJoinInfoDto.getAuthPassword())
         );
         userAuth.setAuthLastLogin(noTime);
 
@@ -64,9 +68,15 @@ public class RestJoinController {
         SnowflakeIdGenerator sfigPri = new SnowflakeIdGenerator(1,0);
         userPriv.setPriMbId(sfigPri.nextId());
         userPriv.setUser(user);
-        userPriv.setPriEmail(requestUserJoinInfoDto.getPri_email());
-        userPriv.setPriBirth(requestUserJoinInfoDto.getPri_birth());
-        userPriv.setPriGender(requestUserJoinInfoDto.getPri_gender());
+        userPriv.setPriEmail(requestUserJoinInfoDto.getPriEmail());
+        //String 에서 localdate으로 바꿔줘야함
+
+        userPriv.setPriBirth(requestUserJoinInfoDto.getPriBirth());
+
+
+
+
+        userPriv.setPriGender(requestUserJoinInfoDto.getPriGender());
 
         try {
             userRepository.save(user);

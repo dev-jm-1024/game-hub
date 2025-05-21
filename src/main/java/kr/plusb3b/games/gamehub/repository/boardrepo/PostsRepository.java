@@ -14,12 +14,9 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
 
     List<Posts> findByBoard_BoardId(String boardId, Pageable pageable);
 
-
     //List로 Posts 데이터 받기
     //해당 게시판의 아이디와 게시물의 아이디를 입력받아 해당 게시물 데이터 가져오기
     //예외처리를 보다 쉽게 처리하기 위해 Optional 로 처리
     Optional<Posts> findByBoard_BoardIdAndPostId(String boardId, Long postId);
-
-
 
 }

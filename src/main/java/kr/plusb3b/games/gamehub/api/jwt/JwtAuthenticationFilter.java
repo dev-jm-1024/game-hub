@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
+
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,37 +27,67 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtProvider = jwtProvider;
     }
 
-    @Override
+//    @Override
+//    protected void doFilterInternal(HttpServletRequest request,
+//                                    HttpServletResponse response,
+//                                    FilterChain filterChain) throws ServletException, IOException {
+//
+//        System.out.println("요청 들어옴");
+//
+//        // 1. HTTP 요청 헤더에서 Authorization 값 추출
+//        String authHeader = request.getHeader("Authorization");
+//
+//        // 2. Authorization 헤더가 존재하고 "Bearer "로 시작하면
+//        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+//
+//            // 3. "Bearer " 다음부터가 실제 토큰 → substring(7)
+//            String token = authHeader.substring(7);
+//
+//            // 4. 토큰이 유효한 경우만 인증 처리
+//            if (jwtProvider.validateToken(token)) {
+//
+//                // 5. 토큰에서 사용자 ID 추출 (subject 또는 custom claim)
+//                String userId = jwtProvider.getUserId(token);
+//
+//                // 6. 인증 객체 생성 (권한은 비워둠)
+//                UsernamePasswordAuthenticationToken auth =
+//                        new UsernamePasswordAuthenticationToken(userId, null, List.of());
+//
+//                // 7. SecurityContext에 인증 정보 저장 (이후 Spring Security가 인증된 사용자로 인식)
+//                SecurityContextHolder.getContext().setAuthentication(auth);
+//            }
+//        }
+//
+//        // 8. 다음 필터로 요청 전달
+//        filterChain.doFilter(request, response);
+//    }
+@Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // 1. HTTP 요청 헤더에서 Authorization 값 추출
-        String authHeader = request.getHeader("Authorization");
+        String token = null;
 
-        // 2. Authorization 헤더가 존재하고 "Bearer "로 시작하면
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-
-            // 3. "Bearer " 다음부터가 실제 토큰 → substring(7)
-            String token = authHeader.substring(7);
-
-            // 4. 토큰이 유효한 경우만 인증 처리
-            if (jwtProvider.validateToken(token)) {
-
-                // 5. 토큰에서 사용자 ID 추출 (subject 또는 custom claim)
-                String userId = jwtProvider.getUserId(token);
-
-                // 6. 인증 객체 생성 (권한은 비워둠)
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(userId, null, List.of());
-
-                // 7. SecurityContext에 인증 정보 저장 (이후 Spring Security가 인증된 사용자로 인식)
-                SecurityContextHolder.getContext().setAuthentication(auth);
+        // ✅ 쿠키에서 "jwt" 추출
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (cookie.getName().equals("jwt")) {
+                    token = cookie.getValue();
+                }
             }
         }
 
-        // 8. 다음 필터로 요청 전달
+        if (token != null && jwtProvider.validateToken(token)) {
+            String userId = jwtProvider.getUserId(token);
+
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(userId, null, List.of());
+
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        }
+
         filterChain.doFilter(request, response);
     }
+
 }
 

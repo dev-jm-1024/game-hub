@@ -6,8 +6,11 @@ import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
     // 비밀번호 암호화 방식 설정 (BCrypt 사용)
@@ -43,40 +47,42 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. URL 요청별 권한 설정
-                .authorizeHttpRequests(auth -> auth
-                        // 누구나 접근 가능한 경로 (비회원 허용) -- 게시판 이용불가
-                        .requestMatchers(
-                                //"/game-hub/**", "/boards/**", "/mypage/**","/"
-                                "/", "/mypage/**", "/game-hub/**", "/games/**", "/boards/**/**"
-                        ).permitAll()
-
-                        .requestMatchers("/board/*/new").authenticated()
-
-                        .requestMatchers("/admin").hasRole("ADMIN") //관리자 권한만 접근 가능
-
-                        // 그 외 모든 요청은 "USER" 권한을 가진 사용자만 접근 가능
-                        .anyRequest().hasRole("USER")
+                .headers(headers -> headers
+                        .frameOptions(frameOptions -> frameOptions.sameOrigin()) // ✅ 핵심 설정
                 )
+                // 모든 요청에 대해 인증 없이 허용
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll()
+                )
+                .formLogin(form -> form.disable())
 
                 // 2. 로그인 설정 (form 기반)
-                .formLogin(formLogin -> formLogin
-                        // 커스텀 로그인 페이지 경로 지정
-                        .loginPage("/login")
-                        // 로그인 성공 시 이동할 기본 경로 (항상 /index로 이동)
-                        .defaultSuccessUrl("/index", true)
-                        // 로그인 페이지 접근은 누구나 가능
-                        .permitAll()
-                )
+//                .formLogin(formLogin -> formLogin
+//                        // 커스텀 로그인 페이지 경로 지정
+//                        .loginPage("/login/login-form")
+//                        // 로그인 성공 시 이동할 기본 경로 (항상 /index로 이동)
+//                        .defaultSuccessUrl(".game-hub", true)
+//                        // 로그인 페이지 접근은 누구나 가능
+//                        .permitAll()
+//                )
 
                 // 3. 로그아웃 설정
                 .logout(logout -> logout
-                        // 로그아웃 성공 시 이동할 경로
-                        .logoutSuccessUrl("/")
-                        // 로그아웃 요청은 누구나 가능
-                        .permitAll()
-                )
+                        .logoutUrl("/logout") // 기본값도 /logout
+                        .logoutSuccessUrl("/") // 성공 후 이동
+                        .addLogoutHandler((request, response, auth) -> {
+                            // ✅ 쿠키 삭제 수동 처리
+                            ResponseCookie deleteCookie = ResponseCookie.from("jwt", "")
+                                    .httpOnly(true)
+                                    .secure(false)
+                                    .path("/")
+                                    .sameSite("Strict")
+                                    .maxAge(0)
+                                    .build();
 
+                            response.setHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
+                        })
+                )
                 // 4. CSRF 설정 (쿠키 기반으로 토큰 저장)
                 .csrf(csrf -> csrf
                         // CSRF 토큰을 쿠키에 저장하고, JS에서 접근 가능하도록 설정 (HttpOnly=false)
@@ -89,4 +95,6 @@ public class SecurityConfig {
         // 설정을 기반으로 SecurityFilterChain 객체 생성 및 반환
         return http.build();
     }
+
+
 }

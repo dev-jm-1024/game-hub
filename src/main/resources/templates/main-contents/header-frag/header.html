@@ -1,5 +1,5 @@
 <!--header-frag-->
-<header>
+<header th:fragment="header">
     <!-- 사이트 로고 -->
     <h1 class="site-logo">
         <a href="/" title="홈으로">
@@ -9,7 +9,9 @@
     </h1>
 
     <!-- 글로벌 내비게이션 -->
-    <nav th:replace="~{nav-frag/nav.html}"></nav>
+    <!-- header.html 안의 nav 불러오기 -->
+    <nav th:replace="main-contents/nav-frag/nav :: nav"></nav>
+
 
     <!-- 검색창 -->
     <form class="search-form" action="/search" method="get">
@@ -19,16 +21,20 @@
 
     <!-- 사용자 영역 -->
     <div class="user-area">
+
         <!-- 로그인 상태가 아닐 때 -->
         <div th:if="${not isLoggedIn}">
-            <a href="/login">로그인</a>
-            <a href="/signup">회원가입</a>
+            <a href="/game-hub/login">로그인</a>
+            <a href="/game-hub/join">회원가입</a>
         </div>
         <!-- 로그인 상태일 때 -->
         <div th:if="${isLoggedIn}">
             <img th:src="${profileImage}" alt="프로필" class="profile-img">
             <span th:text="${nickname}">닉네임</span>
-            <a href="/logout">로그아웃</a>
+            <form th:action="@{/logout}" method="post">
+                <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
+                <button type="submit">로그아웃</button>
+            </form>
         </div>
     </div>
 

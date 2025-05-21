@@ -3,12 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>게임 커뮤니티 플랫폼</title>
+    <!-- CSRF 토큰 정보 (form 전송에 사용됨) -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 <body>
-    <div th:replace="main-contents/header-frag :: header"></div>
-    <div th:replace="main-contents/nav-frag :: nav"></div>
-    <div th:replace="main-contents/sidebar-frag :: sidebar"></div>
-    <div th:replace="main-contents/main-frag :: main"></div>
-    <div th:replace="main-contents/footer-frag :: footer"></div>
+<div th:replace="main-contents/header-frag/header :: header"></div>
+<div th:replace="main-contents/sidebar-frag/sidebar :: sidebar"></div>
+<div th:replace="main-contents/main-frag/content-main :: main"></div>
+<div th:replace="main-contents/footer-frag/footer :: footer"></div>
+
+<!-- 로그인 상태 출력용 영역 (뷰 렌더링 시 서버에서 판단함) -->
+<span id="userInfo" th:text="${isLoggedIn} ? '로그인 상태' : '비회원'">상태 확인 중...</span>
+
 </body>
 </html>

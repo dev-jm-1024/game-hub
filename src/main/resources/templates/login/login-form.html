@@ -1,50 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
+    <title>로그인</title>
+
+    <!-- CSRF 토큰 정보 -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        form { max-width: 400px; margin: auto; display: flex; flex-direction: column; gap: 12px; }
+        input { padding: 10px; font-size: 16px; }
+        button { padding: 10px; font-size: 16px; cursor: pointer; }
+    </style>
 </head>
 <body>
-    <h2>안녕하세요!</h2>
-    <h2>로그인 화면입니다.</h2>
 
-    <!-- action 추가-->
-    <form method="post" th:action="@{'/game-hub/api/' + ${apiVersion} + '/login'}" id="loginForm">
-        <input type="text" id="authUserId" name="authUserId" placeholder="아이디">
-        <input type="password" id="authPassword" name="authPassword" placeholder="비밀번호">
-        <button type="submit">로그인</button>
-    </form>
+<h2>안녕하세요!</h2>
+<h2>로그인 화면입니다.</h2>
 
-    <script>
-        document.getElementById("loginForm").addEventListener("submit", async function (e) {
-            e.preventDefault();
+<form id="loginForm">
+    <input type="text" id="authUserId" name="authUserId" placeholder="아이디" required>
+    <input type="password" id="authPassword" name="authPassword" placeholder="비밀번호" required>
+    <button type="submit">로그인</button>
+</form>
 
-            const userId = document.getElementById("authUserId").value;
-            const userPw = document.getElementById("authPassword").value;
+<script>
+    document.getElementById("loginForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
 
-            const response = await fetch("/game-hub/api/v1/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams({
-                    auth_user_id: userId,
-                    auth_password: userPw
-                })
-            });
+        const userId = document.getElementById("authUserId").value;
+        const userPw = document.getElementById("authPassword").value;
 
-            if (response.ok) {
-                const token = response.headers.get("Authorization"); // Bearer 토큰
-                alert("로그인 성공! 토큰: " + token);
+        const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+        const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
-                // localStorage 저장 예시
-                localStorage.setItem("jwt", token);
-
-                // 이후 페이지 이동
-                window.location.href = "/game-hub";
-            } else {
-                alert("로그인 실패: 아이디 또는 비밀번호 오류");
-            }
+        const response = await fetch("/game-hub/api/v1/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                [header]: token
+            },
+            body: new URLSearchParams({
+                authUserId: userId,
+                authPassword: userPw
+            })
         });
-    </script>
 
+        if (response.ok) {
+            const jwt = response.headers.get("Authorization"); // Bearer 토큰
+            //alert("로그인 성공! 토큰: " + jwt);
+
+            localStorage.setItem("jwt", jwt); // JWT 저장
+
+            window.location.href = "/game-hub"; // 홈으로 이동
+        } else {
+            const msg = await response.text();
+            alert("로그인 실패: " + msg);
+        }
+    });
+</script>
 
 </body>
 </html>

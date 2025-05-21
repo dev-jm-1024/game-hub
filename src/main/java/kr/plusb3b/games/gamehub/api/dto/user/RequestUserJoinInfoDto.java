@@ -3,6 +3,7 @@ package kr.plusb3b.games.gamehub.api.dto.user;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 
@@ -13,41 +14,41 @@ public class RequestUserJoinInfoDto {
 
 
     //로그인 아이디
-    private String auth_user_id;
+    private String authUserId;
 
     //사용자 비밀번호
-    private String auth_password;
+    private String authPassword;
 
     //닉네임
-    private String mb_nickname;
+    private String mbNickname;
 
     //팀 혹은 제작사 이름
-    private String team_name;
+    private String teamName;
 
     //이메일
-    private String pri_email;
+    private String priEmail;
 
     //사용자 생년월일
-    private LocalDateTime pri_birth;
+    private LocalDate priBirth;
 
     //사용자 성별
-    private String pri_gender;
+    private String priGender;
 
     //사용자 역할(권한)
-    private User.Role mb_role;
+    private User.Role mbRole;
 
     public RequestUserJoinInfoDto(){}
 
-    public RequestUserJoinInfoDto(String auth_user_id, String auth_password, String mb_nickname,
-                                  String team_name, String pri_email, LocalDateTime pri_birth,
-                                  String pri_gender, User.Role mb_role) {
-        this.auth_user_id = auth_user_id;
-        this.auth_password = auth_password;
-        this.mb_nickname = mb_nickname;
-        this.team_name = team_name;
-        this.pri_email = pri_email;
-        this.pri_birth = pri_birth;
-        this.pri_gender = pri_gender;
-        this.mb_role = mb_role;
+    public RequestUserJoinInfoDto(String authUserId, String authPassword, String mbNickname,
+                                  String teamName, String priEmail, LocalDate priBirth,
+                                  String priGender, User.Role mbRole) {
+        this.authUserId = authUserId;
+        this.authPassword = authPassword;
+        this.mbNickname = mbNickname;
+        this.teamName = teamName;
+        this.priEmail = priEmail;
+        this.priBirth = priBirth;
+        this.priGender = priGender;
+        this.mbRole = mbRole;
     }
 }

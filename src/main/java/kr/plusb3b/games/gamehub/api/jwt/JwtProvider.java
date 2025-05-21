@@ -1,5 +1,7 @@
 package kr.plusb3b.games.gamehub.api.jwt;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.stereotype.Component;
@@ -16,26 +18,33 @@ public class JwtProvider {
     private final long expireMs = 1000 * 60 * 60; // 1시간
 
     public String createToken(String userId) {
+        Claims claims = Jwts.claims().setSubject(userId);
+
         Date now = new Date();
+        Date validity = new Date(now.getTime() + expireMs);
+
         return Jwts.builder()
-                .setSubject(userId)
+                .setClaims(claims)
                 .setIssuedAt(now)
-                .setExpiration(new Date(now.getTime() + expireMs))
-                .signWith(SignatureAlgorithm.HS256, secretKey)
+                .setExpiration(validity)
+                .signWith(SignatureAlgorithm.HS256, secretKey.getBytes())
                 .compact();
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+            Jwts.parser()
+                    .setSigningKey(secretKey.getBytes())
+                    .parseClaimsJws(token);
             return true;
-        } catch (Exception e) {
+        } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }
 
     public String getUserId(String token) {
-        return Jwts.parser().setSigningKey(secretKey)
+        return Jwts.parser()
+                .setSigningKey(secretKey.getBytes())
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();

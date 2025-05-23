@@ -42,8 +42,10 @@
 <main>
     <h1>게시판 홈</h1>
 
-    <div th:if="${isPostsListEmpty}">
-        <div class="board-section" th:each="board : ${boardList}">
+    <!-- 게시글이 존재하는 게시판 목록 출력 -->
+    <div th:if="${!isPostsListEmpty}">
+        <div class="board-section" th:each="board : ${boardList}"
+             th:if="${postsByBoard[board.board_id]} != null">
             <h2>
                 <a th:href="@{'/boards/' + ${board.board_id}}"
                    th:text="${board.board_name}">게시판 이름</a>
@@ -66,15 +68,25 @@
             </table>
 
             <form th:action="@{'/boards/' + ${board.board_id} + '/new'}" method="get">
-    <!--            <input type="hidden" th:value="${board.board_id}" name="boardId" />-->
                 <button type="submit">글쓰기</button>
             </form>
         </div>
     </div>
-    <div th:if="${not isisPostsListEmpty}">
-        <h2>존재하지 않음</h2>
+
+    <!-- 게시글이 존재하는 게시판이 하나도 없을 경우 -->
+    <div th:if="${isPostsListEmpty}">
+        <h2>게시글이 존재하는 게시판이 없습니다.</h2>
+
+        <div th:if="${#lists.isEmpty(boardList)}">
+            <p>등록된 게시판이 없습니다. 관리자에게 문의하세요.</p>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(boardList)}">
+            <form th:action="@{'/boards/' + ${boardList[0].board_id} + '/new'}" method="get">
+                <button type="submit">글쓰기</button>
+            </form>
+        </div>
     </div>
 </main>
-
 </body>
 </html>

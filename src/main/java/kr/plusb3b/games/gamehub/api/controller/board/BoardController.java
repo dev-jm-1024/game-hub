@@ -39,36 +39,41 @@ public class BoardController {
         this.postsRepository = postsRepository;
     }
 
-    //전체 게시판 보여주는 페이지
     @GetMapping
     public String boardMainPage(Model model) {
-
-        // 1. 전체 게시판 목록
         List<Board> boardList = boardRepository.findAll();
         model.addAttribute("boardList", boardList);
 
-        // 2. 게시판별 Top 5 게시글 가져오기
+        Map<String, Boolean> hasPostsMap = new HashMap<>();
         Map<String, List<Posts>> postsByBoard = new HashMap<>();
+
+        boolean isAnyPostExists = false;
         Pageable top5 = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         for (Board board : boardList) {
-            List<Posts> topPosts = postsRepository.findByBoard_BoardId(board.getBoard_id(), top5);
-            postsByBoard.put(board.getBoard_id(), topPosts);
+            String boardId = board.getBoard_id();
+
+            boolean hasPosts = postsRepository.existsPostsByBoard_BoardId(boardId);
+            hasPostsMap.put(boardId, hasPosts);
+
+            if (hasPosts) {
+                isAnyPostExists = true; // 전체 플래그 설정
+                List<Posts> topPosts = postsRepository.findByBoard_BoardId(boardId, top5);
+                postsByBoard.put(boardId, topPosts);
+            }
         }
 
+        model.addAttribute("hasPostsMap", hasPostsMap); // 게시판별 유무
+        model.addAttribute("isPostsListEmpty", !isAnyPostExists); // 전체 플래그
         model.addAttribute("postsByBoard", postsByBoard);
 
-
-        //해당 게시판의 게시물 데이터 5개 불러오기
-        PageRequest pageRequest = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<Posts> latestPosts = postsRepository.findAll(pageRequest);
-        List<Posts> postsList = latestPosts.getContent();
-
-        model.addAttribute("postsList", postsList);
-
+        Page<Posts> latestPostsPage = postsRepository.findAll(PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt")));
+        model.addAttribute("postsList", latestPostsPage.getContent());
 
         return "board/main-board";
     }
+
+
 
     //자유 게시판 경로 처리
     @GetMapping("/free")
@@ -120,10 +125,17 @@ public class BoardController {
 
     //글 작성 페이지 경로 처리
     @GetMapping("/{boardId}/new")
-    public String showPostPage(@PathVariable("boardId") int boardId){
+    public String showPostPage(@PathVariable("boardId") String boardId){
 
-        return "/board/common/write-content/post-form";
+        return "board/common/post-form";
     }
+
+
+    //나머지 메소드들이 완성되면 추후에 합침
+//    public String dispatchBoardPost(Model model){
+//
+//        return "test";
+//    }
 
     //게시물 데이터 가져오기
     @GetMapping("/{boardId}/{postId}/view")

@@ -20,6 +20,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.ResponseCookie;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -55,11 +56,9 @@ public class RestBoardController {
     public Posts insertPosts(@Valid @RequestBody PostsRequestDto postsRequestDto,
                              @PathVariable String boardId,  @AuthenticationPrincipal UserDetails userDetails) {
 
+
         String authUserId = userDetails.getUsername(); // 예: "jaeminlee123"
         User user = userRepo.findByAuthUserId(authUserId);
-
-
-
 
         // 게시판 엔티티 조회
         Board board = boardRepo.findById(boardId)
@@ -71,6 +70,7 @@ public class RestBoardController {
         LocalDateTime createdAt = LocalDateTime.now();
         LocalDateTime updatedAt = null;
         int post_act = 1;
+
 
         // Posts 엔티티 조립
         Posts post = new Posts();
@@ -89,7 +89,7 @@ public class RestBoardController {
     //게시물에 첨부파일 있으면 삽입 -- 미완
     @PostMapping("/{boardId}/new")
     @ResponseStatus(HttpStatus.CREATED)
-    public PostFiles insertPostFiles(@RequestBody PostFiles postFiles, @PathVariable Long board_id) {
+    public PostFiles insertPostFiles(@RequestBody PostFiles postFiles, @PathVariable Long bordId) {
         return postFilesRepo.save(postFiles);
     }
 

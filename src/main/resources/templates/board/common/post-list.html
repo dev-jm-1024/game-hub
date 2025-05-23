@@ -22,18 +22,18 @@
         </thead>
         <tbody>
         <!-- 게시글이 없을 경우 메시지 -->
-        <tr th:if="${#lists.isEmpty(posts)}">
+        <tr th:if="${isPostsListEmpty}">
             <td colspan="5">게시글이 없습니다.</td>
         </tr>
 
         <!-- 게시글 반복 -->
-        <tr th:each="post, stat : ${posts}">
+        <tr th:each="isPostsListEmpty, stat : ${isPostsListEmpty}">
             <td th:text="${stat.count}">1</td>
             <td>
                 <a th:href="@{'/boards/' + ${board.board_id} + '/' + ${post.post_id}}"
                    th:text="${post.post_title}">글 제목</a>
             </td>
-            <td th:text="${post.user.mb_nickname}">작성자</td>
+            <td th:text="${post.user.mb_nicknam}">작성자</td>
             <td th:text="${#temporals.format(post.created_at, 'yyyy-MM-dd')}">2024-01-01</td>
             <td th:text="${post.view_count}">0</td>
         </tr>

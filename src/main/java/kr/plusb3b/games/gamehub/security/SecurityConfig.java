@@ -51,8 +51,10 @@ public class SecurityConfig {
                         .frameOptions(frameOptions -> frameOptions.sameOrigin()) // ✅ 핵심 설정
                 )
                 // 모든 요청에 대해 인증 없이 허용
-                .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
+                .authorizeHttpRequests(
+                        auth -> auth
+                                .requestMatchers("/board/api/v1/**").authenticated() // ✅ 인증 필요
+                                .anyRequest().permitAll()
                 )
                 .formLogin(form -> form.disable())
 

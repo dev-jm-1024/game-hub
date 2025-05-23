@@ -19,4 +19,7 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
     //예외처리를 보다 쉽게 처리하기 위해 Optional 로 처리
     Optional<Posts> findByBoard_BoardIdAndPostId(String boardId, Long postId);
 
+    //boardId를 입력받아, 해당 게시판의 게시물이 존재하는 지 확인
+    boolean existsPostsByBoard_BoardId(String boardId);
+
 }

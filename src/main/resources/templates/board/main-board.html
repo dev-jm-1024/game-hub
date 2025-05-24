@@ -12,12 +12,12 @@
             margin-bottom: 50px;
         }
         .board-section h2 {
+            width: 100%;
             margin-bottom: 10px;
             border-bottom: 2px solid #333;
             padding-bottom: 5px;
         }
         table {
-            width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
         }
@@ -42,51 +42,48 @@
 <main>
     <h1>게시판 홈</h1>
 
-    <!-- 게시글이 존재하는 게시판 목록 출력 -->
-    <div th:if="${!isPostsListEmpty}">
-        <div class="board-section" th:each="board : ${boardList}"
-             th:if="${postsByBoard[board.board_id]} != null">
+    <div class="board-section" th:each="board : ${boardList}">div th:if="${postsByBoard[board.boardId] == null}">
             <h2>
-                <a th:href="@{'/boards/' + ${board.board_id}}"
-                   th:text="${board.board_name}">게시판 이름</a>
+                <a th:href="@{'/boards/' + ${board.boardId}}"
+                   th:text="${board.boardName}">게시판 이름</a>
             </h2>
 
-            <table>
-                <thead>
-                <tr><th>제목</th><th>작성일</th><th>조회수</th></tr>
-                </thead>
-                <tbody>
-                <tr th:each="post : ${postsByBoard[board.board_id]}">
-                    <td>
-                        <a th:href="@{'/boards/' + ${board.board_id} + '/' + ${post.post_id}}"
-                           th:text="${post.post_title}">제목</a>
-                    </td>
-                    <td th:text="${#temporals.format(post.created_at, 'yyyy-MM-dd')}">날짜</td>
-                    <td th:text="${post.view_count}">0</td>
-                </tr>
-                </tbody>
-            </table>
+            <!-- 게시글이 있는 경우 -->
+            <div th:if="${postsByBoard[board.boardId] != null}">
+                <table>
+                    <thead>
+                    <tr><th>제목</th><th>작성일</th><th>조회수</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="post : ${postsByBoard[board.boardId]}">
+                        <td>
+                            <a th:href="@{'/boards/' + ${board.boardId} + '/' + ${post.postId}}"
+                               th:text="${post.postTitle}">제목</a>
+                        </td>
+                        <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">날짜</td>
+                        <td th:text="${post.viewConunt}">0</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
 
-            <form th:action="@{'/boards/' + ${board.board_id} + '/new'}" method="get">
-                <button type="submit">글쓰기</button>
-            </form>
+            <!-- 게시글이 없는 경우 -->
+            <
+            <p>게시물이 없습니다.</p>
         </div>
     </div>
 
-    <!-- 게시글이 존재하는 게시판이 하나도 없을 경우 -->
+    <!-- 전체 게시판에 게시물이 하나도 없는 경우 안내 메시지 (선택 사항) -->
     <div th:if="${isPostsListEmpty}">
-        <h2>게시글이 존재하는 게시판이 없습니다.</h2>
-
-        <div th:if="${#lists.isEmpty(boardList)}">
-            <p>등록된 게시판이 없습니다. 관리자에게 문의하세요.</p>
-        </div>
-
-        <div th:if="${!#lists.isEmpty(boardList)}">
-            <form th:action="@{'/boards/' + ${boardList[0].board_id} + '/new'}" method="get">
-                <button type="submit">글쓰기</button>
-            </form>
-        </div>
+        <hr>
+        <p>현재 게시글이 존재하지 않습니다. 첫 번째 게시글을 작성해보세요!</p>
     </div>
+
+
+    <!-- 글쓰기 버튼은 항상 표시 -->
+    <form action="boards/new" method="get">
+        <button type="submit">글쓰기</button>
+    </form>
 </main>
 </body>
 </html>

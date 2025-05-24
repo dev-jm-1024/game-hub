@@ -90,7 +90,7 @@ public class BoardController {
             model.addAttribute("postsList", postsList);
         }
         
-        return "board/comon/post-list";
+        return "board/common/post-list";
     }
 
     //공지사항 경로 처리
@@ -123,13 +123,11 @@ public class BoardController {
         return "board/post-list";
     }
 
-    //글 작성 페이지 경로 처리
-    @GetMapping("/{boardId}/new")
-    public String showPostPage(@PathVariable("boardId") String boardId){
-
+    //글 작성 페이지 경로 처리 : 전체 보여주는 페이지에서 작성 : 클라이언트가 직접 게시판 선택 가능
+    @GetMapping("/new")
+    public String showWritePage(){
         return "board/common/post-form";
     }
-
 
     //나머지 메소드들이 완성되면 추후에 합침
 //    public String dispatchBoardPost(Model model){

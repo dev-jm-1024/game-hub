@@ -54,6 +54,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         auth -> auth
                                 .requestMatchers("/board/api/v1/**").authenticated() // ✅ 인증 필요
+                                .requestMatchers("/game/api/v1/**").authenticated()
                                 .anyRequest().permitAll()
                 )
                 .formLogin(form -> form.disable())

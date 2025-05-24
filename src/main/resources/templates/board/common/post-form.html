@@ -6,33 +6,62 @@
     <title>글 작성</title>
 </head>
 <body>
-    <main>
-        <h1>글 작성</h1>
-        <form th:action="@{'/api/v1/' + ${boardId} + '/new'}" method="post">
+<form id="postForm">
+    <div>
+        <label for="title">제목</label>
+        <input type="text" id="title" name="postTitle" required>
+    </div>
+    <div>
+        <label for="content">내용</label>
+        <textarea id="content" name="postContent" rows="10" required></textarea>
+    </div>
+    <div>
+        <label for="boardId">카테고리</label>
+        <select id="boardId" name="boardId">
+            <option value="free">자유 게시판</option>
+            <option value="guide">공략 게시판</option>
+            <option value="qna">Q&A 게시판</option>
+            <option value="suggestion">건의사항 게시판</option>
+            <option value="report">신고 게시판</option>
+        </select>
+    </div>
+    <div>
+        <button type="submit">작성 완료</button>
+        <button type="button" onclick="history.back()">취소</button>
+    </div>
+</form>
 
-        <div>
-                <label for="title">제목</label>
-                <input type="text" id="title" name="post_title" required>
-            </div>
-            <div>
-                <label for="content">내용</label>
-                <textarea id="content" name="post_content" rows="10" required></textarea>
-            </div>
-<!--            <div>-->
-<!--                <label for="category">카테고리</label>-->
-<!--                <select id="category" name="category">-->
-<!--                    <option value="free">자유 게시판</option>-->
-<!--                    <option value="guide">공략 게시판</option>-->
-<!--                    <option value="qna">Q&A 게시판</option>-->
-<!--                    <option value="suggestion">건의사항 게시판</option>-->
-<!--                    <option value="report">신고 게시판</option>-->
-<!--                </select>-->
-<!--            </div>-->
-            <div>
-                <button type="submit">작성 완료</button>
-                <button type="button" onclick="history.back()">취소</button>
-            </div>
-        </form>
-    </main>
+<script>
+    document.getElementById("postForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+
+        const data = {
+            postTitle: formData.get("postTitle"),
+            postContent: formData.get("postContent"),
+            boardId: formData.get("boardId")
+        };
+
+        const response = await fetch("/board/api/v1/new", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include", // JWT 쿠키 포함
+            body: JSON.stringify(data)
+        });
+
+        if (response.status === 201) {
+            // ✅ 성공 시 게시판으로 리다이렉트
+            window.location.href = "/board";
+        } else {
+            // ❌ 실패 시 현재 페이지 유지 + 오류 알림
+            alert("게시물 작성에 실패했습니다. 입력값을 확인해주세요.");
+        }
+    });
+</script>
+
 </body>
 </html>

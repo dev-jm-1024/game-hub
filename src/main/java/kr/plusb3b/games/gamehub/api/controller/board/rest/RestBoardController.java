@@ -15,7 +15,9 @@ import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +30,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController("RestBoardController")
-@RequestMapping(path = "/board", produces = "application/json")
+@RequestMapping(path = "/board")
 public class RestBoardController {
 
 
@@ -51,14 +53,17 @@ public class RestBoardController {
 
     //게시물 작성 후 DB 삽입
     //@PostMapping("/api/version/{boardId}/new")
-    @PostMapping("/api/v1/{boardId}/new")
+    @PostMapping("/api/v1/new")
     @ResponseStatus(HttpStatus.CREATED)
-    public Posts insertPosts(@Valid @RequestBody PostsRequestDto postsRequestDto,
-                             @PathVariable String boardId,  @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<?> insertPosts(@Valid @ModelAttribute PostsRequestDto postsRequestDto,
+                                      @AuthenticationPrincipal UserDetails userDetails) {
 
-
-        String authUserId = userDetails.getUsername(); // 예: "jaeminlee123"
-        User user = userRepo.findByAuthUserId(authUserId);
+        String boardId = postsRequestDto.getBoardId(); //게시판 아이디
+        //String authUserId = userDetails.getUsername(); // 예: "jaeminlee123"
+        String authUserId = "test";
+        // 2. UserRepository 통해 바로 User 조회
+        User user = userRepo.findByUserAuth_AuthUserId(authUserId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         // 게시판 엔티티 조회
         Board board = boardRepo.findById(boardId)
@@ -69,21 +74,35 @@ public class RestBoardController {
         int viewCount = 0;
         LocalDateTime createdAt = LocalDateTime.now();
         LocalDateTime updatedAt = null;
-        int post_act = 1;
-
+        int postAct = 1;
 
         // Posts 엔티티 조립
         Posts post = new Posts();
         post.setUser(user); //사용자의 고유 아이디인 mb_id
         post.setBoard(board); //게시판 아이디
-        post.setPostTitle(postsRequestDto.getPostTitle());
-        post.setPostContent(postsRequestDto.getPostContent());
-        post.setViewCount(0);
-        post.setCreatedAt(LocalDateTime.now());
-        post.setUpdatedAt(LocalDateTime.now());
-        post.setPostAct(1);
+        post.setPostTitle(title);
+        post.setPostContent(content);
+        post.setViewCount(viewCount);
+        post.setCreatedAt(createdAt);
+        post.setUpdatedAt(updatedAt);
+        post.setPostAct(postAct);
 
-        return postsRepo.save(post);
+//        for(Posts posts : postsRepo.findAll()) {
+//            System.out.println("posts 객체: "+posts);
+//        }
+        try {
+            Posts savedPosts = postsRepo.save(post);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedPosts);
+
+        } catch (IllegalArgumentException e) {
+            // 사용자를 찾을 수 없음, 게시판 없음 등 → 404 Not Found
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
+        } catch (Exception e) {
+            // 기타 오류 (DB 오류 등) → 500 Internal Server Error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("게시글 저장 중 오류가 발생했습니다.");
+        }
+
     }
 
     //게시물에 첨부파일 있으면 삽입 -- 미완

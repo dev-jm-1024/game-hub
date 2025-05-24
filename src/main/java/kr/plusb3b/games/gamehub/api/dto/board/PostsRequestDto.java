@@ -8,6 +8,8 @@ import lombok.Setter;
 @Setter
 public class PostsRequestDto
 {
+
+    private String boardId;
     //유효성 검사
     @NotBlank(message="제목을 입력해야합니다.")
     private String postTitle;

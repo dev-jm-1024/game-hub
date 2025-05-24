@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>글 작성</title>
 </head>
 <body>
@@ -38,30 +40,40 @@
         const form = e.target;
         const formData = new FormData(form);
 
+        const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+        const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
         const data = {
             postTitle: formData.get("postTitle"),
             postContent: formData.get("postContent"),
             boardId: formData.get("boardId")
         };
 
-        const response = await fetch("/board/api/v1/new", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include", // JWT 쿠키 포함
-            body: JSON.stringify(data)
-        });
+        try {
+            const response = await fetch("/board/api/v1/new", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    [header]: token
+                },
+                credentials: "include",
+                body: JSON.stringify(data)
+            });
 
-        if (response.status === 201) {
-            // ✅ 성공 시 게시판으로 리다이렉트
-            window.location.href = "/board";
-        } else {
-            // ❌ 실패 시 현재 페이지 유지 + 오류 알림
-            alert("게시물 작성에 실패했습니다. 입력값을 확인해주세요.");
+            if (response.ok) {
+                // ✅ 성공 시 명시적 리다이렉트
+                window.location.href = "/board";
+            } else {
+                const msg = await response.text();
+                alert("작성 실패: " + msg);
+            }
+        } catch (err) {
+            alert("네트워크 오류 또는 서버 응답 없음");
+            console.error("요청 실패", err);
         }
     });
 </script>
+
 
 </body>
 </html>

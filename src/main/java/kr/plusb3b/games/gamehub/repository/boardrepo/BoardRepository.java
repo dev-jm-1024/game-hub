@@ -14,4 +14,5 @@ public interface BoardRepository extends JpaRepository<Board, String> {
 //    public List<String> findBoardNameById(@Param("boardId") Long boardId);
 
 
+
 }

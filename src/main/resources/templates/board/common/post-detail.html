@@ -6,27 +6,27 @@
 </head>
 <body>
 
-<h1 id="post-title">게시글 제목</h1>
+<h1 id="post-title" th:text="${postTitle}">게시글 제목</h1>
 
 <div>
     <strong>작성자:</strong>
-    <span id="post-writer">작성자 이름</span>
+    <span id="post-writer" th:text="${postAuther}">작성자 이름</span>
 </div>
 
 <div>
     <strong>작성일:</strong>
-    <span id="post-date">날짜</span>
+    <span id="post-date" th:text="${createdAt}">날짜</span>
 </div>
 
 <div>
     <strong>조회수:</strong>
-    <span id="post-views">0</span>
+    <span id="post-views" th:text="${viewCount}">0</span>
 </div>
 
 <hr>
 
 <div>
-    <p id="post-content">게시글 내용</p>
+    <p id="post-content" th:text="${postContent}">게시글 내용</p>
 </div>
 
 <hr>

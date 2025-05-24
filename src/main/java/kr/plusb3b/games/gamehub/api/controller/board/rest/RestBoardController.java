@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.ResponseCookie;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,8 +56,8 @@ public class RestBoardController {
     //@PostMapping("/api/version/{boardId}/new")
     @PostMapping("/api/v1/new")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<?> insertPosts(@Valid @ModelAttribute PostsRequestDto postsRequestDto,
-                                      @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<?> insertPosts(@RequestBody PostsRequestDto postsRequestDto,
+                                         @AuthenticationPrincipal UserDetails userDetails) {
 
         String boardId = postsRequestDto.getBoardId(); //게시판 아이디
         //String authUserId = userDetails.getUsername(); // 예: "jaeminlee123"
@@ -72,8 +73,8 @@ public class RestBoardController {
         String title = postsRequestDto.getPostTitle();
         String content = postsRequestDto.getPostContent();
         int viewCount = 0;
-        LocalDateTime createdAt = LocalDateTime.now();
-        LocalDateTime updatedAt = null;
+        LocalDate createdAt = LocalDate.now();
+        LocalDate updatedAt = null;
         int postAct = 1;
 
         // Posts 엔티티 조립
@@ -106,11 +107,11 @@ public class RestBoardController {
     }
 
     //게시물에 첨부파일 있으면 삽입 -- 미완
-    @PostMapping("/{boardId}/new")
-    @ResponseStatus(HttpStatus.CREATED)
-    public PostFiles insertPostFiles(@RequestBody PostFiles postFiles, @PathVariable Long bordId) {
-        return postFilesRepo.save(postFiles);
-    }
+//    @PostMapping("/{boardId}/new")
+//    @ResponseStatus(HttpStatus.CREATED)
+//    public PostFiles insertPostFiles(@RequestBody PostFiles postFiles, @PathVariable Long bordId) {
+//        return postFilesRepo.save(postFiles);
+//    }
 
     //화면에 게시물 데이터 뿌려주기
     @GetMapping("/api/v1/{boardId}/{postId}/view")

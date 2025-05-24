@@ -42,35 +42,35 @@
 <main>
     <h1>게시판 홈</h1>
 
-    <div class="board-section" th:each="board : ${boardList}">div th:if="${postsByBoard[board.boardId] == null}">
-            <h2>
-                <a th:href="@{'/boards/' + ${board.boardId}}"
-                   th:text="${board.boardName}">게시판 이름</a>
-            </h2>
+    <div class="board-section" th:each="board : ${boardList}">
+        <h2>
+            <a th:href="@{'/boards/' + ${board.boardId} +'/view'}"
+               th:text="${board.boardName}">게시판 이름</a>
+        </h2>
 
-            <!-- 게시글이 있는 경우 -->
-            <div th:if="${postsByBoard[board.boardId] != null}">
-                <table>
-                    <thead>
-                    <tr><th>제목</th><th>작성일</th><th>조회수</th></tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="post : ${postsByBoard[board.boardId]}">
-                        <td>
-                            <a th:href="@{'/boards/' + ${board.boardId} + '/' + ${post.postId}}"
-                               th:text="${post.postTitle}">제목</a>
-                        </td>
-                        <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">날짜</td>
-                        <td th:text="${post.viewConunt}">0</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 게시글이 없는 경우 -->
-            <
-            <p>게시물이 없습니다.</p>
+        <!-- 게시글이 있는 경우 -->
+        <div th:if="${postsByBoard[board.boardId] != null}">
+            <table>
+                <thead>
+                <tr><th>제목</th><th>작성일</th><th>조회수</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="post : ${postsByBoard[board.boardId]}">
+                    <td>
+                        <a th:href="@{'/boards/' + ${board.boardId} + '/' + ${post.postId}}"
+                           th:text="${post.postTitle}">제목</a>
+                    </td>
+                    <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">날짜</td>
+                    <td th:text="${post.viewConunt}">0</td>
+                </tr>
+                </tbody>
+            </table>
         </div>
+
+        <!-- 게시글이 없는 경우 -->
+
+        <p>게시물이 없습니다.</p>
+    </div>
     </div>
 
     <!-- 전체 게시판에 게시물이 하나도 없는 경우 안내 메시지 (선택 사항) -->

@@ -1,9 +1,6 @@
 package kr.plusb3b.games.gamehub.api.controller.board;
 
-import kr.plusb3b.games.gamehub.api.dto.board.Board;
-import kr.plusb3b.games.gamehub.api.dto.board.Posts;
-import kr.plusb3b.games.gamehub.api.dto.board.PostsNotFoundException;
-import kr.plusb3b.games.gamehub.api.dto.board.TestDataBoard;
+import kr.plusb3b.games.gamehub.api.dto.board.*;
 import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
 import org.atmosphere.config.service.Get;
@@ -11,13 +8,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
@@ -53,7 +48,9 @@ public class BoardController {
         for (Board board : boardList) {
             String boardId = board.getBoard_id();
 
-            boolean hasPosts = postsRepository.existsPostsByBoard_BoardId(boardId);
+
+            List<Posts> postList = postsRepository.findByBoard_BoardId(boardId);
+            boolean hasPosts = postList.isEmpty();
             hasPostsMap.put(boardId, hasPosts);
 
             if (hasPosts) {
@@ -74,23 +71,31 @@ public class BoardController {
     }
 
 
+    //게시판 경로 처리
+    @GetMapping("/{boardId}/view")
+    public String dispatchBoardPost(@PathVariable String boardId, Model model) {
+
+        // 1. 게시판 정보 조회
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "해당 게시판을 찾을 수 없습니다."));
+
+        // 2. 게시글 목록 조회
+        List<Posts> postsList = postsRepository.findByBoard_BoardId(boardId);
+        boolean isPostsListEmpty = postsList.isEmpty();
+
+        // 3. 모델에 데이터 추가
+        model.addAttribute("board", board);  // Optional이 아닌 실제 객체로 넘김
+        model.addAttribute("postsList", postsList);
+        model.addAttribute("checkPostsList", isPostsListEmpty); // Thymeleaf에서 게시물 유무 표시용
+
+        return "board/common/post-list";
+    }
+
 
     //자유 게시판 경로 처리
     @GetMapping("/free")
-    public String showFreeBoardPage(Model model){
-
-        //model.addAttribute("boardList", boardRepository.findAll());
-        //게시판에 보여져야할 것 들: Number, title, author, viewCount, createdAt
-
-        List<Posts> postsList = postsRepository.findAll();
-        boolean isPostsListEmpty = postsList.isEmpty();
-        model.addAttribute("isPostsListEmpty", isPostsListEmpty);
-
-        if(isPostsListEmpty){
-            model.addAttribute("postsList", postsList);
-        }
-        
-        return "board/common/post-list";
+    public String showFreePage(){
+        return "board/post-list";
     }
 
     //공지사항 경로 처리
@@ -123,11 +128,13 @@ public class BoardController {
         return "board/post-list";
     }
 
-    //글 작성 페이지 경로 처리 : 전체 보여주는 페이지에서 작성 : 클라이언트가 직접 게시판 선택 가능
+    //글 작성 페이지 경로 처리
     @GetMapping("/new")
-    public String showWritePage(){
+    public String showPostPage(){
+
         return "board/common/post-form";
     }
+
 
     //나머지 메소드들이 완성되면 추후에 합침
 //    public String dispatchBoardPost(Model model){

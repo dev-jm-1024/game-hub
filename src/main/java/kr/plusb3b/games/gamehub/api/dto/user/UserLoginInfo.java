@@ -1,6 +1,7 @@
 package kr.plusb3b.games.gamehub.api.dto.user;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,15 +21,17 @@ public class UserLoginInfo {
 
     //로그인 기록 고유 아이디
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long loginInfoId;
 
     //로그인 시각
+    @NotNull
     private LocalDateTime loginTime;
 
     //접속 IP주소
+    @NotNull
     private String ipAddress;
 
+    public UserLoginInfo() {}
     //여분컬럼
     /*
     private String login_extra1;
@@ -43,7 +46,5 @@ public class UserLoginInfo {
     private String login_extra10;
 
      */
-
-    public UserLoginInfo() {}
 
 }

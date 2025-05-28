@@ -21,12 +21,12 @@ import java.util.Map;
 import java.util.Optional;
 
 @Controller
-@RequestMapping("/boards")
+@RequestMapping("/board")
 public class BoardController {
 
     private final BoardRepository boardRepository;
     private final PostsRepository postsRepository;
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(BoardController.class);
+    //private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(BoardController.class);
 
 
     public BoardController(BoardRepository boardRepository, PostsRepository postsRepository) {
@@ -53,7 +53,7 @@ public class BoardController {
             boolean hasPosts = postList.isEmpty();
             hasPostsMap.put(boardId, hasPosts);
 
-            if (hasPosts) {
+            if (!hasPosts) {
                 isAnyPostExists = true; // 전체 플래그 설정
                 List<Posts> topPosts = postsRepository.findByBoard_BoardId(boardId, top5);
                 postsByBoard.put(boardId, topPosts);
@@ -92,68 +92,13 @@ public class BoardController {
     }
 
 
-    //자유 게시판 경로 처리
-    @GetMapping("/free")
-    public String showFreePage(){
-        return "board/post-list";
-    }
-
-    //공지사항 경로 처리
-    @GetMapping("/notice")
-    public String showNoticePage(){
-        return "board/post-list";
-    }
-
-    //공략 게시판 경로 처리
-    @GetMapping("/guide")
-    public String showGuidePage(){
-        return "board/post-list";
-    }
-
-    //Q&A 게시판 경로 처리
-    @GetMapping("/qna")
-    public String showQnaPage(){
-        return "board/post-list";
-    }
-
-    //건의사항 게시판 경로 처리
-    @GetMapping("/suggestion")
-    public String showSuggestionPage(){
-        return "board/post-list";
-    }
-
-    //신고 게시판 경로 처리
-    @GetMapping("/report")
-    public String showReportPage(){
-        return "board/post-list";
-    }
-
     //글 작성 페이지 경로 처리
     @GetMapping("/new")
-    public String showPostPage(){
-
+    public String showPostPage(@RequestParam("boardId") String boardId, Model model) {
+        model.addAttribute("boardId", boardId);
         return "board/common/post-form";
     }
 
-
-    //나머지 메소드들이 완성되면 추후에 합침
-//    public String dispatchBoardPost(Model model){
-//
-//        return "test";
-//    }
-
-    //게시물 데이터 가져오기
-    @GetMapping("/{boardId}/{postId}/view")
-    public String showPostDetailPage(@PathVariable("boardId") String boardId,
-                                     @PathVariable("postId") Long postId,
-                                     Model model) {
-
-        Posts post = postsRepository.findByBoard_BoardIdAndPostId(boardId, postId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."));
-
-        model.addAttribute("postsData", post);
-        return "board/common/post-detail";
-    }
 
     // GlobalExceptionHandler
     @ExceptionHandler(PostsNotFoundException.class)
@@ -165,18 +110,30 @@ public class BoardController {
 
 
     // /boards/{boardId}/{postsId}/view
-    @GetMapping("/{boardId}/{postsId}/view")
+    @GetMapping("/{boardId}/{postId}/view")
     public String showPostsViewPage(@PathVariable("boardId") String boardId,
-                                    @PathVariable("postsId") Long postsId,Model model){
+                                    @PathVariable("postId") Long postId,Model model){
 
         //게시물이 보여서 링크타고 들어오면 당연히 게시물 데이터가 존재함.
         //근데 만약 없는 경우? 이건 내부적으로 예외처리를 해야한다.
-        Posts posts = postsRepository.findByBoard_BoardIdAndPostId(boardId, postsId)
-                .orElseThrow(() -> new PostsNotFoundException(postsId));
+        Posts posts = postsRepository.findByBoard_BoardIdAndPostId(boardId, postId)
+                .orElseThrow(() -> new PostsNotFoundException(postId));
 
         //View 에다가 데이터 전송
         model.addAttribute("postsData", posts);
         return "/board/common/post-detail";
+    }
+
+    @GetMapping("/posts/edit")
+    public String showPostsEditPage(@RequestParam("postId") Long postId,@RequestParam("boardId") String boardId ,Model model) {
+
+        Optional<Posts> postsData = postsRepository.findByBoard_BoardIdAndPostId(boardId, postId);
+
+        if (postsData.isPresent()) {
+            model.addAttribute("postData", postsData.get());
+        }
+
+        return "/board/common/post-edit-form";
     }
 
 

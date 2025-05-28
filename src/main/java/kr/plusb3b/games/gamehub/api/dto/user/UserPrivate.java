@@ -21,8 +21,7 @@ public class UserPrivate {
 
     // User와 1:1 매핑, 외래키 + PK 공유
     @OneToOne
-    @MapsId // priMbId = user.mb_id (식별자 공유)
-    @JoinColumn(name = "pri_mb_id")
+    @JoinColumn(name = "mbId")
     private User user;
 
     //사용자 이메일

@@ -6,10 +6,11 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PostsRequestDto
+public class CreatePostsRequestDto
 {
 
     private String boardId;
+
     //유효성 검사
     @NotBlank(message="제목을 입력해야합니다.")
     private String postTitle;
@@ -18,9 +19,9 @@ public class PostsRequestDto
     @NotBlank(message="내용을 입력하세요.")
     private String postContent;
 
-    public PostsRequestDto(){}
+    public CreatePostsRequestDto(){}
 
-    public PostsRequestDto(String post_title, String post_content) {
+    public CreatePostsRequestDto(String post_title, String post_content) {
         this.postTitle = post_title;
         this.postContent = post_content;
     }

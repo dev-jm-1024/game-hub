@@ -35,6 +35,14 @@
                 <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
                 <button type="submit">로그아웃</button>
             </form>
+
+
+            <form th:action="@{${deactivatePath}}" method="patch"
+                  style="background-color: #EBF4F6; color: rgb(54,54,52); font-weight: 900;">
+                <input type="text" name="authUserId" id="authUserId">
+                <input type="password" name="authUserPassword" id="authUserPassword">
+                <button type="submit"></button>
+            </form>
         </div>
     </div>
 

@@ -26,7 +26,7 @@
         <h3>공지사항</h3>
         <ul>
             <li th:each="notice : ${notices}">
-                <a th:href="@{/boards/notice/{id}(id=${notice.id})}" th:text="${notice.title}">공지 제목</a>
+                <a th:href="@{/board/notice/{id}(id=${notice.id})}" th:text="${notice.title}">공지 제목</a>
             </li>
         </ul>
     </section>
@@ -40,4 +40,3 @@
         </div>
     </section>
 </aside>
-<!-- 끝 -->

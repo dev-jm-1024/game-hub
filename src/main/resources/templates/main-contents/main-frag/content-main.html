@@ -33,7 +33,7 @@
         <h2>커뮤니티 최신 글</h2>
         <ul>
             <li th:each="post : ${communityPosts}">
-                <a th:href="@{/boards/{id}(id=${post.id})}" th:text="${post.title}">글 제목</a>
+                <a th:href="@{/board/{id}(id=${post.id})}" th:text="${post.title}">글 제목</a>
                 <span th:text="${post.author}">작성자</span>
                 <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">작성일</span>
             </li>

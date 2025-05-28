@@ -44,7 +44,7 @@
 
     <div class="board-section" th:each="board : ${boardList}">
         <h2>
-            <a th:href="@{'/boards/' + ${board.boardId} +'/view'}"
+            <a th:href="@{'/board/' + ${board.boardId} +'/view'}"
                th:text="${board.boardName}">게시판 이름</a>
         </h2>
 
@@ -57,15 +57,16 @@
                 <tbody>
                 <tr th:each="post : ${postsByBoard[board.boardId]}">
                     <td>
-                        <a th:href="@{'/boards/' + ${board.boardId} + '/' + ${post.postId}}"
+                        <a th:href="@{'/board/' + ${board.boardId} + '/' + ${post.postId} + '/view'}"
                            th:text="${post.postTitle}">제목</a>
                     </td>
                     <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">날짜</td>
-                    <td th:text="${post.viewConunt}">0</td>
+                    <td th:text="${post.viewCount}">0</td> <!-- 오타 수정 -->
                 </tr>
                 </tbody>
             </table>
         </div>
+
 
         <!-- 게시글이 없는 경우 -->
 
@@ -81,7 +82,8 @@
 
 
     <!-- 글쓰기 버튼은 항상 표시 -->
-    <form action="boards/new" method="get">
+    <form action="board/new" method="get">
+        <input type="hidden" th:value="${boardList.get(0).getBoardId}" name="boardId">
         <button type="submit">글쓰기</button>
     </form>
 </main>

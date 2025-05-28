@@ -3,12 +3,11 @@
     <ul>
         <li><a href="/games">게임 목록</a></li>
         <li>
-            <a href="/boards">게시판</a>
+            <a href="/board">게시판</a>
             <ul>
-                <li><a href="/boards/notice">공지</a></li>
-                <li><a href="/boards/free">자유</a></li>
-                <li><a href="/boards/guide">공략</a></li>
-                <li><a href="/boards/qna">Q&A</a></li>
+                <li th:each="board : ${boardList}">
+                    <a th:href="@{'/board/' + ${board.boardId} + '/view'}" th:text="${board.boardName}"></a>
+                </li>
             </ul>
         </li>
         <li><a href="/upload">게임 업로드</a></li>

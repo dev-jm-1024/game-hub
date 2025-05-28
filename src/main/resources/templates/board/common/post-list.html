@@ -29,7 +29,7 @@
         <tr th:each="post, stat : ${postsList}">
             <td th:text="${stat.count}">1</td>
             <td>
-                <a th:href="@{'/boards/' + ${board.boardId} + '/' + ${post.postId}}"
+                <a th:href="@{'/board/' + ${board.boardId} + '/' + ${post.postId} + '/view'}"
                    th:text="${post.postTitle}">글 제목</a>
             </td>
             <td th:text="${post.user.mbNickname}">작성자</td>
@@ -41,7 +41,16 @@
 
     <!-- 글쓰기 버튼 -->
     <div>
-        <a th:href="@{'/boards/' + ${board.boardId} + '/new'}">글쓰기</a>
+<!--        <a th:href="@{'/board/' + ${board.boardId} + '/new'}">글쓰기</a>-->
+
+        <form action="/board/new" method="get">
+            <input type="hidden" name="boardId" th:value="${board.boardId}" />
+
+            <button type="submit" value="글쓰기"
+                    style="background-color: rgb(54,54,52); color: #fbf8fb; font-weight: 900;
+                    border-radius: 16px; width: 200px; height: 100px; font-size: 13px;">
+            글쓰기</button>
+        </form>
     </div>
 
     <!-- 페이지네이션 (추후 페이징 기능 확장 대비) -->
@@ -49,7 +58,7 @@
         <ul class="pagination">
             <!-- 이전 -->
             <li th:if="${currentPage > 1}">
-                <a th:href="@{'/boards/' + ${board.boardId} + '(page=' + ${currentPage - 1} + ')'}" aria-label="Previous">
+                <a th:href="@{'/board/' + ${board.boardId} + '(page=' + ${currentPage - 1} + ')'}" aria-label="Previous">
                     <span aria-hidden="true">&laquo;</span>
                 </a>
             </li>
@@ -57,13 +66,13 @@
             <!-- 페이지 번호 -->
             <li th:each="pageNumber : ${#numbers.sequence(1, totalPages)}"
                 th:classappend="${pageNumber == currentPage} ? 'active'">
-                <a th:href="@{'/boards/' + ${board.boardId} + '(page=' + ${pageNumber} + ')'}"
+                <a th:href="@{'/board/' + ${board.boardId} + '(page=' + ${pageNumber} + ')'}"
                    th:text="${pageNumber}">1</a>
             </li>
 
             <!-- 다음 -->
             <li th:if="${currentPage < totalPages}">
-                <a th:href="@{'/boards/' + ${board.boardId} + '(page=' + ${currentPage + 1} + ')'}" aria-label="Next">
+                <a th:href="@{'/board/' + ${board.boardId} + '(page=' + ${currentPage + 1} + ')'}" aria-label="Next">
                     <span aria-hidden="true">&raquo;</span>
                 </a>
             </li>

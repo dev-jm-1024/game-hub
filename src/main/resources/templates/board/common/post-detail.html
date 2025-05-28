@@ -3,63 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <title>게시글 상세</title>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 <body>
 
-<h1 id="post-title" th:text="${postTitle}">게시글 제목</h1>
+<h1 id="post-title" th:text="${postsData.getPostTitle()}">게시글 제목</h1>
 
 <div>
     <strong>작성자:</strong>
-    <span id="post-writer" th:text="${postAuther}">작성자 이름</span>
+    <span id="post-writer" th:text="${postsData.getUser().getUserAuth().getAuthUserId}">작성자 이름</span>
 </div>
 
 <div>
     <strong>작성일:</strong>
-    <span id="post-date" th:text="${createdAt}">날짜</span>
+    <span id="post-date" th:text="${postsData.getCreatedAt}">날짜</span>
 </div>
 
 <div>
     <strong>조회수:</strong>
-    <span id="post-views" th:text="${viewCount}">0</span>
+    <span id="post-views" th:text="${postsData.getViewCount}">0</span>
 </div>
 
 <hr>
 
 <div>
-    <p id="post-content" th:text="${postContent}">게시글 내용</p>
+    <p id="post-content" th:text="${postsData.getPostContent}">게시글 내용</p>
 </div>
 
 <hr>
+<form id="updatePosts" method="get" action="/board/posts/edit">
+    <input type="hidden" name="postId" th:value="${postsData.getPostId}">
+    <input type="hidden" name="boardId" th:value="${postsData.getBoard().boardId}">
+    <button type="submit">수정하기</button>
+</form>
 
-<a href="/boards">목록으로 돌아가기</a>
+<form id="deletePosts" >
+    <input type="hidden" name="postId" th:value="${postsData.getPostId}">
+    <input type="hidden" name="boardId" th:value="${postsData.getBoard().boardId}">
+    <button type="submit">삭제하기</button>
+</form>
+<a th:href="@{'/board/' + ${postsData.getBoard().getBoardId} + '/view'}">목록으로 돌아가기</a>
 
 <script>
-    // (1) URL에서 boardId, postId 추출하기
-    const pathParts = window.location.pathname.split('/');
-    const boardId = pathParts[2];  // /boards/{boardId}/{postId}/view → boards가 1, boardId가 2
-    const postId = pathParts[3];
+    document.getElementById('deletePosts').addEventListener('submit', function (e) {
+        e.preventDefault();
 
-    // (2) API 호출해서 데이터 가져오기
-    fetch(`/board/api/v1/${boardId}/${postId}/view`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('게시글 정보를 불러오지 못했습니다.');
-            }
-            return response.json();
+        const form = e.target;
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+
+        // boardId 가져오기
+        const boardId = form.querySelector('input[name="boardId"]').value;
+        const postId = form.querySelector('input[name="postId"]').value;
+
+        // 메타 태그에서 CSRF 값 가져오기
+        const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+        const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+        fetch(`/board/api/v1/delete/${boardId}/${postId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                [header]: token // 동적으로 CSRF 헤더 설정
+            },
+            body: params
         })
-        .then(post => {
-            // (3) 받아온 데이터로 DOM 업데이트
-            document.getElementById('post-title').textContent = post.post_title;
-            document.getElementById('post-writer').textContent = post.user.name;
-            document.getElementById('post-date').textContent = new Date(post.created_at).toLocaleString();
-            document.getElementById('post-views').textContent = post.view_count;
-            document.getElementById('post-content').textContent = post.post_content;
-        })
-        .catch(error => {
-            console.error(error);
-            alert('오류가 발생했습니다. 게시글을 불러올 수 없습니다.');
-        });
+            .then(response => {
+                if (response.ok) {
+                    alert("삭제 성공");
+                    window.location.href = `/boards/${boardId}/view`; // 해당 게시판 목록으로 리다이렉트
+                } else {
+                    alert("삭제 실패");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("에러 발생: " + error);
+            });
+    });
 </script>
-
 </body>
 </html>

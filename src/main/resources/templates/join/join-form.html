@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>회원가입</title>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
 </head>
 <body>
 <main>
     <h1>회원가입</h1>
-    <!--action="/api/v1/join/submit" -->
-    <form method="post" th:action="@{/game-hub/api/v1/join/new}">
+    <form id="joinForm">
         <div>
             <label for="authUserId">아이디</label>
             <input type="text" id="authUserId" name="authUserId" required>
@@ -22,7 +22,6 @@
             <label for="mbNickname">닉네임</label>
             <input type="text" id="mbNickname" name="mbNickname" required>
         </div>
-        <input type="hidden" name="teamName" id="teamName" value="teamName">
         <div>
             <label for="priEmail">이메일</label>
             <input type="email" id="priEmail" name="priEmail" required>
@@ -45,5 +44,36 @@
         </div>
     </form>
 </main>
+
+<script>
+    document.getElementById("joinForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+
+        // CSRF 정보 메타에서 가져오기
+        const csrfToken = document.querySelector("meta[name='_csrf']").getAttribute("content");
+        const csrfHeader = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
+
+        const response = await fetch("/game-hub/api/v1/join/new", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                [csrfHeader]: csrfToken // 동적 키 사용!
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            alert("회원가입에 성공하였습니다!");
+            window.location.href = "/game-hub";
+        } else {
+            const errorText = await response.text();
+            alert("회원가입 실패: " + errorText);
+        }
+    });
+
+</script>
 </body>
 </html>

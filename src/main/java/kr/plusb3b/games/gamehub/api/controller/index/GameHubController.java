@@ -1,7 +1,10 @@
 package kr.plusb3b.games.gamehub.api.controller.index;
 
 import jakarta.servlet.http.HttpServletRequest;
+import kr.plusb3b.games.gamehub.api.dto.board.Board;
 import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
+import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
+import org.atmosphere.config.service.Get;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -15,22 +18,30 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
 
+import java.util.List;
+import java.util.Optional;
+
 @Controller
 @RequestMapping("/game-hub")
 public class GameHubController {
 
     private final JwtProvider jwtProvider;
+    private final BoardRepository boardRepo;
     @Value("${app.api.version}")
     private String apiVersion;
 
+    @Value("${app.deactivate.path}")
+    private String deactivatePath;
 
-    public GameHubController(JwtProvider jwtProvider) {
+
+    public GameHubController(JwtProvider jwtProvider, BoardRepository boardRepo) {
         this.jwtProvider = jwtProvider;
+        this.boardRepo = boardRepo;
     }
 
 
     @GetMapping
-    public String showGamePage(Authentication authentication, Model model) {
+    public String showMainPage(Authentication authentication, Model model) {
 
         System.out.println("[Controller] 인증객체: " + authentication);
 
@@ -46,10 +57,23 @@ public class GameHubController {
                 "%2Foriginals%2F9f%2F85%2Ffc%2F9f85fc037501419f146f81e5a2ab7a98.jpg" +
                 "&type=sc960_832";
 
+        //게시판 정보 Model에 줘야함
+
+        //1. boardId, boardName 조회
+        List<Board> boardList = boardRepo.findAll();
+        boolean checkBoardListEmpty = boardList.isEmpty();
+
+        if(!checkBoardListEmpty) {
+            model.addAttribute("boardList", boardList);
+        }
+
+
+
         model.addAttribute("isAdmin", true); // 나중에 권한에 따라 분기 처리 가능
         model.addAttribute("profileImage", testImageUrl);
         model.addAttribute("isLoggedIn", isMember);
         model.addAttribute("nickname", userId); // 일단 userId를 닉네임으로 사용
+        model.addAttribute("deactivatePath", deactivatePath);
 
         return "main-contents/index";
     }
@@ -67,7 +91,6 @@ public class GameHubController {
         model.addAttribute("apiVersion", apiVersion);
         return "login/login-form";
     }
-
 
 }
 

@@ -32,6 +32,7 @@
 </div>
 
 <hr>
+<div id="memberForm" th:if="${isAuthor}">
 <form id="updatePosts" method="get" action="/board/posts/edit">
     <input type="hidden" name="postId" th:value="${postsData.getPostId}">
     <input type="hidden" name="boardId" th:value="${postsData.getBoard().boardId}">
@@ -43,6 +44,7 @@
     <input type="hidden" name="boardId" th:value="${postsData.getBoard().boardId}">
     <button type="submit">삭제하기</button>
 </form>
+</div>
 <a th:href="@{'/board/' + ${postsData.getBoard().getBoardId} + '/view'}">목록으로 돌아가기</a>
 
 <script>
@@ -61,7 +63,9 @@
         const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
         const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
-        fetch(`/board/api/v1/delete/${boardId}/${postId}`, {
+        // new API path: /api/v1/board/{boardId}/posts/{postsId}
+        // poast API path: /board/api/v1/delete/${boardId}/${postId}
+        fetch(`/api/v1/board/${boardId}/posts/${postId}/deactivate`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -72,7 +76,7 @@
             .then(response => {
                 if (response.ok) {
                     alert("삭제 성공");
-                    window.location.href = `/boards/${boardId}/view`; // 해당 게시판 목록으로 리다이렉트
+                    window.location.href = `/board`; // 해당 게시판 목록으로 리다이렉트
                 } else {
                     alert("삭제 실패");
                 }

@@ -45,6 +45,10 @@
     const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
     const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
+    //boardId, postId
+    const boardId = form.querySelector('input[name="boardId"]').value;
+    const postId = form.querySelector('input[name="postId"]').value;
+
     const data = {
       postTitle: formData.get("postTitle"),
       postContent: formData.get("postContent"),
@@ -52,8 +56,9 @@
       postId: formData.get("postId")
     };
 
-    try {
-      const response = await fetch("/board/api/v1/edit", {
+    try { // new API path: /api/vi/board/{boardId}/posts/{postId}
+      //past API path: /board/api/v1/edit
+      const response = await fetch(`/api/v1/board/${boardId}/posts/${postId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

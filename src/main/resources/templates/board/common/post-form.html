@@ -44,25 +44,27 @@
         const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
         const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
+        // ✅ 수정된 boardId 선택
+        const boardId = form.querySelector('[name="boardId"]').value;
+
         const data = {
             postTitle: formData.get("postTitle"),
-            postContent: formData.get("postContent"),
-            boardId: formData.get("boardId")
+            postContent: formData.get("postContent")
+            // boardId는 URL에 포함되므로 body에 포함 X
         };
 
         try {
-            const response = await fetch("/board/api/v1/new", {
+            const response = await fetch(`/api/v1/board/${boardId}/posts`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     [header]: token
                 },
-                credentials: "include",
+                credentials: "include", // JWT 쿠키 포함
                 body: JSON.stringify(data)
             });
 
             if (response.ok) {
-                // ✅ 성공 시 명시적 리다이렉트
                 window.location.href = "/board";
             } else {
                 const msg = await response.text();
@@ -74,6 +76,7 @@
         }
     });
 </script>
+
 
 
 </body>

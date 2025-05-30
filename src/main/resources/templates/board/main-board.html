@@ -44,46 +44,40 @@
 
     <div class="board-section" th:each="board : ${boardList}">
         <h2>
-            <a th:href="@{'/board/' + ${board.boardId} +'/view'}"
+            <a th:href="@{'/board/' + ${board.boardId} + '/view'}"
                th:text="${board.boardName}">게시판 이름</a>
         </h2>
 
-        <!-- 게시글이 있는 경우 -->
-        <div th:if="${postsByBoard[board.boardId] != null}">
+        <!-- 게시물이 있는 경우 -->
+        <div th:if="${hasBoardPosts[board.boardId]}">
             <table>
                 <thead>
                 <tr><th>제목</th><th>작성일</th><th>조회수</th></tr>
                 </thead>
                 <tbody>
-                <tr th:each="post : ${postsByBoard[board.boardId]}">
+                <!-- boardId로 필터링된 top5Posts 표시 -->
+                <tr th:each="post : ${top5Posts}"
+                    th:if="${post.board.boardId == board.boardId}">
                     <td>
                         <a th:href="@{'/board/' + ${board.boardId} + '/' + ${post.postId} + '/view'}"
                            th:text="${post.postTitle}">제목</a>
                     </td>
                     <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">날짜</td>
-                    <td th:text="${post.viewCount}">0</td> <!-- 오타 수정 -->
+                    <td th:text="${post.viewCount}">0</td>
                 </tr>
                 </tbody>
             </table>
         </div>
 
-
-        <!-- 게시글이 없는 경우 -->
-
-        <p>게시물이 없습니다.</p>
-    </div>
-    </div>
-
-    <!-- 전체 게시판에 게시물이 하나도 없는 경우 안내 메시지 (선택 사항) -->
-    <div th:if="${isPostsListEmpty}">
-        <hr>
-        <p>현재 게시글이 존재하지 않습니다. 첫 번째 게시글을 작성해보세요!</p>
+        <!-- 게시물이 없는 경우 -->
+        <div th:if="${!hasBoardPosts[board.boardId]}">
+            <p>게시물이 없습니다.</p>
+        </div>
     </div>
 
-
-    <!-- 글쓰기 버튼은 항상 표시 -->
-    <form action="board/new" method="get">
-        <input type="hidden" th:value="${boardList.get(0).getBoardId}" name="boardId">
+    <!-- 글쓰기 버튼 -->
+    <form action="/board/new" method="get">
+        <input type="hidden" th:value="${boardList[0].boardId}" name="boardId">
         <button type="submit">글쓰기</button>
     </form>
 </main>

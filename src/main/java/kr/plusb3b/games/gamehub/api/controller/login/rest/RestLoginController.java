@@ -26,6 +26,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/game-hub/api/v1/login")
+// new API Path: /api/v1/login
 public class RestLoginController {
 
     private final UserRepository userRepository;

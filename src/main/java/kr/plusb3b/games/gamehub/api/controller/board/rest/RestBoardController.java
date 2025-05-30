@@ -23,8 +23,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 
 @RestController("RestBoardController")
-@RequestMapping(path = "/board")
-//@RequestMapping(path="/api/v1") -- 경로 수정 ver
+//@RequestMapping(path = "/board")
+@RequestMapping(path="/api/v1/board") // 경로 수정 ver
 public class RestBoardController {
 
 
@@ -32,25 +32,22 @@ public class RestBoardController {
 //    private String apiVersion;
 
     private final PostsRepository postsRepo;
-    private final PostFilesRepository postFilesRepo;
     private final UserRepository userRepo;
     private final BoardRepository boardRepo;
     private final JwtProvider jwtProvider;
 
-    public RestBoardController(PostsRepository postsRepo, PostFilesRepository postFilesRepo,
-                               UserAuthRepository userAuthRepo, BoardRepository boardRepo,
+    public RestBoardController(PostsRepository postsRepo, BoardRepository boardRepo,
                                UserRepository userRepo, JwtProvider jwtProvider) {
         this.postsRepo = postsRepo;
-        this.postFilesRepo = postFilesRepo;
         this.userRepo = userRepo;
         this.boardRepo = boardRepo;
         this.jwtProvider = jwtProvider;
     }
 
-    //@PostMapping("/board/{boardId}/posts") -- 수정 ver
-    @PostMapping("/api/v1/new")
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<?> insertPosts(@RequestBody CreatePostsRequestDto createPostsRequestDto,
+    @PostMapping("/{boardId}/posts") // 수정 ver
+    //@PostMapping("/api/v1/new")
+    @ResponseStatus(HttpStatus.CREATED)//(@PathVariable("boardId") String boardId , @RequestBody CreatePostsRequestDto createPostsRequestDto, HttpServletRequest request)
+    public ResponseEntity<?> insertPosts(@PathVariable("boardId") String boardId , @RequestBody CreatePostsRequestDto createPostsRequestDto,
                                          HttpServletRequest request) {
         try {
             // 1. JWT 쿠키 추출
@@ -84,7 +81,7 @@ public class RestBoardController {
             }
 
             // 6. 게시판 엔티티 조회
-            String boardId = createPostsRequestDto.getBoardId();
+            //String boardId = createPostsRequestDto.getBoardId(); //이 부분 지워져야함.
             Board board = boardRepo.findById(boardId)
                     .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
 
@@ -110,10 +107,10 @@ public class RestBoardController {
         }
     }
 
-    //PatchMapping("/board/{boardId}/posts/{postId}")
-    @PatchMapping("/api/v1/edit")
-    public ResponseEntity<?> updatePosts(@Valid @RequestBody UpdatePostsRequestDto updatePostsRequestDto,
-                                         HttpServletRequest request) {
+    @PatchMapping("/{boardId}/posts/{postId}")
+    //@PatchMapping("/api/v1/edit")//(@PathVariable("boardId") String boardId, @PathVariable("postId") Long postId, ....)
+    public ResponseEntity<?> updatePosts(@PathVariable("boardId") String boardId, @PathVariable("postId") Long postId,
+            @Valid @RequestBody UpdatePostsRequestDto updatePostsRequestDto, HttpServletRequest request) {
 
         try {
             // 1. JWT 쿠키 추출
@@ -147,12 +144,12 @@ public class RestBoardController {
             }
 
             // 6. 게시판 엔티티 조회
-            String boardId = updatePostsRequestDto.getBoardId();
+            //String boardId = updatePostsRequestDto.getBoardId(); // 이 부분 제거
             Board board = boardRepo.findById(boardId)
                     .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
 
             //7. 게시물이 존재하는 지 확인
-            Long postId = updatePostsRequestDto.getPostId();
+            //Long postId = updatePostsRequestDto.getPostId(); //이 부분 제거
             Posts posts = postsRepo.findById(postId)
                     .orElseThrow(() -> new IllegalArgumentException("해당 게시물이 존재하지 않습니다."));
 
@@ -179,8 +176,8 @@ public class RestBoardController {
         }
     }
 
-    //@PathchMapping("/board/{boardId}/posts/{postsId}")
-    @PatchMapping("api/v1/delete/{boardId}/{postId}")
+    @PatchMapping("/{boardId}/posts/{postId}/deactivate")
+   // @PatchMapping("api/v1/delete/{boardId}/{postId}")
     public ResponseEntity<?> deactivatePosts(@PathVariable("boardId") String boardId,@PathVariable("postId") Long postId, HttpServletRequest request){
 
 

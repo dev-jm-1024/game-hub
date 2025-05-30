@@ -44,4 +44,9 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
     int deletePostsByPostId(@Param("postId") Long postId);
 
 
+    @Query("SELECT p FROM Posts p WHERE p.user.userAuth.authUserId = :authUserId AND p.board.boardId = :boardId")
+    Optional<Posts> findPostsByUserAuth(@Param("authUserId") String authUserId,
+                                        @Param("boardId") String boardId);
+
+
 }

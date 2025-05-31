@@ -9,17 +9,14 @@ import kr.plusb3b.games.gamehub.api.dto.board.UpdatePostsRequestDto;
 import kr.plusb3b.games.gamehub.api.dto.user.User;
 import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
 import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
-import kr.plusb3b.games.gamehub.repository.boardrepo.PostFilesRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.time.LocalDate;
 
 @RestController("RestBoardController")
@@ -35,13 +32,16 @@ public class RestBoardController {
     private final UserRepository userRepo;
     private final BoardRepository boardRepo;
     private final JwtProvider jwtProvider;
+    private final AccessControlService access;
 
     public RestBoardController(PostsRepository postsRepo, BoardRepository boardRepo,
-                               UserRepository userRepo, JwtProvider jwtProvider) {
+                               UserRepository userRepo, JwtProvider jwtProvider,
+                               AccessControlService access) {
         this.postsRepo = postsRepo;
         this.userRepo = userRepo;
         this.boardRepo = boardRepo;
         this.jwtProvider = jwtProvider;
+        this.access = access;
     }
 
     @PostMapping("/{boardId}/posts") // 수정 ver
@@ -50,35 +50,9 @@ public class RestBoardController {
     public ResponseEntity<?> insertPosts(@PathVariable("boardId") String boardId , @RequestBody CreatePostsRequestDto createPostsRequestDto,
                                          HttpServletRequest request) {
         try {
-            // 1. JWT 쿠키 추출
-            Cookie[] cookies = request.getCookies();
-            String jwt = null;
-
-            if (cookies != null) {
-                for (Cookie cookie : cookies) {
-                    if ("jwt".equals(cookie.getName())) {
-                        jwt = cookie.getValue();
-                        break;
-                    }
-                }
-            }
-
-            // 2. JWT 존재 여부 확인
-            if (jwt == null || !jwtProvider.validateToken(jwt)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
-            }
-
-            // 3. JWT에서 사용자 ID 추출
-            String authUserId = jwtProvider.getUserId(jwt);
-
-            // 4. 사용자 조회
-            User user = userRepo.findByUserAuth_AuthUserId(authUserId)
-                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-            // 5. 탈퇴한 회원인지 확인 (mb_act == 0)
-            if (user.getMbAct() == 0) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("탈퇴한 회원은 글을 작성할 수 없습니다.");
-            }
+            //1 ~ 5
+            User user = access.getAuthenticatedUser(request);
+            if(user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
             // 6. 게시판 엔티티 조회
             //String boardId = createPostsRequestDto.getBoardId(); //이 부분 지워져야함.
@@ -113,45 +87,13 @@ public class RestBoardController {
             @Valid @RequestBody UpdatePostsRequestDto updatePostsRequestDto, HttpServletRequest request) {
 
         try {
-            // 1. JWT 쿠키 추출
-            Cookie[] cookies = request.getCookies();
-            String jwt = null;
+            //1 ~ 5
+            User user = access.getAuthenticatedUser(request);
+            if(user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-            if (cookies != null) {
-                for (Cookie cookie : cookies) {
-                    if ("jwt".equals(cookie.getName())) {
-                        jwt = cookie.getValue();
-                        break;
-                    }
-                }
-            }
+            boolean checkBoardAndPosts = access.validateBoardAndPost(boardId, postId);
 
-            // 2. JWT 존재 여부 확인
-            if (jwt == null || !jwtProvider.validateToken(jwt)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
-            }
-
-            // 3. JWT에서 사용자 ID 추출
-            String authUserId = jwtProvider.getUserId(jwt);
-
-            // 4. 사용자 조회
-            User user = userRepo.findByUserAuth_AuthUserId(authUserId)
-                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-            // 5. 탈퇴한 회원인지 확인 (mb_act == 0)
-            if (user.getMbAct() == 0) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("탈퇴한 회원은 글을 작성할 수 없습니다.");
-            }
-
-            // 6. 게시판 엔티티 조회
-            //String boardId = updatePostsRequestDto.getBoardId(); // 이 부분 제거
-            Board board = boardRepo.findById(boardId)
-                    .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
-
-            //7. 게시물이 존재하는 지 확인
-            //Long postId = updatePostsRequestDto.getPostId(); //이 부분 제거
-            Posts posts = postsRepo.findById(postId)
-                    .orElseThrow(() -> new IllegalArgumentException("해당 게시물이 존재하지 않습니다."));
+            if(!checkBoardAndPosts) throw new RuntimeException("알 수 없는 오류");
 
             //8. UpdatePostsRequestDto 조립
             //updatedAt 시간
@@ -182,43 +124,12 @@ public class RestBoardController {
 
 
         try {
-            // 1. JWT 쿠키 추출
-            Cookie[] cookies = request.getCookies();
-            String jwt = null;
+            //1 ~ 5
+            User user = access.getAuthenticatedUser(request);
+            if(user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            boolean checkBoardAndPosts = access.validateBoardAndPost(boardId, postId);
 
-            if (cookies != null) {
-                for (Cookie cookie : cookies) {
-                    if ("jwt".equals(cookie.getName())) {
-                        jwt = cookie.getValue();
-                        break;
-                    }
-                }
-            }
-
-            // 2. JWT 존재 여부 확인
-            if (jwt == null || !jwtProvider.validateToken(jwt)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
-            }
-
-            // 3. JWT에서 사용자 ID 추출
-            String authUserId = jwtProvider.getUserId(jwt);
-
-            // 4. 사용자 조회
-            User user = userRepo.findByUserAuth_AuthUserId(authUserId)
-                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-            // 5. 탈퇴한 회원인지 확인 (mb_act == 0)
-            if (user.getMbAct() == 0) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("탈퇴한 회원은 글을 작성할 수 없습니다.");
-            }
-
-            //6. 게시판이 존재하는 지 확인하기
-            Board board = boardRepo.findById(boardId)
-                    .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
-
-            //7. 해당 게시물이 존재하는 지 확인하기
-            Posts post = postsRepo.findById(postId)
-                    .orElseThrow(()-> new IllegalArgumentException("해당 게시물이 존재하지 않습니다."));
+            if(!checkBoardAndPosts) throw new RuntimeException("알 수 없는 오류");
 
             //8. 해당 게시물을 비활성화 시키기
             int deactivatePosts = postsRepo.deletePostsByPostId(postId);

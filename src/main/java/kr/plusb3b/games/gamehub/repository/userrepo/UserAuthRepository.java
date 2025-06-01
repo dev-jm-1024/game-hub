@@ -21,7 +21,13 @@ public interface UserAuthRepository extends JpaRepository<UserAuth, Long> {
     @Query("UPDATE UserAuth SET authLastLogin = :authLastLogin WHERE authUserId = :authUserId")
     int updateLastLoginByUserId(@Param("authLastLogin") LocalDateTime authLastLogin,
                                @Param("authUserId") String authUserId);
+    @Query("SELECT UserAuth FROM UserAuth WHERE UserAuth.user.mbId = :mbId")
+    Optional<UserAuth> findAllByUserId(@Param("mbId")Long userId);
 
 
+    @Transactional
+    @Modifying
+    @Query("UPDATE UserAuth ua SET ua.authUserId = :authUserId WHERE ua.user.mbId = :mbId")
+    int updateUserAuth(@Param("authUserId") String authUserId, @Param("mbId") Long mbId);
 
 }

@@ -28,4 +28,18 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("UPDATE User SET mbAct = 0 WHERE userAuth.authUserId = :authUserId AND mbAct = 1")
     int updateMbActByAuthUserId(@Param("authUserId") String authUserId);
 
+    //프로필 업데이트 메소드
+    @Modifying
+    @Query("UPDATE User u SET u.mbNickname = :mbNickName, u.mbProfileUrl = :mbProfileUrl, u.mbStatusMessage = :mbStatusMessage WHERE u.mbId = :mbId")
+    int updateUserByMbId(
+            @Param("mbNickName") String mbNickName,
+            @Param("mbProfileUrl") String mbProfileUrl,
+            @Param("mbStatusMessage") String mbStatusMessage,
+            @Param("mbId") Long mbId
+    );
+
+    //고유 아이디로 회원의 정보 찾기
+    Optional<User> findUserByMbId(Long mbId);
+
+
 }

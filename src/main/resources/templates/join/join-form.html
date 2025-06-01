@@ -56,7 +56,9 @@
         const csrfToken = document.querySelector("meta[name='_csrf']").getAttribute("content");
         const csrfHeader = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
 
-        const response = await fetch("/game-hub/api/v1/join/new", {
+        //new API path: /api/v1/user
+        //past API path: /game-hub/api/v1/join/new
+        const response = await fetch("/api/v1/user", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

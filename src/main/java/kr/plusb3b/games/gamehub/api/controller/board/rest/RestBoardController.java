@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 
 @RestController("RestBoardController")
-//@RequestMapping(path = "/board")
 @RequestMapping(path="/api/v1/board") // 경로 수정 ver
 public class RestBoardController {
 

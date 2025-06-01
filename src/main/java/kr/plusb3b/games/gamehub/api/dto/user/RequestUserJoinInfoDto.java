@@ -37,11 +37,14 @@ public class RequestUserJoinInfoDto {
     //사용자 역할(권한)
     private User.Role mbRole;
 
+    //일반 사용자 혹은 제작사 구분 필드
+    private String prod;
+
     public RequestUserJoinInfoDto(){}
 
     public RequestUserJoinInfoDto(String authUserId, String authPassword, String mbNickname,
                                   String teamName, String priEmail, LocalDate priBirth,
-                                  String priGender, User.Role mbRole) {
+                                  String priGender, User.Role mbRole, String prod) {
         this.authUserId = authUserId;
         this.authPassword = authPassword;
         this.mbNickname = mbNickname;
@@ -50,5 +53,6 @@ public class RequestUserJoinInfoDto {
         this.priBirth = priBirth;
         this.priGender = priGender;
         this.mbRole = mbRole;
+        this.prod = prod;
     }
 }

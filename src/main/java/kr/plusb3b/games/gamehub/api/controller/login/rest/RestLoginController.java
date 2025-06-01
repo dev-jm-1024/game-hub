@@ -25,8 +25,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/game-hub/api/v1/login")
-// new API Path: /api/v1/login
+@RequestMapping("/api/v1/auth")
+//@RequestMapping("/game-hub/api/v1/login") : past API path
 public class RestLoginController {
 
     private final UserRepository userRepository;
@@ -51,7 +51,8 @@ public class RestLoginController {
     }
 
     //로그인 체크
-    @PostMapping
+    @PostMapping("/login")
+    //new API Path : /login
     public ResponseEntity<?> checkLogin(@RequestParam("authUserId") String authUserId,
                                         @RequestParam("authPassword") String authPassword,
                                         HttpServletResponse response, HttpServletRequest request) {

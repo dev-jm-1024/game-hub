@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 
 @RestController
+//@RequestMapping("/api/v1/game-hub")
 @RequestMapping("/game-hub/deactivate")
 public class RestDeactivateUserController {
 
@@ -26,6 +27,8 @@ public class RestDeactivateUserController {
         this.userRepo = userRepo;
     }
 
+    // new API Path: /users/{userId}
+    // @PathVariable("userId") Long userId, 나머지는 동일
     @PostMapping
     public ResponseEntity<?> deactivateUser(@RequestParam("authUserId")String authUserId,
                                             @RequestParam("authUserPassword") String authUserPassword) {

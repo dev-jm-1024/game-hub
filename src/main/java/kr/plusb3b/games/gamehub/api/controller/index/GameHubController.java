@@ -25,7 +25,6 @@ import java.util.Optional;
 @RequestMapping("/game-hub")
 public class GameHubController {
 
-    private final JwtProvider jwtProvider;
     private final BoardRepository boardRepo;
     @Value("${app.api.version}")
     private String apiVersion;
@@ -34,8 +33,7 @@ public class GameHubController {
     private String deactivatePath;
 
 
-    public GameHubController(JwtProvider jwtProvider, BoardRepository boardRepo) {
-        this.jwtProvider = jwtProvider;
+    public GameHubController( BoardRepository boardRepo) {
         this.boardRepo = boardRepo;
     }
 
@@ -90,6 +88,14 @@ public class GameHubController {
     public String showLoginPage(Model model){
         model.addAttribute("apiVersion", apiVersion);
         return "login/login-form";
+    }
+
+    //팀 회원가입 페이지 이동
+    @GetMapping("/join-prod")
+    public String showJoinProdPage(Model model){
+        String prod="producer";
+        model.addAttribute("prod", prod);
+        return "join/join-form-producer";
     }
 
 }

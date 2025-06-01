@@ -16,7 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/game-hub/api/v1")
+@RequestMapping("/api/v1/user") //new API path
+//@RequestMapping("/game-hub/api/v1")
 public class RestJoinController {
 
     private final UserRepository userRepository;
@@ -38,8 +39,9 @@ public class RestJoinController {
 
     }
 
-
-    @PostMapping("/join/new")
+    //new API Path : /users
+    //past API path: /join/new
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> registerUser(@RequestBody RequestUserJoinInfoDto requestUserJoinInfoDto) {
 
@@ -48,14 +50,23 @@ public class RestJoinController {
         LocalDateTime now = LocalDateTime.now();
 
         User user = new User();
-        SnowflakeIdGenerator sfig = new SnowflakeIdGenerator(0,0);
-        user.setMbId(sfig.nextId());
-        user.setMbNickname(requestUserJoinInfoDto.getMbNickname());
-        user.setMbProfileUrl(empty);
-        user.setMbStatusMessage(empty);
-        user.setMbJoinDate(now);
-        user.setMbAct(1);
-        user.setMbRole(User.Role.ROLE_USER);
+        SnowflakeIdGenerator snowflake = new SnowflakeIdGenerator(0,0);
+        user.setMbId(snowflake.nextId()); //mbId 생성
+        user.setMbNickname(requestUserJoinInfoDto.getMbNickname()); //mbNickname 생성
+        user.setMbProfileUrl(empty); //프로필 url 생성
+        user.setMbStatusMessage(empty); //상태 메세지 생성
+        user.setMbJoinDate(now); //가입날짜
+        user.setMbAct(1); //mbAct 1로
+
+
+        String prod = requestUserJoinInfoDto.getProd();
+        if(prod.isEmpty()){
+            user.setMbRole(User.Role.ROLE_USER);
+        }
+        else{
+            user.setMbRole(User.Role.ROLE_PRODUCER);
+        }
+
         user.setMbReportCnt(0);
 
         UserAuth userAuth = new UserAuth();

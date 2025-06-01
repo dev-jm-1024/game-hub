@@ -26,11 +26,13 @@
         <div th:if="${not isLoggedIn}">
             <a href="/game-hub/login">로그인</a>
             <a href="/game-hub/join">회원가입</a>
+            <a href="/game-hub/join-prod">팀 회원가입</a>
         </div>
         <!-- 로그인 상태일 때 -->
         <div th:if="${isLoggedIn}">
             <img th:src="${profileImage}" alt="프로필" class="profile-img">
             <span th:text="${nickname}">닉네임</span>
+
             <form th:action="@{/logout}" method="post">
                 <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
                 <button type="submit">로그아웃</button>

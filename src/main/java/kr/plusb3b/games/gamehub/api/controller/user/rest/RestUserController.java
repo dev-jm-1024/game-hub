@@ -8,6 +8,7 @@ import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserPrivateRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
+import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,23 +23,30 @@ public class RestUserController {
     private final UserAuthRepository userAuthRepo;
     private final UserRepository userRepo;
     private final JwtProvider jwtProvider;
+    private final AccessControlService access;
 
     public RestUserController(UserPrivateRepository userPrivateRepo, UserAuthRepository userAuthRepo,
-                              UserRepository userRepo,JwtProvider jwtProvider) {
+                              UserRepository userRepo,JwtProvider jwtProvider, AccessControlService access) {
         this.userPrivateRepo = userPrivateRepo;
         this.userAuthRepo = userAuthRepo;
         this.userRepo = userRepo;
         this.jwtProvider = jwtProvider;
+        this.access = access;
     }
 
 
     @PatchMapping("/user/{mbId}")
-    public ResponseEntity<?> updateUser(@RequestBody RequestUserUpdateDto updateDto,@PathVariable("mbId") Long mbId, HttpServletRequest request) {
+    public ResponseEntity<?> updateUser(@RequestBody RequestUserUpdateDto updateDto,@PathVariable("mbId") Long mbId,
+                                        HttpServletRequest request) {
 
         try {
 
             //여기다가 Access 메소드
-            //access.validateAccess(request)
+            User user = access.getAuthenticatedUser(request);
+            boolean result = mbId == user.getMbId();
+            if(!result) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
 
             //6.입력받은 객체 조립 시작
             //6.1 user 테이블 - mbNickName, mbProfileUrl, mbStatusMessage

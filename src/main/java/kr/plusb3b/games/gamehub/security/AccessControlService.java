@@ -54,7 +54,7 @@ public class AccessControlService {
         // 3. JWT에서 사용자 ID 추출
         String authUserId = jwtProvider.getUserId(jwt);
 
-        // 4. 사용자 조회
+        // 4. 사용자 조회 --- 여기서 오류남
         User user = userRepo.findByUserAuth_AuthUserId(authUserId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 

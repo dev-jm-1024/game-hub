@@ -5,9 +5,12 @@
     <title>Title</title>
 </head>
 <body>
+<!-- 이거 post-detail.html 에서 합쳐져야함.-->
+<!-- 따라서, postId, boardId 여기다가 넣어줘야함 -->
 <form id="commentForm">
   <input type="text" name="commentContent">
-  <input type="hidden" th:value="${boardId}">
+    <input type="hidden" name="postId" th:value="${postsData.getPostId}">
+    <input type="hidden" name="boardId" th:value="${postsData.getBoard().boardId}">
   <button type="submit">등록</button>
 </form>
 <script>

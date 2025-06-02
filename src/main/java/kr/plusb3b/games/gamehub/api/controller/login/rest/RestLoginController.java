@@ -27,7 +27,8 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/v1/auth")
 //@RequestMapping("/game-hub/api/v1/login") : past API path
-public class RestLoginController {
+public class RestLoginController
+{
 
     private final UserRepository userRepository;
     @Value("${app.api.version}")
@@ -62,12 +63,20 @@ public class RestLoginController {
         boolean isAuthUserId = authUserId != null && !authUserId.isEmpty();
         boolean isAuthPassword = authPassword != null && !authPassword.isEmpty();
 
-        //이때 로그인 시도하려는 아이디의 값이 mbAct=0 이면 회원 탈퇴로 판단
-        int isMemberBreak = userRepository.findMbActByAuthUserId(authUserId);
 
-        if(isMemberBreak == 0) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("탈퇴한 회원 입니다.");
+        //이때 로그인 시도하려는 아이디의 값이 mbAct=0 이면 회원 탈퇴로 판단
+        Optional<Integer> isMemberBreak = userRepository.findMbActByAuthUserId(authUserId);
+
+        if(isMemberBreak == null){return ResponseEntity.status(HttpStatus.NOT_FOUND).body("회원조회가 안되어짐");}
+        if(isMemberBreak.isPresent()){
+            Integer result = isMemberBreak.get();
+
+            if(result == 0){
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("탈퇴함");
+            }
         }
+
+
 
         if (isAuthUserId && isAuthPassword)
         {
@@ -77,10 +86,12 @@ public class RestLoginController {
 
             if(userAuthOptional.isPresent())
             {
+                System.out.println("UserAuth 존재함?" + userAuthOptional.isPresent());  //true 나옴
                 UserAuth userAuth = userAuthOptional.get();
 
                 if (passwordEncoder.matches(authPassword, userAuth.getAuthPassword()))
                 {
+                    System.out.println("비밀번호 matches결과: "+passwordEncoder.matches(authPassword, userAuth.getAuthPassword()));
                     String token = jwtProvider.createToken(userAuth.getAuthUserId());
 
                     //쿠키로 JWT 내려주기
@@ -101,23 +112,26 @@ public class RestLoginController {
 
                     //로그인 시각 생성
                     LocalDateTime loginTime = LocalDateTime.now();
+                    System.out.println("로그인 시각" + loginTime);
 
                     //접속 IP주소 획득
                     String ipAddress = getClientIP(request);
 
                     //로그인 한 아이디로 사용자 고유 아이디 찾기
                     UserLoginInfo userLoginInfo = new UserLoginInfo();
-                    Optional<User> userOptional = userRepository.findByUserAuth_AuthUserId(authUserId);
+                    Optional<User> userOptional = userRepository.findUserByUserAuth_authUserId(authUserId);
+
                     if(userOptional.isPresent()){
                         User user = userOptional.get();
 
                         //UserLoginInfo 조립 시작
-                        userLoginInfo.setUser(user);
                         userLoginInfo.setLoginInfoId(loginInfoId);
                         userLoginInfo.setLoginTime(loginTime);
+                        userLoginInfo.setUser(user);
                         userLoginInfo.setIpAddress(ipAddress);
+                    }else{
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User 객체 비어있음");
                     }
-
 
                     try{
                         //로그인 기록 저장
@@ -162,6 +176,7 @@ public class RestLoginController {
         }
         return ip;
     }
+
 
 
 }

@@ -8,6 +8,7 @@ import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
 import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
+import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.stereotype.Controller;
@@ -26,6 +27,7 @@ public class BoardController {
     private final PostsRepository postsRepository;
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
+    private final AccessControlService access;
     //private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(BoardController.class);4
 
 //    @Value("${app.max.boardSize}")
@@ -34,11 +36,13 @@ public class BoardController {
 
 
     public BoardController(BoardRepository boardRepository, PostsRepository postsRepository,
-                           JwtProvider jwtProvider, UserRepository userRepository) {
+                           JwtProvider jwtProvider, UserRepository userRepository,
+                           AccessControlService access) {
         this.boardRepository = boardRepository;
         this.postsRepository = postsRepository;
         this.jwtProvider = jwtProvider;
         this.userRepository = userRepository;
+        this.access = access;
     }
 
     @GetMapping

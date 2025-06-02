@@ -22,7 +22,9 @@ public interface UserPrivateRepository extends JpaRepository<UserPrivate, Long> 
             @Param("mbId") Long mbId
     );
 
-    @Query("SELECT UserPrivate FROM UserPrivate WHERE UserPrivate.user.mbId = :mbId")
+    @Query("SELECT up FROM UserPrivate up WHERE up.user.mbId = :mbId")
     Optional<UserPrivate> findUserPrivateByMbId(@Param("mbId") Long mbId);
+
+
 
 }

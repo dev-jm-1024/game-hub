@@ -1,11 +1,13 @@
 package kr.plusb3b.games.gamehub.api.controller.user;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.api.dto.user.RequestUserUpdateDto;
 import kr.plusb3b.games.gamehub.api.dto.user.User;
 import kr.plusb3b.games.gamehub.api.dto.user.UserAuth;
 import kr.plusb3b.games.gamehub.api.dto.user.UserPrivate;
+import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserPrivateRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
@@ -27,25 +29,59 @@ public class UserController {
     private final UserRepository userRepo;
     private final UserPrivateRepository userPrivateRepo;
     private final UserAuthRepository userAuthRepo;
+    private final JwtProvider jwtProvider;
 
     public UserController(AccessControlService access, UserRepository userRepo,
-                          UserPrivateRepository userPrivateRepo, UserAuthRepository userAuthRepo) {
+                          UserPrivateRepository userPrivateRepo, UserAuthRepository userAuthRepo,
+                          JwtProvider jwtProvider) {
         this.access = access;
         this.userRepo = userRepo;
         this.userPrivateRepo = userPrivateRepo;
         this.userAuthRepo = userAuthRepo;
+        this.jwtProvider = jwtProvider;
     }
 
 
     //프로필 변경 페이지 요청 처리
-    @GetMapping("/{mbId}/edit-profile")
-    public String showEditProfilePage(@PathVariable("mbId") Long mbId, HttpServletRequest request, Model model) {
+    @GetMapping("/edit-profile")
+    public String showEditProfilePage(HttpServletRequest request, Model model) {
 
-        User user = access.getAuthenticatedUser(request);
+        // 1. JWT 쿠키 추출
+        Cookie[] cookies = request.getCookies();
+        String jwt = null;
+
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("jwt".equals(cookie.getName())) {
+                    jwt = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        // 2. JWT 존재 여부 확인
+        if (jwt == null || !jwtProvider.validateToken(jwt)) {
+            throw new IllegalStateException("로그인이 필요합니다.");
+        }
+
+        // 3. JWT에서 사용자 ID 추출
+        String authUserId = jwtProvider.getUserId(jwt);
+        System.out.println("Debugging Check AuthUserId: " + authUserId);
+
+        // 4. 사용자 조회 --- 여기서 오류남
+        User user = userRepo.findByUserAuth_AuthUserId(authUserId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // 5. 탈퇴 여부 확인
+        if (user.getMbAct() == 0) {
+            throw new IllegalStateException("탈퇴한 회원입니다.");
+        }
+
         Long memberId = user.getMbId();
 
+
         Optional<User> userOptional = userRepo.findById(memberId);
-        Optional<UserAuth> userauthOptional = userAuthRepo.findAllByUserId(memberId);
+        Optional<UserAuth> userauthOptional = userAuthRepo.findByUser_MbId(memberId);
         Optional<UserPrivate> userprivateOptional = userPrivateRepo.findUserPrivateByMbId(memberId);
 
         userOptional.ifPresent(value -> model.addAttribute("user", value));

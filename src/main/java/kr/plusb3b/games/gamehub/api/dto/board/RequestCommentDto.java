@@ -10,6 +10,7 @@ public class RequestCommentDto {
 
     private String commentContent;
     private String boardId;
+    private Long postId;
 
     public RequestCommentDto() {}
 

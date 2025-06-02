@@ -60,7 +60,7 @@ public class RestJoinController {
 
 
         String prod = requestUserJoinInfoDto.getProd();
-        if(prod.isEmpty()){
+        if(prod.isEmpty() || prod == null){
             user.setMbRole(User.Role.ROLE_USER);
         }
         else{

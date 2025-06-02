@@ -17,7 +17,7 @@ public class UserAuth {
     private String authUserId; // 로그인 ID
 
     @OneToOne
-    @JoinColumn(name = "mbid")
+    @JoinColumn(name = "mb_Id")
     private User user;
 
     private String authPassword;

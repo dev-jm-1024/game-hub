@@ -11,15 +11,9 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    //뭔가 안되어지고 있음
     @Query("SELECT u FROM User u WHERE u.userAuth.authUserId = :authUserId")
     Optional<User> findByUserAuth_AuthUserId(@Param("authUserId") String authUserId);
-
-    //test method
-    Optional<User> findUserByUserAuth_authUserId(@Param("authUserId") String authUserId);
-
-
-    @Query("SELECT u.mbAct FROM User u WHERE u.userAuth.authUserId = :authUserId")
-    Optional<Integer> findMbActByAuthUserId(@Param("authUserId") String authUserId);
 
     //회원계정 비활성화 -- 탈퇴
     @Modifying

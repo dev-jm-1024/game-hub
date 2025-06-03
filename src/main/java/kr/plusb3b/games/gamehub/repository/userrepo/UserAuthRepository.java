@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-public interface UserAuthRepository extends JpaRepository<UserAuth, Long> {
+public interface UserAuthRepository extends JpaRepository<UserAuth, String> {
 
     // Spring JPA 메서드 규칙에 따라 필드명을 그대로 메서드명에 사용 (쿼리 자동 생성됨)
     Optional<UserAuth> findByAuthUserId(String authUserId);

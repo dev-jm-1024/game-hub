@@ -29,132 +29,118 @@ import java.util.Optional;
 //@RequestMapping("/game-hub/api/v1/login") : past API path
 public class RestLoginController
 {
-
-    private final UserRepository userRepository;
     @Value("${app.api.version}")
     private String appApiVersion;
 
+    private final UserRepository userRepo;
     private final UserAuthRepository userAuthRepo;
-    private final UserLoginInfoRepository loginInfoRepo;
+    private final UserLoginInfoRepository userLoginInfoRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
-
-
-    public RestLoginController(UserAuthRepository userAuthRepo,
-                               PasswordEncoder passwordEncoder, JwtProvider jwtProvider,
-                               UserLoginInfoRepository loginInfoRepo, UserRepository userRepository) {
+    public RestLoginController(UserRepository userRepo, UserAuthRepository userAuthRepo, UserLoginInfoRepository userLoginInfoRepo, PasswordEncoder passwordEncoder,
+                               JwtProvider jwtProvider) {
+        this.userRepo = userRepo;
         this.userAuthRepo = userAuthRepo;
+        this.userLoginInfoRepo = userLoginInfoRepo;
         this.passwordEncoder = passwordEncoder;
         this.jwtProvider = jwtProvider;
-        this.loginInfoRepo = loginInfoRepo;
-        this.userRepository = userRepository;
     }
 
     //로그인 체크
     @PostMapping("/login")
     //new API Path : /login
     public ResponseEntity<?> checkLogin(@RequestParam("authUserId") String authUserId,
-                                        @RequestParam("authPassword") String authPassword,
-                                        HttpServletResponse response, HttpServletRequest request) {
+                                        @RequestParam("authPassword") String authPassword,HttpServletRequest request,
+                                        HttpServletResponse response) {
 
-        //Optional<UserAuth> userOptional = userAuthRepo.findByAuthUserId(userAuth.getAuthUserId());
+        boolean checkId = authUserId == null || authUserId.length() == 0;
+        boolean checkPassword = authPassword == null || authPassword.length() == 0;
 
-        boolean isAuthUserId = authUserId != null && !authUserId.isEmpty();
-        boolean isAuthPassword = authPassword != null && !authPassword.isEmpty();
-
-
-        //이때 로그인 시도하려는 아이디의 값이 mbAct=0 이면 회원 탈퇴로 판단
-        Optional<Integer> isMemberBreak = userRepository.findMbActByAuthUserId(authUserId);
-
-        if(isMemberBreak == null){return ResponseEntity.status(HttpStatus.NOT_FOUND).body("회원조회가 안되어짐");}
-        if(isMemberBreak.isPresent()){
-            Integer result = isMemberBreak.get();
-
-            if(result == 0){
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("탈퇴함");
-            }
-        }
+        //데이터 누락 체크
+        if(checkId && checkPassword) {return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body("아이디 혹은 비밀번호가 누락되었습니다");}
 
 
+        //Optional<User> userOpt = userRepo.findByAuthUserId(authUserId); //이 코드가 문제
+        Optional<UserAuth> userAuthOpt = userAuthRepo.findById(authUserId);
 
-        if (isAuthUserId && isAuthPassword)
+        //디버기 용도
+        //boolean checkUserOpt = userOpt.isPresent(); //이 친구가 조회가 안되어짐
+        boolean checkUserAuthOpt = userAuthOpt.isPresent();
+
+        //System.out.println("user 조회여부: " + checkUserOpt);
+        System.out.println("userAuth 조회여부: " + checkUserAuthOpt);
+
+        //로그인한 아이디가 DB에 존재하는 지 확인
+        if(checkUserAuthOpt)
         {
+            UserAuth userAuth = userAuthOpt.get();
+            User user = userAuth.getUser();
+            int mbAct = user.getMbAct();
 
-            //로그인한 아이디로 회원이 존재하는 지 확인
-            Optional<UserAuth> userAuthOptional = userAuthRepo.findByAuthUserId(authUserId);
+            //회원의 계정상태 검사
+            if(mbAct == 0) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("탈퇴된 계정입니다.");
 
-            if(userAuthOptional.isPresent())
-            {
-                System.out.println("UserAuth 존재함?" + userAuthOptional.isPresent());  //true 나옴
-                UserAuth userAuth = userAuthOptional.get();
+            //해시 값 일치하는 지 확인
+            if(passwordEncoder.matches(authPassword, userAuth.getAuthPassword())){
 
-                if (passwordEncoder.matches(authPassword, userAuth.getAuthPassword()))
-                {
-                    System.out.println("비밀번호 matches결과: "+passwordEncoder.matches(authPassword, userAuth.getAuthPassword()));
-                    String token = jwtProvider.createToken(userAuth.getAuthUserId());
+                //일치할 경우 토큰 발급
+                /***************************************************************************************/
+                String token = jwtProvider.createToken(userAuth.getAuthUserId());
 
-                    //쿠키로 JWT 내려주기
-                    ResponseCookie cookie = ResponseCookie.from("jwt", token)
-                            .httpOnly(true)
-                            .secure(false) // ✅ 개발 시 false, 운영 시 true
-                            .path("/")
-                            .sameSite("Strict")
-                            .maxAge(60 * 60) // 1시간
-                            .build();
+                //쿠키로 JWT 내려주기
+                ResponseCookie cookie = ResponseCookie.from("jwt", token)
+                        .httpOnly(true)
+                        .secure(false) // 개발 시 false, 운영 시 true
+                        .path("/")
+                        .sameSite("Strict")
+                        .maxAge(60 * 60) // 1시간
+                        .build();
 
-                    //브라우저에 쿠키를 내려줌
-                    response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+                //브라우저에 쿠키를 내려줌
+                response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+                /***************************************************************************************/
 
-                    //로그인 기록 고유 아이디 생성
-                    SnowflakeIdGenerator snowflakeIdGenerator = new SnowflakeIdGenerator(0,0);
-                    Long loginInfoId = snowflakeIdGenerator.nextId();
+                /***************************************************************************************/
+                //로그인 기록 남기기
 
-                    //로그인 시각 생성
-                    LocalDateTime loginTime = LocalDateTime.now();
-                    System.out.println("로그인 시각" + loginTime);
+                //UserLoginInfo 조립 시작
 
-                    //접속 IP주소 획득
-                    String ipAddress = getClientIP(request);
+                //로그인 기록 고유 아이디 생성
+                SnowflakeIdGenerator snowflakeIdGenerator = new SnowflakeIdGenerator(0,0);
+                Long loginInfoId = snowflakeIdGenerator.nextId();
 
-                    //로그인 한 아이디로 사용자 고유 아이디 찾기
-                    UserLoginInfo userLoginInfo = new UserLoginInfo();
-                    Optional<User> userOptional = userRepository.findUserByUserAuth_authUserId(authUserId);
+                //현재시간 생성
+                LocalDateTime loginTime = LocalDateTime.now();
 
-                    if(userOptional.isPresent()){
-                        User user = userOptional.get();
+                //접속 IP 획득
+                String ipAddress = getClientIP(request);
 
-                        //UserLoginInfo 조립 시작
-                        userLoginInfo.setLoginInfoId(loginInfoId);
-                        userLoginInfo.setLoginTime(loginTime);
-                        userLoginInfo.setUser(user);
-                        userLoginInfo.setIpAddress(ipAddress);
-                    }else{
-                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User 객체 비어있음");
-                    }
+                UserLoginInfo userLoginInfo = new UserLoginInfo();
+                userLoginInfo.setLoginInfoId(loginInfoId);
+                userLoginInfo.setLoginTime(loginTime);
+                userLoginInfo.setUser(user);
+                userLoginInfo.setIpAddress(ipAddress);
+                /***************************************************************************************/
 
-                    try{
-                        //로그인 기록 저장
-                        loginInfoRepo.save(userLoginInfo);
-
-                        //UserAuth의 authLastLogin 기록 업데이트
-                        userAuthRepo.updateLastLoginByUserId(loginTime, authUserId);
-                    }catch (Exception e){
-                        e.printStackTrace();
-                    }
-
-                    return ResponseEntity.ok()
-                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                            .body("로그인 성공: 토큰 발급 완료");
+                try{
+                    userLoginInfoRepo.save(userLoginInfo);
+                    return ResponseEntity.status(HttpStatus.OK).body("로그인 성공");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
                 }
+
+            }else{
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("비밀번호가 일치하지 않습니다");
+
             }
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("아이디/비밀번호 누락");
+
         }
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인 실패");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("알 수 없는 이유로 실패하였습니다");
     }
+
 
     //클라이언트의 로그인한 IP얻는 메소드
     public String getClientIP(HttpServletRequest request) {

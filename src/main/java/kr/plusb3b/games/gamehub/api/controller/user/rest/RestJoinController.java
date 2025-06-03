@@ -60,10 +60,9 @@ public class RestJoinController {
 
 
         String prod = requestUserJoinInfoDto.getProd();
-        if(prod.isEmpty() || prod == null){
+        if(prod.equals("generalUser")){
             user.setMbRole(User.Role.ROLE_USER);
-        }
-        else{
+        }else{
             user.setMbRole(User.Role.ROLE_PRODUCER);
         }
 

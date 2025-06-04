@@ -54,8 +54,8 @@ public class RestLoginController
                                         @RequestParam("authPassword") String authPassword,HttpServletRequest request,
                                         HttpServletResponse response) {
 
-        boolean checkId = authUserId == null || authUserId.length() == 0;
-        boolean checkPassword = authPassword == null || authPassword.length() == 0;
+        boolean checkId = authUserId == null || authUserId.isEmpty();
+        boolean checkPassword = authPassword == null || authPassword.isEmpty();
 
         //데이터 누락 체크
         if(checkId && checkPassword) {return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body("아이디 혹은 비밀번호가 누락되었습니다");}

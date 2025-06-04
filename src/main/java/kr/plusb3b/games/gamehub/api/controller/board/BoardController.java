@@ -9,6 +9,7 @@ import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
+import org.atmosphere.config.service.Post;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.stereotype.Controller;
@@ -48,37 +49,18 @@ public class BoardController {
     @GetMapping
     public String boardMainPage(Model model) {
 
-        // 게시판 목록 전체 조회
+        //게시판 데이터 가져오기
         List<Board> boardList = boardRepository.findAll();
         model.addAttribute("boardList", boardList);
 
-        // 전체 게시물 중에서 postAct == 1인 것만 필터링
-        List<Posts> postsList = postsRepository.findAll();
-        List<Posts> realPostsList = postsList.stream()
-                .filter(post -> post.getPostAct() == 1)
-                .collect(Collectors.toList());
+        // 게시물 전체 조회
+        List<Posts> allPosts = postsRepository.findAll();
 
-        // 게시판별 게시물 존재 여부 Map
-        Map<String, Boolean> hasBoardPosts = new HashMap<>();
+        // 활성 게시물 필터링
+        List<Posts> activePosts = filterActivePosts(allPosts);
 
-        for (Board board : boardList) {
-            String boardId = board.getBoardId();
+        //각 게시판별로 게시물 데이터 존재하는 지 확인 및 각 게시판별로 최신순으로 5개씩 정렬
 
-            // 해당 게시판에 postAct == 1인 게시물이 하나라도 있는지 확인
-            boolean exists = realPostsList.stream()
-                    .anyMatch(post -> post.getBoard().getBoardId().equals(boardId));
-
-            hasBoardPosts.put(boardId, exists);
-        }
-
-        // 최신순 5개 게시물 추출
-        List<Posts> top5Posts = realPostsList.stream()
-                .sorted(Comparator.comparing(Posts::getCreatedAt).reversed())
-                .limit(5)
-                .collect(Collectors.toList());
-
-        model.addAttribute("hasBoardPosts", hasBoardPosts);
-        model.addAttribute("top5Posts", top5Posts);
 
         return "board/main-board";
     }
@@ -208,6 +190,11 @@ public class BoardController {
         }
 
         return "/board/common/post-edit-form";
+    }
+
+    //게시물 데이터 필터링하기
+    private List<Posts> filterActivePosts(List<Posts> posts){
+        return posts.stream().filter(post -> post.getPostAct() == 0).collect(Collectors.toList());
     }
 
 

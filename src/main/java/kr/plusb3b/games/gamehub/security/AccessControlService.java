@@ -5,9 +5,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.api.dto.board.Board;
 import kr.plusb3b.games.gamehub.api.dto.board.Posts;
 import kr.plusb3b.games.gamehub.api.dto.user.User;
+import kr.plusb3b.games.gamehub.api.dto.user.UserAuth;
 import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
 import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
+import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,13 +24,16 @@ public class AccessControlService {
     private final JwtProvider jwtProvider;
     private final BoardRepository boardRepo;
     private final PostsRepository postsRepo;
+    private final UserAuthRepository userAuthRepo;
 
     public AccessControlService(UserRepository userRepo, JwtProvider jwtProvider,
-                                BoardRepository boardRepo, PostsRepository postsRepo) {
+                                BoardRepository boardRepo, PostsRepository postsRepo,
+                                UserAuthRepository userAuthRepo) {
         this.userRepo = userRepo;
         this.jwtProvider = jwtProvider;
         this.boardRepo = boardRepo;
         this.postsRepo = postsRepo;
+        this.userAuthRepo = userAuthRepo;
     }
 
     public User getAuthenticatedUser(HttpServletRequest request) {
@@ -55,9 +60,15 @@ public class AccessControlService {
         String authUserId = jwtProvider.getUserId(jwt);
 
         // 4. 사용자 조회 --- 여기서 오류남
-        User user = userRepo.findByUserAuth_AuthUserId(authUserId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+//        User user1 = userRepo.findByUserAuth_AuthUserId(authUserId)
+//                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
+        Optional<UserAuth> userAuthOpt = userAuthRepo.findByAuthUserId(authUserId);
+        if(!(userAuthOpt.isPresent())) {
+            throw new IllegalArgumentException("사용자를 찾을 수 없습니다");
+        }
+
+        User user = userAuthOpt.get().getUser();
         // 5. 탈퇴 여부 확인
         if (user.getMbAct() == 0) {
             throw new IllegalStateException("탈퇴한 회원입니다.");

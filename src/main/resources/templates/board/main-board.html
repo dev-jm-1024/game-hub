@@ -49,15 +49,13 @@
         </h2>
 
         <!-- 게시물이 있는 경우 -->
-        <div th:if="${hasBoardPosts[board.boardId]}">
+        <div th:if="${postsByBoard[board.boardId]?.size() > 0}">
             <table>
                 <thead>
                 <tr><th>제목</th><th>작성일</th><th>조회수</th></tr>
                 </thead>
                 <tbody>
-                <!-- boardId로 필터링된 top5Posts 표시 -->
-                <tr th:each="post : ${top5Posts}"
-                    th:if="${post.board.boardId == board.boardId}">
+                <tr th:each="post : ${postsByBoard[board.boardId]}">
                     <td>
                         <a th:href="@{'/board/' + ${board.boardId} + '/' + ${post.postId} + '/view'}"
                            th:text="${post.postTitle}">제목</a>
@@ -70,16 +68,16 @@
         </div>
 
         <!-- 게시물이 없는 경우 -->
-        <div th:if="${!hasBoardPosts[board.boardId]}">
+        <div th:if="${postsByBoard[board.boardId]?.size() == 0}">
             <p>게시물이 없습니다.</p>
         </div>
-    </div>
 
-    <!-- 글쓰기 버튼 -->
-    <form action="/board/new" method="get">
-        <input type="hidden" th:value="${boardList[0].boardId}" name="boardId">
-        <button type="submit">글쓰기</button>
-    </form>
+        <!-- 게시판별 글쓰기 버튼 -->
+        <form th:action="@{'/board/new'}" method="get">
+            <input type="hidden" th:name="boardId" th:value="${board.boardId}">
+            <button type="submit">글쓰기</button>
+        </form>
+    </div>
 </main>
 </body>
 </html>

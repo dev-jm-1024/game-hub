@@ -36,35 +36,36 @@
     <button type="submit">update</button>
 </form>
 <script>
-    document.getElementById("joinForm").addEventListener("submit", async function (e) {
+    document.getElementById("profile").addEventListener("submit", async function (e) {
         e.preventDefault();
 
         const formData = new FormData(this);
         const data = Object.fromEntries(formData.entries());
 
-        // CSRF 정보 메타에서 가져오기
+        // CSRF 정보
         const csrfToken = document.querySelector("meta[name='_csrf']").getAttribute("content");
         const csrfHeader = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
-        const mbId = form.querySelector("input[name='mbId']").value;
+        const mbId = formData.get("mbId"); // ← 수정된 부분
 
-        //new API path: api/v1/user/{userId}
         const response = await fetch(`/api/v1/user/${mbId}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
-                [csrfHeader]: csrfToken // 동적 키 사용!
+                [csrfHeader]: csrfToken
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+            credentials: "include"
         });
 
         if (response.ok) {
-            alert("회원가입에 성공하였습니다!");
+            alert("회원정보가 성공적으로 수정되었습니다!");
             window.location.href = "/game-hub";
         } else {
             const errorText = await response.text();
-            alert("회원가입 실패: " + errorText);
+            alert("회원정보 수정 실패: " + errorText);
         }
     });
+
 
 </script>
 </body>

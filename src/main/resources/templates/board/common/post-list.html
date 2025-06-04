@@ -20,20 +20,20 @@
         </tr>
         </thead>
         <tbody>
-        <!-- 게시글이 없을 경우 메시지 -->
-        <tr th:if="${checkPostsList}">
+        <!-- 게시글이 없을 경우 -->
+        <tr th:if="${#lists.isEmpty(realPostData)}">
             <td colspan="5">게시글이 없습니다.</td>
         </tr>
 
-        <!-- 게시글 반복 -->
-        <tr th:each="post, stat : ${postsList}">
+        <!-- 게시글이 있을 경우 -->
+        <tr th:each="post, stat : ${realPostData}">
             <td th:text="${stat.count}">1</td>
             <td>
                 <a th:href="@{'/board/' + ${board.boardId} + '/' + ${post.postId} + '/view'}"
                    th:text="${post.postTitle}">글 제목</a>
             </td>
             <td th:text="${post.user.mbNickname}">작성자</td>
-            <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">2024-01-01</td>
+            <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">작성일</td>
             <td th:text="${post.viewCount}">0</td>
         </tr>
         </tbody>
@@ -41,43 +41,15 @@
 
     <!-- 글쓰기 버튼 -->
     <div>
-<!--        <a th:href="@{'/board/' + ${board.boardId} + '/new'}">글쓰기</a>-->
-
         <form action="/board/new" method="get">
             <input type="hidden" name="boardId" th:value="${board.boardId}" />
-
             <button type="submit" value="글쓰기"
                     style="background-color: rgb(54,54,52); color: #fbf8fb; font-weight: 900;
                     border-radius: 16px; width: 200px; height: 100px; font-size: 13px;">
-            글쓰기</button>
+                글쓰기
+            </button>
         </form>
     </div>
-
-    <!-- 페이지네이션 (추후 페이징 기능 확장 대비) -->
-    <nav th:if="${totalPages != null}" aria-label="Page navigation">
-        <ul class="pagination">
-            <!-- 이전 -->
-            <li th:if="${currentPage > 1}">
-                <a th:href="@{'/board/' + ${board.boardId} + '(page=' + ${currentPage - 1} + ')'}" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-            </li>
-
-            <!-- 페이지 번호 -->
-            <li th:each="pageNumber : ${#numbers.sequence(1, totalPages)}"
-                th:classappend="${pageNumber == currentPage} ? 'active'">
-                <a th:href="@{'/board/' + ${board.boardId} + '(page=' + ${pageNumber} + ')'}"
-                   th:text="${pageNumber}">1</a>
-            </li>
-
-            <!-- 다음 -->
-            <li th:if="${currentPage < totalPages}">
-                <a th:href="@{'/board/' + ${board.boardId} + '(page=' + ${currentPage + 1} + ')'}" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-            </li>
-        </ul>
-    </nav>
 </main>
 </body>
 </html>

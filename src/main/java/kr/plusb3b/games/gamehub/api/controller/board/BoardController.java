@@ -4,11 +4,14 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.api.dto.board.*;
 import kr.plusb3b.games.gamehub.api.dto.user.User;
+import kr.plusb3b.games.gamehub.api.dto.user.UserAuth;
 import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
 import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
+import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
+import org.atmosphere.config.service.Post;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.stereotype.Controller;
@@ -28,6 +31,7 @@ public class BoardController {
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
     private final AccessControlService access;
+    private final UserAuthRepository userAuthRepo;
     //private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(BoardController.class);4
 
 //    @Value("${app.max.boardSize}")
@@ -37,79 +41,69 @@ public class BoardController {
 
     public BoardController(BoardRepository boardRepository, PostsRepository postsRepository,
                            JwtProvider jwtProvider, UserRepository userRepository,
-                           AccessControlService access) {
+                           AccessControlService access, UserAuthRepository userAuthRepo) {
         this.boardRepository = boardRepository;
         this.postsRepository = postsRepository;
         this.jwtProvider = jwtProvider;
         this.userRepository = userRepository;
         this.access = access;
+        this.userAuthRepo = userAuthRepo;
     }
 
     @GetMapping
     public String boardMainPage(Model model) {
 
-        // 게시판 목록 전체 조회
+        // 게시판 목록 가져오기
         List<Board> boardList = boardRepository.findAll();
         model.addAttribute("boardList", boardList);
 
-        // 전체 게시물 중에서 postAct == 1인 것만 필터링
-        List<Posts> postsList = postsRepository.findAll();
-        List<Posts> realPostsList = postsList.stream()
-                .filter(post -> post.getPostAct() == 1)
-                .collect(Collectors.toList());
-
-        // 게시판별 게시물 존재 여부 Map
-        Map<String, Boolean> hasBoardPosts = new HashMap<>();
+        // 게시판별로 게시물 분류 및 필터링/정렬
+        Map<String, List<Posts>> postsByBoard = new HashMap<>();
 
         for (Board board : boardList) {
             String boardId = board.getBoardId();
 
-            // 해당 게시판에 postAct == 1인 게시물이 하나라도 있는지 확인
-            boolean exists = realPostsList.stream()
-                    .anyMatch(post -> post.getBoard().getBoardId().equals(boardId));
+            // 해당 게시판의 전체 게시물 가져오기
+            List<Posts> posts = postsRepository.findByBoard_BoardId(boardId);
 
-            hasBoardPosts.put(boardId, exists);
+            // 활성화된 게시물 중 최신순 5개만 필터링
+            List<Posts> top5Posts = filterAndSortTop5ByCreatedAt(posts);
+
+            // Map에 추가
+            postsByBoard.put(boardId, top5Posts);
         }
 
-        // 최신순 5개 게시물 추출
-        List<Posts> top5Posts = realPostsList.stream()
-                .sorted(Comparator.comparing(Posts::getCreatedAt).reversed())
-                .limit(5)
-                .collect(Collectors.toList());
+        // View에 전달
+        model.addAttribute("postsByBoard", postsByBoard);
 
-        model.addAttribute("hasBoardPosts", hasBoardPosts);
-        model.addAttribute("top5Posts", top5Posts);
-
-        return "board/main-board";
+        return "board/main-board"; // 템플릿 경로
     }
+
 
 
     //게시판 경로 처리
     @GetMapping("/{boardId}/view")
-    public String dispatchBoardPost(@PathVariable String boardId, Model model) {
+    public String dispatchBoardPost(@PathVariable("boardId") String boardId, Model model) {
 
-        // 1. 게시판 정보 조회
-        Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "해당 게시판을 찾을 수 없습니다."));
+        Board board = boardRepository.findById(boardId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        model.addAttribute("board", board);
 
-        // 2. 게시글 목록 조회. 단, postAct가 1인 게시물만.
-        List<Posts> tempPostList = postsRepository.findByBoard_BoardId(boardId);
-        List<Posts> postList = new ArrayList<>();
+        //boardId 디버깅 출력
+        System.out.println(boardId);
 
-        //boolean isPostsListEmpty = postsList.isEmpty();
-        for(int i = 0; i < tempPostList.size(); i++) {
-            if(tempPostList.get(i).getPostAct() != 0)
-                postList.add(tempPostList.get(i));
+        //postAct가 1인 것만 넣기
+        List<Posts> allPostData = postsRepository.findByBoard_BoardId(boardId);
+        List<Posts> realPostData = new ArrayList<>();
+        for(int i = 0; i < allPostData.size(); i++) {
+            if(allPostData.get(i).getPostAct() == 1){
+                realPostData.add(allPostData.get(i));
+            }
         }
 
-        boolean hasPosts = postList.isEmpty();
-        if(!hasPosts) {
-            model.addAttribute("postList", postList);
-        }
+        //postAct 1인 데이터 Model로 넘기기
 
-        // 3. 모델에 데이터 추가
-        model.addAttribute("board", board);  // Optional이 아닌 실제 객체로 넘김
-        model.addAttribute("checkPostsList", hasPosts); // Thymeleaf에서 게시물 유무 표시용
+        model.addAttribute("realPostData", realPostData);
+
 
         return "board/common/post-list";
     }
@@ -146,6 +140,8 @@ public class BoardController {
         Posts posts = postsRepository.findByBoard_BoardIdAndPostId(boardId, postId)
                 .orElseThrow(() -> new PostsNotFoundException(postId));
 
+        System.out.println("boardId 존재함? " + boardId);
+        System.out.println("postId 존재함? " + postId);
 
         //해당 글이 로그인한 본인이 쓴 글이면 true 아니면 false를 보낸다.
         //이를 통해 수정 및 삭제 버튼이 보여지게 된다.
@@ -171,26 +167,32 @@ public class BoardController {
             // 3. JWT에서 사용자 ID 추출
             String authUserId = jwtProvider.getUserId(jwt);
 
-            // 4. 사용자 조회
-            User user = userRepository.findByUserAuth_AuthUserId(authUserId)
-                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+            Optional<UserAuth> userAuthOpt = userAuthRepo.findByAuthUserId(authUserId);
+            if(userAuthOpt.isPresent()) {
+                User user = userAuthOpt.get().getUser();
 
-            // 5. 탈퇴한 회원인지 확인 (mb_act == 0)
-            if (user.getMbAct() == 0) {
-                throw new AuthenticationCredentialsNotFoundException("계정이 존재하지 않거나, 탈퇴한 회원입니다.");
+                /********************로그인한 회원이 게시물 쓴건지 확인************************/
+                boolean isAuthUser = false;
+                if(posts.getUser().equals(user)){
+                    model.addAttribute("isAuthUser", true);
+                }else{
+                    model.addAttribute("isAuthUser", false);
+                }
+
+
+                // 5. 탈퇴 여부 확인
+                if (user.getMbAct() == 0) {
+                    throw new IllegalStateException("탈퇴한 회원입니다.");
+                }
+            }else{
+                throw new IllegalArgumentException("사용자를 찾을 수 없습니다");
             }
 
-            Optional<Posts> optionalPosts = postsRepository.findPostsByUserAuth(authUserId, boardId);
-            boolean isLogin = false;
-            if(optionalPosts.isPresent()) {
-                isLogin = true;
-            }
 
             //View 에다가 데이터 전송
             model.addAttribute("postsData", posts);
 
-            //로그인 여부 Model에 넣기
-            model.addAttribute("isAuthor", isLogin);
+
         }catch (AuthenticationCredentialsNotFoundException e) {
             e.printStackTrace();
         }
@@ -209,6 +211,16 @@ public class BoardController {
 
         return "/board/common/post-edit-form";
     }
+
+
+    private List<Posts> filterAndSortTop5ByCreatedAt(List<Posts> posts) {
+        return posts.stream()
+                .filter(post -> post.getPostAct() == 1) // 활성 게시글만
+                .sorted(Comparator.comparing(Posts::getCreatedAt).reversed()) // 최신순 정렬
+                .limit(5) // 상위 5개
+                .collect(Collectors.toList());
+    }
+
 
 
 }

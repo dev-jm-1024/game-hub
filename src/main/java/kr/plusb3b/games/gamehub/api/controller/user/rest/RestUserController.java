@@ -43,7 +43,8 @@ public class RestUserController {
 
             //여기다가 Access 메소드
             User user = access.getAuthenticatedUser(request);
-            boolean result = mbId == user.getMbId();
+            boolean result = mbId.equals(user.getMbId());
+
             if(!result) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
@@ -75,7 +76,7 @@ public class RestUserController {
 
             if(totalResult < 3) throw new RuntimeException("update error");
             else{
-                return ResponseEntity.status(HttpStatus.OK).body(updateDto);
+                return ResponseEntity.status(HttpStatus.OK).body("update success");
             }
 
         } catch (Exception e) {

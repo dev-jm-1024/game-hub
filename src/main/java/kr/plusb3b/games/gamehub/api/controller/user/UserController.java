@@ -69,8 +69,10 @@ public class UserController {
         System.out.println("Debugging Check AuthUserId: " + authUserId);
 
         // 4. 사용자 조회 --- 여기서 오류남
-        User user = userRepo.findByUserAuth_AuthUserId(authUserId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        UserAuth userAuth = userAuthRepo.findById(authUserId)
+                .orElseThrow(()-> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+
+        User user = userAuth.getUser();
 
         // 5. 탈퇴 여부 확인
         if (user.getMbAct() == 0) {

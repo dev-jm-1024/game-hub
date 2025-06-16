@@ -50,9 +50,13 @@ public class RestLoginController
     //로그인 체크
     @PostMapping("/login")
     //new API Path : /login
+    //checkLogin(@RequestBody LoginCheckDto loginCheckDto)
     public ResponseEntity<?> checkLogin(@RequestParam("authUserId") String authUserId,
                                         @RequestParam("authPassword") String authPassword,HttpServletRequest request,
                                         HttpServletResponse response) {
+
+        //String authUserId = loginCheckDto.getAuthUserId();
+        //String authUserPassword = loginCheckDto.getAuthUserPassword();
 
         boolean checkId = authUserId == null || authUserId.isEmpty();
         boolean checkPassword = authPassword == null || authPassword.isEmpty();
@@ -64,7 +68,7 @@ public class RestLoginController
         //Optional<User> userOpt = userRepo.findByAuthUserId(authUserId); //이 코드가 문제
         Optional<UserAuth> userAuthOpt = userAuthRepo.findById(authUserId);
 
-        //디버기 용도
+        //디버깅 용도
         //boolean checkUserOpt = userOpt.isPresent(); //이 친구가 조회가 안되어짐
         boolean checkUserAuthOpt = userAuthOpt.isPresent();
 

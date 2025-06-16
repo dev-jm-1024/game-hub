@@ -11,6 +11,7 @@ import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserPrivateRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
+import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -135,6 +136,27 @@ public class RestUserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류 발생");
         }
     }
+
+    //아이디 중복 확인해주는 메소드
+    @GetMapping("/user/check-id")
+    public ResponseEntity<?> checkDuplicateUserId(@RequestParam String userId){
+
+        if(userId == null || userId.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        Optional<UserAuth> userAuthOpt = userAuthRepo.findByAuthUserId(userId);
+
+
+        if(userAuthOpt.isEmpty()){
+            return ResponseEntity.status(HttpStatus.OK).body("사용 가능한 아이디 입니다!");
+        }
+        else{
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body("존재하는 아이디 입니다!");
+        }
+
+    }
+
 
     private static RequestUserUpdateDto mergeUserUpdateDto(
             RequestUserUpdateDto oldDto,

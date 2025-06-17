@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class CreatePostsRequestDto
@@ -20,11 +22,11 @@ public class CreatePostsRequestDto
     @NotBlank(message="내용을 입력하세요.")
     private String postContent;
 
-    private MultipartFile[] files;
+    private List<MultipartFile> files;
 
     public CreatePostsRequestDto(){}
 
-    public CreatePostsRequestDto(String boardId, String postTitle, String postContent, MultipartFile[] files) {
+    public CreatePostsRequestDto(String boardId, String postTitle, String postContent, List<MultipartFile> files) {
         this.boardId = boardId;
         this.postTitle = postTitle;
         this.postContent = postContent;

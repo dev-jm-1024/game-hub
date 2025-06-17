@@ -26,6 +26,11 @@
     <span id="post-views" th:text="${postsData.getViewCount}">0</span>
 </div>
 
+<div>
+    <strong>사진:</strong>
+    <img th:src="${postFiles.getFileUrl}" alt="image">
+</div>
+
 <hr>
 
 <div>

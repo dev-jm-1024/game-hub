@@ -3,6 +3,7 @@ package kr.plusb3b.games.gamehub.api.dto.board;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Setter
@@ -19,12 +20,14 @@ public class CreatePostsRequestDto
     @NotBlank(message="내용을 입력하세요.")
     private String postContent;
 
+    private MultipartFile[] files;
+
     public CreatePostsRequestDto(){}
 
-    public CreatePostsRequestDto(String post_title, String post_content) {
-        this.postTitle = post_title;
-        this.postContent = post_content;
+    public CreatePostsRequestDto(String boardId, String postTitle, String postContent, MultipartFile[] files) {
+        this.boardId = boardId;
+        this.postTitle = postTitle;
+        this.postContent = postContent;
+        this.files = files;
     }
-
-
 }

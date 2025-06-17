@@ -26,8 +26,13 @@
             <option value="suggestion" th:selected="${boardId == 'suggestion'}">건의사항 게시판</option>
             <option value="report" th:selected="${boardId == 'report'}">신고 게시판</option>
         </select>
-
     </div>
+
+    <div>
+        <input type="file" id="files" name="files" multiple accept="image/*" />
+        <button type="submit">업로드</button>
+    </div>
+
     <div>
         <button type="submit">작성 완료</button>
         <button type="button" onclick="history.back()">취소</button>
@@ -39,33 +44,34 @@
         e.preventDefault();
 
         const form = e.target;
-        const formData = new FormData(form);
+        const formData = new FormData();
 
         const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
         const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
-        // ✅ 수정된 boardId 선택
-        const boardId = form.querySelector('[name="boardId"]').value;
+        // 텍스트 필드 수동 추가
+        formData.append("postTitle", form.querySelector('#title').value);
+        formData.append("postContent", form.querySelector('#content').value);
+        const boardId = form.querySelector('#boardId').value;
 
-        const data = {
-            postTitle: formData.get("postTitle"),
-            postContent: formData.get("postContent")
-            // boardId는 URL에 포함되므로 body에 포함 X
-        };
+        // 파일들 추가
+        const fileInput = document.querySelector('#files');
+        for (const file of fileInput.files) {
+            formData.append("files", file); // name="files"
+        }
 
         try {
             const response = await fetch(`/api/v1/board/${boardId}/posts`, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
                     [header]: token
                 },
-                credentials: "include", // JWT 쿠키 포함
-                body: JSON.stringify(data)
+                body: formData,
+                credentials: "include"
             });
 
             if (response.ok) {
-                window.location.href = "/board";
+                window.location.href = `/board/${boardId}/view`;
             } else {
                 const msg = await response.text();
                 alert("작성 실패: " + msg);
@@ -76,6 +82,7 @@
         }
     });
 </script>
+
 
 
 

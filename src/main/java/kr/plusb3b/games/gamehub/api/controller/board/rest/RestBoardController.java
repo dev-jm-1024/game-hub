@@ -2,10 +2,7 @@ package kr.plusb3b.games.gamehub.api.controller.board.rest;
 
 
 import jakarta.validation.Valid;
-import kr.plusb3b.games.gamehub.api.dto.board.Board;
-import kr.plusb3b.games.gamehub.api.dto.board.Posts;
-import kr.plusb3b.games.gamehub.api.dto.board.CreatePostsRequestDto;
-import kr.plusb3b.games.gamehub.api.dto.board.UpdatePostsRequestDto;
+import kr.plusb3b.games.gamehub.api.dto.board.*;
 import kr.plusb3b.games.gamehub.api.dto.user.User;
 import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
 import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
@@ -44,9 +41,8 @@ public class RestBoardController {
     }
 
     @PostMapping("/{boardId}/posts") // 수정 ver
-    //@PostMapping("/api/v1/new")
-    @ResponseStatus(HttpStatus.CREATED)//(@PathVariable("boardId") String boardId , @RequestBody CreatePostsRequestDto createPostsRequestDto, HttpServletRequest request)
-    public ResponseEntity<?> insertPosts(@PathVariable("boardId") String boardId , @RequestBody CreatePostsRequestDto createPostsRequestDto,
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<?> insertPosts(@PathVariable("boardId") String boardId , @ModelAttribute CreatePostsRequestDto createPostsRequestDto,
                                          HttpServletRequest request) {
         try {
             //1 ~ 5
@@ -70,6 +66,14 @@ public class RestBoardController {
             post.setPostAct(1);
 
             Posts savedPost = postsRepo.save(post);
+
+            PostFiles postFiles = new PostFiles();
+            postFiles.setPost(savedPost);
+            //postFiles.setFileUrl();
+            //postFiles.setFileType();
+            postFiles.setUploadDate(LocalDate.now());
+
+
             return ResponseEntity.status(HttpStatus.CREATED).body(savedPost);
 
         } catch (IllegalArgumentException e) {

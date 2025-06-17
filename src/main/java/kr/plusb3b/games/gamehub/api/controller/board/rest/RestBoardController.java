@@ -6,15 +6,18 @@ import kr.plusb3b.games.gamehub.api.dto.board.*;
 import kr.plusb3b.games.gamehub.api.dto.user.User;
 import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
 import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
+import kr.plusb3b.games.gamehub.repository.boardrepo.PostFilesRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
+import kr.plusb3b.games.gamehub.upload.FileUpload;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
+import java.util.Map;
 
 @RestController("RestBoardController")
 @RequestMapping(path="/api/v1/board") // 경로 수정 ver
@@ -29,20 +32,26 @@ public class RestBoardController {
     private final BoardRepository boardRepo;
     private final JwtProvider jwtProvider;
     private final AccessControlService access;
+    private final FileUpload fileUpload;
+    private final PostFilesRepository postFilesRepo;
 
     public RestBoardController(PostsRepository postsRepo, BoardRepository boardRepo,
                                UserRepository userRepo, JwtProvider jwtProvider,
-                               AccessControlService access) {
+                               AccessControlService access, FileUpload fileUpload,
+                               PostFilesRepository postFilesRepo) {
         this.postsRepo = postsRepo;
         this.userRepo = userRepo;
         this.boardRepo = boardRepo;
         this.jwtProvider = jwtProvider;
         this.access = access;
+        this.fileUpload = fileUpload;
+        this.postFilesRepo = postFilesRepo;
     }
 
     @PostMapping("/{boardId}/posts") // 수정 ver
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<?> insertPosts(@PathVariable("boardId") String boardId , @ModelAttribute CreatePostsRequestDto createPostsRequestDto,
+    public ResponseEntity<?> insertPosts(@PathVariable("boardId") String boardId ,
+                                         @ModelAttribute CreatePostsRequestDto createPostsRequestDto,
                                          HttpServletRequest request) {
         try {
             //1 ~ 5
@@ -67,14 +76,24 @@ public class RestBoardController {
 
             Posts savedPost = postsRepo.save(post);
 
-            PostFiles postFiles = new PostFiles();
-            postFiles.setPost(savedPost);
-            //postFiles.setFileUrl();
-            //postFiles.setFileType();
-            postFiles.setUploadDate(LocalDate.now());
+            //첨부파일 업로드 시작
+
+            //클라이언트에게 받은 파일 데이터 업로드 후, URL과 파일 타입 반환
+            Map<String, String> fileUrlAndType = fileUpload.getFileUrlAndType(createPostsRequestDto.getFiles());
+
+            for (Map.Entry<String, String> entry : fileUrlAndType.entrySet()) {
+                PostFiles postFiles = new PostFiles(); // 꼭 새로 생성해야 함 (안 그러면 덮어씀)
+
+                postFiles.setPost(savedPost);
+                postFiles.setFileUrl(entry.getKey()); // URL
+                postFiles.setFileType(entry.getValue()); // MIME Type
+                postFiles.setUploadDate(LocalDate.now());
+
+                postFilesRepo.save(postFiles);
+            }
 
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedPost);
+            return ResponseEntity.status(HttpStatus.CREATED).body("success");
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());

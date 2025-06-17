@@ -7,6 +7,7 @@ import kr.plusb3b.games.gamehub.api.dto.user.User;
 import kr.plusb3b.games.gamehub.api.dto.user.UserAuth;
 import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
 import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
+import kr.plusb3b.games.gamehub.repository.boardrepo.PostFilesRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
@@ -29,9 +30,8 @@ public class BoardController {
     private final BoardRepository boardRepository;
     private final PostsRepository postsRepository;
     private final JwtProvider jwtProvider;
-    private final UserRepository userRepository;
-    private final AccessControlService access;
     private final UserAuthRepository userAuthRepo;
+    private final PostFilesRepository postFilesRepo;
     //private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(BoardController.class);4
 
 //    @Value("${app.max.boardSize}")
@@ -40,14 +40,12 @@ public class BoardController {
 
 
     public BoardController(BoardRepository boardRepository, PostsRepository postsRepository,
-                           JwtProvider jwtProvider, UserRepository userRepository,
-                           AccessControlService access, UserAuthRepository userAuthRepo) {
+                           JwtProvider jwtProvider,UserAuthRepository userAuthRepo, PostFilesRepository postFilesRepo) {
         this.boardRepository = boardRepository;
         this.postsRepository = postsRepository;
         this.jwtProvider = jwtProvider;
-        this.userRepository = userRepository;
-        this.access = access;
         this.userAuthRepo = userAuthRepo;
+        this.postFilesRepo = postFilesRepo;
     }
 
     @GetMapping
@@ -130,7 +128,7 @@ public class BoardController {
     // /boards/{boardId}/{postsId}/view
     @GetMapping("/{boardId}/{postId}/view")
     public String showPostsViewPage(@PathVariable("boardId") String boardId,
-                                    @PathVariable("postId") Long postId,Model model,
+                                    @PathVariable("postId") Long postId, Model model,
                                     HttpServletRequest request){
 
         //게시물이 보여서 링크타고 들어오면 당연히 게시물 데이터가 존재함.
@@ -139,6 +137,9 @@ public class BoardController {
 
         Posts posts = postsRepository.findByBoard_BoardIdAndPostId(boardId, postId)
                 .orElseThrow(() -> new PostsNotFoundException(postId));
+
+        PostFiles postFiles = postFilesRepo.findPostFilesByPost_PostId(postId)
+                        .orElseThrow(() -> new PostsNotFoundException(postId));
 
         System.out.println("boardId 존재함? " + boardId);
         System.out.println("postId 존재함? " + postId);
@@ -191,6 +192,7 @@ public class BoardController {
 
             //View 에다가 데이터 전송
             model.addAttribute("postsData", posts);
+            model.addAttribute("postFiles", postFiles);
 
 
         }catch (AuthenticationCredentialsNotFoundException e) {

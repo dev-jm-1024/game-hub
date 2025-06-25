@@ -42,21 +42,22 @@ public class Board {
     // 기본 생성자 (JPA에서 필수로 요구됨)
     public Board() {}
 
-    public String getBoard_id() {
+    public String getBoardId() {
         return boardId;
     }
 
-    public void setBoard_id(String board_id) {
-        this.boardId = board_id;
+    public void setBoardId(String boardId) {
+        this.boardId = boardId;
     }
 
-    public String getBoard_name() {
+    public String getBoardName() {
         return boardName;
     }
 
-    public void setBoard_name(String board_name) {
-        this.boardName = board_name;
+    public void setBoardName(String boardName) {
+        this.boardName = boardName;
     }
+
 
     public List<Games> getGames() {
         return games;

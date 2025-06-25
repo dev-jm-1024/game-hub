@@ -3,11 +3,15 @@ package kr.plusb3b.games.gamehub.api.dto.board;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import kr.plusb3b.games.gamehub.api.dto.user.User;
+import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 
 @Entity
@@ -40,5 +44,10 @@ public class Posts {
     private int postAct;
 
     public Posts() {}
+
+    //postAct의 값이 1인지 확인해주는 메소드
+    public boolean isActivatePosts(){
+        return this.postAct == 1;
+    }
 }
 

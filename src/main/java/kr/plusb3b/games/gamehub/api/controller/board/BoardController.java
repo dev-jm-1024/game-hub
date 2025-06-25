@@ -134,6 +134,7 @@ public class BoardController {
         //게시물이 보여서 링크타고 들어오면 당연히 게시물 데이터가 존재함.
         //근데 만약 없는 경우? 이건 내부적으로 예외처리를 해야한다.
         //게시물 postAct = 1 일 때만 게시물 보여준다.
+        //게시글 리스트에서 보여도 게시물이 삭제되면 안보여져야한다.
 
         Posts posts = postsRepository.findByBoard_BoardIdAndPostId(boardId, postId)
                 .orElseThrow(() -> new PostsNotFoundException(postId));
@@ -141,8 +142,8 @@ public class BoardController {
         PostFiles postFiles = postFilesRepo.findPostFilesByPost_PostId(postId)
                         .orElseThrow(() -> new PostsNotFoundException(postId));
 
-        System.out.println("boardId 존재함? " + boardId);
-        System.out.println("postId 존재함? " + postId);
+//        System.out.println("boardId 존재함? " + boardId);
+//        System.out.println("postId 존재함? " + postId);
 
         //해당 글이 로그인한 본인이 쓴 글이면 true 아니면 false를 보낸다.
         //이를 통해 수정 및 삭제 버튼이 보여지게 된다.

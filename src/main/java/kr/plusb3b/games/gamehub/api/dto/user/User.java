@@ -10,6 +10,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "user")
@@ -76,5 +77,16 @@ public class User {
     */
     public User () {}
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return mbAct == user.mbAct && mbReportCnt == user.mbReportCnt && Objects.equals(mbId, user.mbId) && Objects.equals(mbNickname, user.mbNickname) && Objects.equals(mbProfileUrl, user.mbProfileUrl) && Objects.equals(mbStatusMessage, user.mbStatusMessage) && Objects.equals(mbJoinDate, user.mbJoinDate) && mbRole == user.mbRole && Objects.equals(mbPosts, user.mbPosts) && Objects.equals(comments, user.comments) && Objects.equals(userScores, user.userScores) && Objects.equals(userLoginInfo, user.userLoginInfo) && Objects.equals(games, user.games) && Objects.equals(userAuth, user.userAuth) && Objects.equals(userPrivate, user.userPrivate);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(mbId, mbNickname, mbProfileUrl, mbStatusMessage, mbJoinDate, mbAct, mbRole, mbReportCnt, mbPosts, comments, userScores, userLoginInfo, games, userAuth, userPrivate);
+    }
 }

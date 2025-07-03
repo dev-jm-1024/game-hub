@@ -41,6 +41,11 @@ dependencies {
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
 
+	//cloudinary
+	implementation("com.cloudinary:cloudinary-http5:2.0.0")
+	implementation("com.cloudinary:cloudinary-taglib:2.0.0")
+	implementation("io.github.cdimascio:dotenv-java:2.2.4")
+
 
 
 	// DB 드라이버 (둘 중 하나만 사용)

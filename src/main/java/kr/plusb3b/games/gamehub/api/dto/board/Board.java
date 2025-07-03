@@ -15,7 +15,7 @@ import java.util.List;
 public class Board {
 
     // 기본 키(PK) 필드
-    @Id // 해당 필드가 엔티티의 기본 키임을 명시합니다.
+    @Id // 해당 필드가 엔티티의 기본 키임을 명시.
     @Column(name="board_id")
     private String boardId;
 
@@ -24,6 +24,8 @@ public class Board {
 
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Games> games = new ArrayList<>();
+
+    int boardAct; //게시판 활성화 컬럼
 
     // 확장용 필드: 현재는 사용하지 않으므로 주석 처리함
     /*
@@ -42,28 +44,36 @@ public class Board {
     // 기본 생성자 (JPA에서 필수로 요구됨)
     public Board() {}
 
-    public String getBoardId() {
-        return boardId;
+    //게시판 활성화
+    public boolean activateBoard(){
+        return boardAct == 1;
     }
 
-    public void setBoardId(String boardId) {
-        this.boardId = boardId;
+    //게시판 비활성화
+    public boolean deactivateBoard(){
+        return boardAct == 0;
     }
 
-    public String getBoardName() {
-        return boardName;
+    //게시판 상태가 활성화인 지 검사
+    public boolean isActivateBoard(){
+        if(this.boardAct == 1)
+            return true;
+
+        return false;
     }
 
-    public void setBoardName(String boardName) {
-        this.boardName = boardName;
+    //게시판 이름 변경
+    public void changeBoardName(String newName){
+        this.boardName = newName;
     }
 
+    //게시판 이름 업데이트
+    public void updateBoardName(String newBoardName){
+        if(newBoardName == null || newBoardName.isBlank()){
+            throw new IllegalArgumentException("Board name cannot be blank");
+        }
 
-    public List<Games> getGames() {
-        return games;
+        this.boardName = newBoardName;
     }
 
-    public void setGames(List<Games> games) {
-        this.games = games;
-    }
 }

@@ -11,11 +11,11 @@
 <form id="postForm">
   <div>
     <label for="title">제목</label>
-    <input type="text" id="title" name="postTitle" th:value="${postData.getPostTitle}" required>
+    <input type="text" id="title" name="postTitle" th:value="${postData.postTitle}" required>
   </div>
   <div>
     <label for="content">내용</label>
-    <textarea id="content" name="postContent" rows="10" th:text="${postData.getPostContent}" required></textarea>
+    <textarea id="content" name="postContent" rows="10" th:text="${postData.postContent}" required></textarea>
   </div>
   <div>
     <input type="hidden" name="postId" th:value="${postData.postId}">
@@ -26,7 +26,7 @@
 <!--      <option value="suggestion" th:selected="${boardId == 'suggestion'}">건의사항 게시판</option>-->
 <!--      <option value="report" th:selected="${boardId == 'report'}">신고 게시판</option>-->
 <!--    </select>-->
-    <input type="text" name="boardId" th:value="${postData.getBoard().boardId}" readonly>
+    <input type="text" name="boardId" th:value="${postData.board.boardId}" readonly>
 
   </div>
   <div>

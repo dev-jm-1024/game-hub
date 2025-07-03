@@ -45,6 +45,58 @@ public class Posts {
 
     public Posts() {}
 
+    //Posts 객체
+    public Posts( Board board, User user, String postTitle, String postContent,
+                 int viewCount, LocalDate createdAt, LocalDate updatedAt, int postAct) {
+        this.board = board;
+        this.user = user;
+        this.postTitle = postTitle;
+        this.postContent = postContent;
+        this.viewCount = viewCount;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.postAct = postAct;
+    }
+
+    //글 제목 작성
+    public void createTitle(String title){
+        this.postTitle = title;
+    }
+
+    //글 제목 변경
+    public void changeTitle(String newTitle){
+        this.postTitle = newTitle;
+    }
+
+    //글 내용 작성
+    public void createContent(String content){
+        this.postContent = content;
+    }
+
+    //글 내용 변경
+    public void changeContent(String newContent){
+        this.postContent = newContent;
+    }
+
+    //조회수 증가
+    public void increaseViewCount() {
+        this.viewCount += 1;
+    }
+
+    //생성 및 수정 시간
+    public void markCreated(){
+        this.createdAt = LocalDate.now();
+    }
+
+    public void markUpdated(){
+        this.updatedAt = LocalDate.now();
+    }
+
+    //비활성화 세팅
+    public void changeDeactivatePost(){
+        this.postAct = 0;
+    }
+
     //postAct의 값이 1인지 확인해주는 메소드
     public boolean isActivatePosts(){
         return this.postAct == 1;

@@ -15,4 +15,6 @@ public interface BoardService {
 
     //게시판의 상태 변경하기
     void deleteBoard();
+
+    boolean validateBoard(String boardId);
 }

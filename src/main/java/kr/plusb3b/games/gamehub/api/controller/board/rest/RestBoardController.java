@@ -5,6 +5,9 @@ import jakarta.validation.Valid;
 import kr.plusb3b.games.gamehub.api.dto.board.*;
 import kr.plusb3b.games.gamehub.api.dto.user.User;
 import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
+import kr.plusb3b.games.gamehub.api.service.Board.BoardServiceImpl;
+import kr.plusb3b.games.gamehub.api.service.Board.PostFilesServiceImpl;
+import kr.plusb3b.games.gamehub.api.service.Board.PostsServiceImpl;
 import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostFilesRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
@@ -17,7 +20,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
+
+import static org.reflections.Reflections.log;
 
 @RestController("RestBoardController")
 @RequestMapping(path="/api/v1/board") // 경로 수정 ver
@@ -28,120 +34,92 @@ public class RestBoardController {
 //    private String apiVersion;
 
     private final PostsRepository postsRepo;
-    private final UserRepository userRepo;
-    private final BoardRepository boardRepo;
-    private final JwtProvider jwtProvider;
     private final AccessControlService access;
     private final FileUpload fileUpload;
-    private final PostFilesRepository postFilesRepo;
+    private final PostsServiceImpl postsServiceImpl;
+    private final PostFilesServiceImpl postFilesServiceImpl;
+    private final BoardServiceImpl boardServiceImpl;
 
-    public RestBoardController(PostsRepository postsRepo, BoardRepository boardRepo,
-                               UserRepository userRepo, JwtProvider jwtProvider,
-                               AccessControlService access, FileUpload fileUpload,
-                               PostFilesRepository postFilesRepo) {
+    public RestBoardController(PostsRepository postsRepo, AccessControlService access,
+                               FileUpload fileUpload, PostsServiceImpl postsServiceImpl,
+                               PostFilesServiceImpl postFilesServiceImpl, BoardServiceImpl boardServiceImpl) {
         this.postsRepo = postsRepo;
-        this.userRepo = userRepo;
-        this.boardRepo = boardRepo;
-        this.jwtProvider = jwtProvider;
         this.access = access;
         this.fileUpload = fileUpload;
-        this.postFilesRepo = postFilesRepo;
+        this.postsServiceImpl = postsServiceImpl;
+        this.postFilesServiceImpl = postFilesServiceImpl;
+        this.boardServiceImpl = boardServiceImpl;
     }
 
-    @PostMapping("/{boardId}/posts") // 수정 ver
+    @PostMapping("/{boardId}/posts")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<?> insertPosts(@PathVariable("boardId") String boardId ,
-                                         @ModelAttribute CreatePostsRequestDto createPostsRequestDto,
+    public ResponseEntity<?> insertPosts(@PathVariable("boardId") String boardId,
+                                         @ModelAttribute PostRequestDto postRequestDto,
                                          HttpServletRequest request) {
         try {
-            //1 ~ 5
+            // 1. 사용자 인증
             User user = access.getAuthenticatedUser(request);
-            if(user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-
-            // 6. 게시판 엔티티 조회
-            //String boardId = createPostsRequestDto.getBoardId(); //이 부분 지워져야함.
-            Board board = boardRepo.findById(boardId)
-                    .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
-
-            // 7. Posts 엔티티 조립 및 저장
-            Posts post = new Posts();
-            post.setUser(user);
-            post.setBoard(board);
-            post.setPostTitle(createPostsRequestDto.getPostTitle());
-            post.setPostContent(createPostsRequestDto.getPostContent());
-            post.setViewCount(0);
-            post.setCreatedAt(LocalDate.now());
-            post.setUpdatedAt(null);
-            post.setPostAct(1);
-
-            Posts savedPost = postsRepo.save(post);
-
-            //첨부파일 업로드 시작
-
-            //클라이언트에게 받은 파일 데이터 업로드 후, URL과 파일 타입 반환
-            Map<String, String> fileUrlAndType = fileUpload.getFileUrlAndType(createPostsRequestDto.getFiles());
-
-            for (Map.Entry<String, String> entry : fileUrlAndType.entrySet()) {
-                PostFiles postFiles = new PostFiles(); // 꼭 새로 생성해야 함 (안 그러면 덮어씀)
-
-                postFiles.setPost(savedPost);
-                postFiles.setFileUrl(entry.getKey()); // URL
-                postFiles.setFileType(entry.getValue()); // MIME Type
-                postFiles.setUploadDate(LocalDate.now());
-
-                postFilesRepo.save(postFiles);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
             }
 
+            // 2. 게시물 생성 (기본값 포함)
+            CreatePostsVO defaultPostValues = new CreatePostsVO(); // viewCount=0, postAct=1 등
+            Posts savedPost = postsServiceImpl.createPost(postRequestDto, defaultPostValues, boardId, request);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body("success");
+            // 3. 첨부파일 업로드 및 저장
+            Map<String, String> fileUrlAndType = fileUpload.getFileUrlAndType(postRequestDto.getFiles());
+            List<PostFiles> savedFiles = postFilesServiceImpl.uploadPostFile(savedPost, fileUrlAndType);
+
+            if (savedFiles.isEmpty()) {
+                throw new IllegalStateException("첨부파일이 하나도 저장되지 않았습니다.");
+            }
+
+            // 4. 응답 반환
+            return ResponseEntity.status(HttpStatus.CREATED).body("게시글이 성공적으로 등록되었습니다.");
 
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("요청 처리 중 오류: " + e.getMessage());
+
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("게시글 저장 중 오류가 발생했습니다.");
+            log.error("게시글 저장 중 오류 발생", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("게시글 저장 중 서버 오류가 발생했습니다.");
         }
     }
 
+
     @PatchMapping("/{boardId}/posts/{postId}")
-    //@PatchMapping("/api/v1/edit")//(@PathVariable("boardId") String boardId, @PathVariable("postId") Long postId, ....)
     public ResponseEntity<?> updatePosts(@PathVariable("boardId") String boardId, @PathVariable("postId") Long postId,
-            @Valid @RequestBody UpdatePostsRequestDto updatePostsRequestDto, HttpServletRequest request) {
+            @Valid @RequestBody PostRequestDto postRequestDto, HttpServletRequest request) {
 
         try {
-            //1 ~ 5
+
             User user = access.getAuthenticatedUser(request);
             if(user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-            boolean checkBoardAndPosts = access.validateBoardAndPost(boardId, postId);
+            boolean existsPost = postsServiceImpl.validatePost(postId);
+            boolean existBoard = boardServiceImpl.validateBoard(boardId);
 
-            if(!checkBoardAndPosts) throw new RuntimeException("알 수 없는 오류");
+            if (!existBoard || !existsPost) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("게시판 또는 게시물이 존재하지 않습니다.");
+            }
 
-            //8. UpdatePostsRequestDto 조립
-            //updatedAt 시간
-            LocalDate updatedAt = LocalDate.now();
-            int updateResult = postsRepo.updatePostsByPostIdAndBoardId(
-                    updatePostsRequestDto.getPostTitle(),
-                    updatePostsRequestDto.getPostContent(),
-                    updatedAt,
-                    updatePostsRequestDto.getPostId(),
-                    updatePostsRequestDto.getBoardId()
-            );
 
-            if (updateResult > 0) {
+            boolean updateResult = postsServiceImpl.updatePost(postRequestDto, boardId, postId);
+
+            if (updateResult) {
                 return ResponseEntity.status(HttpStatus.OK).body("정상적으로 업데이트 되었습니다!");
             }
             return ResponseEntity.status(HttpStatus.CONFLICT).body("업데이트에 실패하였습니다");
         }catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("게시글 업데이트 중 오류 발생", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("게시글 업데이트 중 오류가 발생했습니다.");
         }
     }
 
     @PatchMapping("/{boardId}/posts/{postId}/deactivate")
-   // @PatchMapping("api/v1/delete/{boardId}/{postId}")
     public ResponseEntity<?> deactivatePosts(@PathVariable("boardId") String boardId,@PathVariable("postId") Long postId, HttpServletRequest request){
 
 
@@ -149,14 +127,19 @@ public class RestBoardController {
             //1 ~ 5
             User user = access.getAuthenticatedUser(request);
             if(user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            boolean checkBoardAndPosts = access.validateBoardAndPost(boardId, postId);
 
-            if(!checkBoardAndPosts) throw new RuntimeException("알 수 없는 오류");
+            boolean existsPost = postsServiceImpl.validatePost(postId);
+            boolean existBoard = boardServiceImpl.validateBoard(boardId);
+
+            if (!existBoard || !existsPost) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("게시판 또는 게시물이 존재하지 않습니다.");
+            }
 
             //8. 해당 게시물을 비활성화 시키기
-            int deactivatePosts = postsRepo.deletePostsByPostId(postId);
+            //int deactivatePosts = postsRepo.deletePostsByPostId(postId);
+            boolean deactivatePosts = postsServiceImpl.deactivatePost(postId);
 
-            if(deactivatePosts > 0){
+            if(deactivatePosts){
                 return ResponseEntity.status(HttpStatus.OK).body("게시물이 성공적으로 삭제 되었습니다");
             }
 

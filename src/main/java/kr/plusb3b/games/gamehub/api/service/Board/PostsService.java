@@ -10,9 +10,10 @@ import java.util.Map;
 public interface PostsService {
 
     // 작성 & 수정
-    void createPost(PostRequestDto postRequestDto, CreatePostsVO createPostsVO,
+    Posts createPost(PostRequestDto postRequestDto, CreatePostsVO createPostsVO,
                     String boardId, HttpServletRequest request);
-    void updatePost(PostRequestDto postRequestDto, String boardId, Long postId, HttpServletRequest request);
+
+    boolean updatePost(PostRequestDto postRequestDto, String boardId, Long postId);
 
     // 조회
 
@@ -23,13 +24,15 @@ public interface PostsService {
     Posts detailPosts(String boardId, Long postId);
 
     // 삭제
-    boolean deactivatePost(Long postId, HttpServletRequest request);
+    boolean deactivatePost(Long postId);
 
     // 조회수
     void increaseViewCount(Long postId);
 
     //작성자와 로그인한 사용자가 같은가?
     boolean isAuthor(HttpServletRequest request, Posts posts);
+
+    boolean validatePost(Long postId);
 
 }
 

@@ -8,11 +8,13 @@ import kr.plusb3b.games.gamehub.api.dto.user.UserAuth;
 import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
 import kr.plusb3b.games.gamehub.api.service.Board.BoardService;
 import kr.plusb3b.games.gamehub.api.service.Board.BoardServiceImpl;
+import kr.plusb3b.games.gamehub.api.service.Board.PostsService;
 import kr.plusb3b.games.gamehub.api.service.Board.PostsServiceImpl;
 import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostFilesRepository;
 import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
 import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
+import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,13 +28,10 @@ import java.util.stream.Collectors;
 @RequestMapping("/board")
 public class BoardController {
 
-    private final BoardRepository boardRepository;
-    private final PostsRepository postsRepository;
-    private final JwtProvider jwtProvider;
-    private final UserAuthRepository userAuthRepo;
     private final PostFilesRepository postFilesRepo;
     private final BoardServiceImpl boardServiceImpl;
     private final PostsServiceImpl postsServiceImpl;
+    private final AccessControlService access;
     //private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(BoardController.class);4
 
 //    @Value("${app.max.boardSize}")
@@ -40,16 +39,12 @@ public class BoardController {
 //    int maxBoardSize = Integer.parseInt(maxBoardSizeString);
 
 
-    public BoardController(BoardRepository boardRepository, PostsRepository postsRepository, JwtProvider jwtProvider,
-                           UserAuthRepository userAuthRepo, PostFilesRepository postFilesRepo, BoardServiceImpl boardServiceImpl,
-                           PostsServiceImpl postsServiceImpl) {
-        this.boardRepository = boardRepository;
-        this.postsRepository = postsRepository;
-        this.jwtProvider = jwtProvider;
-        this.userAuthRepo = userAuthRepo;
+    public BoardController(PostFilesRepository postFilesRepo, BoardServiceImpl boardServiceImpl,
+                           PostsServiceImpl postsServiceImpl, AccessControlService access) {
         this.postFilesRepo = postFilesRepo;
         this.boardServiceImpl = boardServiceImpl;
         this.postsServiceImpl = postsServiceImpl;
+        this.access = access;
     }
 
     @GetMapping
@@ -101,64 +96,21 @@ public class BoardController {
                                     @PathVariable("postId") Long postId, Model model,
                                     HttpServletRequest request){
 
-        //게시물이 보여서 링크타고 들어오면 당연히 게시물 데이터가 존재함.
-        //근데 만약 없는 경우? 이건 내부적으로 예외처리를 해야한다.
-        //게시물 postAct = 1 일 때만 게시물 보여준다.
-        //게시글 리스트에서 보여도 게시물이 삭제되면 안보여져야한다.
 
-        Posts posts = postsRepository.findByBoard_BoardIdAndPostId(boardId, postId)
-                .orElseThrow(() -> new PostsNotFoundException(postId));
-
+        Posts posts = postsServiceImpl.detailPosts(boardId, postId);
         PostFiles postFiles = postFilesRepo.findPostFilesByPost_PostId(postId)
                         .orElseThrow(() -> new PostsNotFoundException(postId));
 
-//        System.out.println("boardId 존재함? " + boardId);
-//        System.out.println("postId 존재함? " + postId);
-
-        //해당 글이 로그인한 본인이 쓴 글이면 true 아니면 false를 보낸다.
-        //이를 통해 수정 및 삭제 버튼이 보여지게 된다.
-        // 1. JWT 쿠키 추출
         try{
-            Cookie[] cookies = request.getCookies();
-            String jwt = null;
 
-            if (cookies != null) {
-                for (Cookie cookie : cookies) {
-                    if ("jwt".equals(cookie.getName())) {
-                        jwt = cookie.getValue();
-                        break;
-                    }
-                }
-            }
+            User user = access.getAuthenticatedUser(request);
+            if(user == null) throw new IllegalArgumentException("사용자를 찾을 수 없습니다");
 
-            // 2. JWT 존재 여부 확인
-            if (jwt == null || !jwtProvider.validateToken(jwt)) {
-                throw new AuthenticationCredentialsNotFoundException("JWT 토큰이 없거나 유효하지 않습니다.");
-            }
+            boolean isAuthor = postsServiceImpl.isAuthor(request, posts);
 
-            // 3. JWT에서 사용자 ID 추출
-            String authUserId = jwtProvider.getUserId(jwt);
-
-            Optional<UserAuth> userAuthOpt = userAuthRepo.findByAuthUserId(authUserId);
-            if(userAuthOpt.isPresent()) {
-                User user = userAuthOpt.get().getUser();
-
-                /********************로그인한 회원이 게시물 쓴건지 확인************************/
-                boolean isAuthUser = false;
-                if(posts.getUser().equals(user)){
-                    model.addAttribute("isAuthUser", true);
-                }else{
-                    model.addAttribute("isAuthUser", false);
-                }
-
-
-                // 5. 탈퇴 여부 확인
-                if (user.getMbAct() == 0) {
-                    throw new IllegalStateException("탈퇴한 회원입니다.");
-                }
-            }else{
-                throw new IllegalArgumentException("사용자를 찾을 수 없습니다");
-            }
+            /********************로그인한 회원이 게시물 쓴건지 확인************************/
+            if(!isAuthor) model.addAttribute("isAuthUser", true);
+            else model.addAttribute("isAuthUser", false);
 
 
             //View 에다가 데이터 전송
@@ -169,6 +121,7 @@ public class BoardController {
         }catch (AuthenticationCredentialsNotFoundException e) {
             e.printStackTrace();
         }
+
 
         return "board/common/post-detail";
     }

@@ -1,5 +1,6 @@
 package kr.plusb3b.games.gamehub.api.service.Board;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.api.dto.board.*;
 import kr.plusb3b.games.gamehub.api.dto.user.User;
@@ -29,9 +30,11 @@ public class PostsServiceImpl implements PostsService {
     }
 
     @Override
-    public void createPost(PostRequestDto postRequestDto, CreatePostsVO createPostsVO, String boardId, HttpServletRequest request) {
+    public Posts createPost(PostRequestDto postRequestDto, CreatePostsVO createPostsVO, String boardId, HttpServletRequest request) {
 
-        Board board = boardRepo.findById(boardId).get();
+        Board board = boardRepo.findById(boardId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
+
         User user = access.getAuthenticatedUser(request);
 
         Posts posts = new Posts(
@@ -45,22 +48,21 @@ public class PostsServiceImpl implements PostsService {
 
         );
 
-        Posts result = postsRepo.save(posts);
-
+        return postsRepo.save(posts);
     }
 
     @Override
-    public void updatePost(PostRequestDto postRequestDto, String boardId, Long postId, HttpServletRequest request) {
+    public boolean updatePost(PostRequestDto postRequestDto, String boardId, Long postId){
 
-        User user = access.getAuthenticatedUser(request);
-
-        int updateResult = postsRepo.updatePostsByPostIdAndBoardId(
+        int result =  postsRepo.updatePostsByPostIdAndBoardId(
                 postRequestDto.getPostTitle(),
                 postRequestDto.getPostContent(),
                 LocalDate.now(),
                 postId,
                 boardId
         );
+
+        return result > 0;
     }
 
     @Override
@@ -82,30 +84,22 @@ public class PostsServiceImpl implements PostsService {
     @Override
     public Posts detailPosts(String boardId, Long postId) {
 
-        Optional<Posts> postOpt = postsRepo.findByBoard_BoardIdAndPostId(boardId,postId);
+        return postsRepo.findAll().stream()
+                .filter(posts -> posts.getBoard().getBoardId().equals(boardId))
+                .filter(posts -> posts.getPostId().equals(postId))
+                .filter(Posts::isActivatePosts)
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("해당 게시글을 찾을 수 없습니다."));
 
-        Posts result;
-
-        if(postOpt.isPresent()) {
-            result = postOpt.get();
-
-            return result;
-        }
-
-        return null;
     }
 
     @Override
-    public boolean deactivatePost(Long postId, HttpServletRequest request) {
+    public boolean deactivatePost(Long postId) {
 
-        User user = access.getAuthenticatedUser(request);
         int deactivatePosts = postsRepo.deletePostsByPostId(postId);
 
-        if(deactivatePosts > 0) {
-            return true;
-        }
 
-        return false;
+        return deactivatePosts > 0;
     }
 
     @Override
@@ -119,11 +113,12 @@ public class PostsServiceImpl implements PostsService {
         User user = access.getAuthenticatedUser(request);
         User author = posts.getUser();
 
-        boolean result = user.equals(author);
-        if(result) {
-            return true;
-        }
+        return user.equals(author);
+    }
 
-        return false;
+    @Override
+    public boolean validatePost(Long postId) {
+        if (postId == null) return false;
+        return postsRepo.existsById(postId);
     }
 }

@@ -32,7 +32,7 @@ public class BoardServiceImpl implements BoardService {
         //활성화된 게시판 가져오기
         List<Board> boardList = boardRepo.findAll().stream()
                 .filter(Board::activateBoard)
-                .collect(Collectors.toList());
+                .toList();
 
         List<Posts> postsList;
 
@@ -59,5 +59,11 @@ public class BoardServiceImpl implements BoardService {
     @Override
     public void deleteBoard() {
 
+    }
+
+    @Override
+    public boolean validateBoard(String boardId){
+        if (boardId == null || boardId.isBlank()) return false;
+        return boardRepo.existsById(boardId);
     }
 }

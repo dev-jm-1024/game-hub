@@ -39,7 +39,6 @@ public class User {
 
 
 
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Posts> mbPosts = new ArrayList<>();
 
@@ -89,4 +88,40 @@ public class User {
     public int hashCode() {
         return Objects.hash(mbId, mbNickname, mbProfileUrl, mbStatusMessage, mbJoinDate, mbAct, mbRole, mbReportCnt, mbPosts, comments, userScores, userLoginInfo, games, userAuth, userPrivate);
     }
+
+    //닉네임 변경
+    public void changeMbNickName(String mbNickname) {
+        this.mbNickname = mbNickname;
+    }
+
+    //프로필 사진 변경
+    public void changeMbProfileUrl(String mbProfileUrl) {
+        this.mbProfileUrl = mbProfileUrl;
+    }
+
+    //상태 메세지 변경
+    public void changeMbStatusMessage(String mbStatusMessage) {
+        this.mbStatusMessage = mbStatusMessage;
+    }
+
+    //계정 활성화
+
+    //계정의 상태가 활성화인지?
+    public boolean isActivateUser(){
+        return mbAct == 1;
+    }
+
+    public void deactivateUser(){
+        this.mbAct = 0;
+    }
+
+    public void activateUser(){
+        this.mbAct = 1;
+    }
+
+    //신고 횟수 증가 로직
+    public void increaseReportCnt(){
+        this.mbReportCnt++;
+    }
+
 }

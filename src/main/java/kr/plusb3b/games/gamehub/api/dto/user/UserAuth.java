@@ -39,4 +39,14 @@ public class UserAuth {
     private String auth_extra9;
     private String auth_extra10;
     */
+
+    //지난 로그인 시간 변경
+    public void changeAuthLastLogin(LocalDateTime lastLogin){
+        this.authLastLogin = lastLogin;
+    }
+
+    //비밀번호 변경
+    public void changePassword(String password){
+        this.authPassword = password;
+    }
 }

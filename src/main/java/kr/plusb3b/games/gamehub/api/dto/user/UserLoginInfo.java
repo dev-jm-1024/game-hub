@@ -47,4 +47,14 @@ public class UserLoginInfo {
 
      */
 
+    //로그인 시간 업데이트
+    public void updateLoginTime(LocalDateTime loginTime) {
+        this.loginTime = loginTime;
+    }
+
+    //접속 아이피 세팅
+    public void updateIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
 }

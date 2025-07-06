@@ -6,6 +6,8 @@ import kr.plusb3b.games.gamehub.api.dto.user.User;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Entity
 @Getter
 @Setter
@@ -35,6 +37,12 @@ public class Comments {
     private int dislikeCount;
     //신고횟수
     private int reportCount;
+
+    //댓글 작성 날짜
+    private LocalDate createdAt;
+
+    //댓글 활성화 여부
+    private int commentAct;
 
     //여분컬럼
     /*

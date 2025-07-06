@@ -46,4 +46,20 @@ public class UserPrivate {
     */
 
     public UserPrivate() {}
+
+    //이메일 변경
+    public void changeEmail(String email) {
+        this.priEmail = email;
+    }
+
+    //생년월일
+    public void changeBirth(LocalDate birth) {
+        this.priBirth = birth;
+    }
+
+    //성별 변경
+    public void changeGender(String gender) {
+        this.priGender = gender;
+    }
+
 }

@@ -2,17 +2,15 @@ package kr.plusb3b.games.gamehub.security;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import kr.plusb3b.games.gamehub.api.dto.board.Board;
-import kr.plusb3b.games.gamehub.api.dto.board.Posts;
-import kr.plusb3b.games.gamehub.api.dto.user.User;
-import kr.plusb3b.games.gamehub.api.dto.user.UserAuth;
-import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
-import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
-import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import kr.plusb3b.games.gamehub.domain.board.entity.Board;
+import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
+import kr.plusb3b.games.gamehub.domain.user.entity.User;
+import kr.plusb3b.games.gamehub.domain.user.entity.UserAuth;
+import kr.plusb3b.games.gamehub.security.jwt.JwtProvider;
+import kr.plusb3b.games.gamehub.domain.board.repository.BoardRepository;
+import kr.plusb3b.games.gamehub.domain.board.repository.PostsRepository;
+import kr.plusb3b.games.gamehub.domain.user.repository.UserAuthRepository;
+import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;

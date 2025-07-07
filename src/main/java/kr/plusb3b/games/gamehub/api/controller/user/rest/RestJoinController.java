@@ -1,12 +1,12 @@
 package kr.plusb3b.games.gamehub.api.controller.user.rest;
 
-import kr.plusb3b.games.gamehub.api.dto.user.RequestUserJoinInfoDto;
-import kr.plusb3b.games.gamehub.api.dto.user.User;
-import kr.plusb3b.games.gamehub.api.dto.user.UserAuth;
-import kr.plusb3b.games.gamehub.api.dto.user.UserPrivate;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserPrivateRepository;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
+import kr.plusb3b.games.gamehub.domain.user.dto.RequestUserJoinInfoDto;
+import kr.plusb3b.games.gamehub.domain.user.entity.User;
+import kr.plusb3b.games.gamehub.domain.user.entity.UserAuth;
+import kr.plusb3b.games.gamehub.domain.user.entity.UserPrivate;
+import kr.plusb3b.games.gamehub.domain.user.repository.UserAuthRepository;
+import kr.plusb3b.games.gamehub.domain.user.repository.UserPrivateRepository;
+import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
 import kr.plusb3b.games.gamehub.security.SnowflakeIdGenerator;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;

@@ -1,22 +1,18 @@
 package kr.plusb3b.games.gamehub.api.controller.user;
 
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
-import kr.plusb3b.games.gamehub.api.dto.user.RequestUserUpdateDto;
-import kr.plusb3b.games.gamehub.api.dto.user.User;
-import kr.plusb3b.games.gamehub.api.dto.user.UserAuth;
-import kr.plusb3b.games.gamehub.api.dto.user.UserPrivate;
-import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserPrivateRepository;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
+import kr.plusb3b.games.gamehub.domain.user.entity.User;
+import kr.plusb3b.games.gamehub.domain.user.entity.UserAuth;
+import kr.plusb3b.games.gamehub.domain.user.entity.UserPrivate;
+import kr.plusb3b.games.gamehub.security.jwt.JwtProvider;
+import kr.plusb3b.games.gamehub.domain.user.repository.UserAuthRepository;
+import kr.plusb3b.games.gamehub.domain.user.repository.UserPrivateRepository;
+import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.Optional;

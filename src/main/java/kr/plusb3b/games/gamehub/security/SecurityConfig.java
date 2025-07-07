@@ -1,18 +1,14 @@
 package kr.plusb3b.games.gamehub.security;
 
-import kr.plusb3b.games.gamehub.api.jwt.JwtAuthenticationFilter;
-import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
+import kr.plusb3b.games.gamehub.security.jwt.JwtAuthenticationFilter;
+import kr.plusb3b.games.gamehub.security.jwt.JwtProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
-import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;

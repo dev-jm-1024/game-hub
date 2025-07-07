@@ -1,14 +1,13 @@
 package kr.plusb3b.games.gamehub.api.controller.board.rest;
 
 import jakarta.servlet.http.HttpServletRequest;
-import kr.plusb3b.games.gamehub.api.dto.board.Comments;
-import kr.plusb3b.games.gamehub.api.dto.board.Posts;
-import kr.plusb3b.games.gamehub.api.dto.board.RequestCommentDto;
-import kr.plusb3b.games.gamehub.api.dto.user.User;
-import kr.plusb3b.games.gamehub.repository.boardrepo.CommentsRepository;
-import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
+import kr.plusb3b.games.gamehub.domain.board.entity.Comments;
+import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
+import kr.plusb3b.games.gamehub.domain.board.dto.RequestCommentDto;
+import kr.plusb3b.games.gamehub.domain.user.entity.User;
+import kr.plusb3b.games.gamehub.domain.board.repository.CommentsRepository;
+import kr.plusb3b.games.gamehub.domain.board.repository.PostsRepository;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
-import kr.plusb3b.games.gamehub.security.SnowflakeIdGenerator;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

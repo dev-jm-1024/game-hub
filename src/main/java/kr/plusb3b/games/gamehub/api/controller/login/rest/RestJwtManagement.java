@@ -1,6 +1,6 @@
 package kr.plusb3b.games.gamehub.api.controller.login.rest;
 
-import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
+import kr.plusb3b.games.gamehub.security.jwt.JwtProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

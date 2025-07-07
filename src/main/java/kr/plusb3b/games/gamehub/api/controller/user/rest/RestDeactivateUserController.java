@@ -1,9 +1,9 @@
 package kr.plusb3b.games.gamehub.api.controller.user.rest;
 
 
-import kr.plusb3b.games.gamehub.api.dto.user.UserAuth;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
+import kr.plusb3b.games.gamehub.domain.user.entity.UserAuth;
+import kr.plusb3b.games.gamehub.domain.user.repository.UserAuthRepository;
+import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;

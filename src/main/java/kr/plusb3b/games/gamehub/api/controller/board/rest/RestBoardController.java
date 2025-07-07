@@ -2,24 +2,22 @@ package kr.plusb3b.games.gamehub.api.controller.board.rest;
 
 
 import jakarta.validation.Valid;
-import kr.plusb3b.games.gamehub.api.dto.board.*;
-import kr.plusb3b.games.gamehub.api.dto.user.User;
-import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
-import kr.plusb3b.games.gamehub.api.service.Board.BoardServiceImpl;
-import kr.plusb3b.games.gamehub.api.service.Board.PostFilesServiceImpl;
-import kr.plusb3b.games.gamehub.api.service.Board.PostsServiceImpl;
-import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
-import kr.plusb3b.games.gamehub.repository.boardrepo.PostFilesRepository;
-import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserRepository;
-import jakarta.servlet.http.Cookie;
+import kr.plusb3b.games.gamehub.domain.user.entity.User;
+import kr.plusb3b.games.gamehub.application.board.BoardServiceImpl;
+import kr.plusb3b.games.gamehub.application.board.PostFilesServiceImpl;
+import kr.plusb3b.games.gamehub.application.board.PostsServiceImpl;
+import kr.plusb3b.games.gamehub.domain.board.vo.CreatePostsVO;
+import kr.plusb3b.games.gamehub.domain.board.entity.PostFiles;
+import kr.plusb3b.games.gamehub.domain.board.dto.PostRequestDto;
+import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
+import kr.plusb3b.games.gamehub.domain.board.repository.PostsRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import kr.plusb3b.games.gamehub.upload.FileUpload;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.time.LocalDate;
+
 import java.util.List;
 import java.util.Map;
 

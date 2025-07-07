@@ -1,25 +1,15 @@
 package kr.plusb3b.games.gamehub.api.controller.index;
 
-import jakarta.servlet.http.HttpServletRequest;
-import kr.plusb3b.games.gamehub.api.dto.board.Board;
-import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
-import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
-import org.atmosphere.config.service.Get;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import kr.plusb3b.games.gamehub.domain.board.entity.Board;
+import kr.plusb3b.games.gamehub.domain.board.repository.BoardRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.http.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @Controller
 @RequestMapping("/game-hub")

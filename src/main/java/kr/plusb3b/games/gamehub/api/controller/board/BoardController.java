@@ -1,28 +1,21 @@
 package kr.plusb3b.games.gamehub.api.controller.board;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import kr.plusb3b.games.gamehub.api.dto.board.*;
-import kr.plusb3b.games.gamehub.api.dto.user.User;
-import kr.plusb3b.games.gamehub.api.dto.user.UserAuth;
-import kr.plusb3b.games.gamehub.api.jwt.JwtProvider;
-import kr.plusb3b.games.gamehub.api.service.Board.BoardService;
-import kr.plusb3b.games.gamehub.api.service.Board.BoardServiceImpl;
-import kr.plusb3b.games.gamehub.api.service.Board.PostsService;
-import kr.plusb3b.games.gamehub.api.service.Board.PostsServiceImpl;
-import kr.plusb3b.games.gamehub.repository.boardrepo.BoardRepository;
-import kr.plusb3b.games.gamehub.repository.boardrepo.PostFilesRepository;
-import kr.plusb3b.games.gamehub.repository.boardrepo.PostsRepository;
-import kr.plusb3b.games.gamehub.repository.userrepo.UserAuthRepository;
+import kr.plusb3b.games.gamehub.domain.user.entity.User;
+import kr.plusb3b.games.gamehub.application.board.BoardServiceImpl;
+import kr.plusb3b.games.gamehub.application.board.PostsServiceImpl;
+import kr.plusb3b.games.gamehub.domain.board.entity.PostFiles;
+import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
+import kr.plusb3b.games.gamehub.domain.board.dto.PostsNotFoundException;
+import kr.plusb3b.games.gamehub.domain.board.dto.SummaryPostDto;
+import kr.plusb3b.games.gamehub.domain.board.repository.PostFilesRepository;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/board")

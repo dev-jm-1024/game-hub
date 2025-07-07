@@ -73,6 +73,9 @@ public class AccessControlService {
         }
 
         return user;
+
+
+        //test
     }
 
     public boolean validateBoardAndPost(String boardId, Long postId) {

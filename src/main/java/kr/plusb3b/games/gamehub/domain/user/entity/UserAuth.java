@@ -26,6 +26,13 @@ public class UserAuth {
 
     public UserAuth(){}
 
+    public UserAuth(String authUserId, User user, String authPassword, LocalDateTime authLastLogin) {
+        this.authUserId = authUserId;
+        this.user = user;
+        this.authPassword = authPassword;
+        this.authLastLogin = authLastLogin;
+    }
+
     //여번컬럼
     /*
     private String auth_extra1;

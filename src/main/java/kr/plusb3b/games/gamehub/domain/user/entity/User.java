@@ -76,6 +76,18 @@ public class User {
     */
     public User () {}
 
+    public User(int mbReportCnt, Long mbId, String mbNickname, String mbProfileUrl, String mbStatusMessage, LocalDateTime mbJoinDate, int mbAct, Role mbRole) {
+        this.mbReportCnt = mbReportCnt;
+        this.mbId = mbId;
+        this.mbNickname = mbNickname;
+        this.mbProfileUrl = mbProfileUrl;
+        this.mbStatusMessage = mbStatusMessage;
+        this.mbJoinDate = mbJoinDate;
+        this.mbAct = mbAct;
+        this.mbRole = mbRole;
+
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

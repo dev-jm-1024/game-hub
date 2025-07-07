@@ -30,6 +30,14 @@ public class UserPrivate {
     //사용자 성별
     private String priGender;
 
+    public UserPrivate(Long priMbId, User user, String priEmail, LocalDate priBirth, String priGender) {
+        this.priMbId = priMbId;
+        this.user = user;
+        this.priEmail = priEmail;
+        this.priBirth = priBirth;
+        this.priGender = priGender;
+    }
+
     //여분컬럼 1~10
     /*
     private String pri_extra1;

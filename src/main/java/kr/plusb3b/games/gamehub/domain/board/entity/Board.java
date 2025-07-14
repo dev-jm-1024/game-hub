@@ -44,6 +44,16 @@ public class Board {
     // 기본 생성자 (JPA에서 필수로 요구됨)
     public Board() {}
 
+    @Override
+    public String toString() {
+        return "Board{" +
+                "boardId='" + boardId + '\'' +
+                ", boardName='" + boardName + '\'' +
+                ", games=" + games +
+                ", boardAct=" + boardAct +
+                '}';
+    }
+
     //게시판 활성화
     public boolean activateBoard(){
         return boardAct == 1;

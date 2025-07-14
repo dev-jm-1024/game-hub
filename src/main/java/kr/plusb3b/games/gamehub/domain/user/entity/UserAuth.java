@@ -3,8 +3,11 @@ package kr.plusb3b.games.gamehub.domain.user.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
+import java.util.function.BinaryOperator;
 
 
 @Entity
@@ -55,5 +58,15 @@ public class UserAuth {
     //비밀번호 변경
     public void changePassword(String password){
         this.authPassword = password;
+    }
+
+
+    public boolean isEmptyLoginIdAndPassword(String authUserId, String authPassword){
+
+        if(authUserId == null || authPassword == null){
+            return false;
+        }
+
+        return true;
     }
 }

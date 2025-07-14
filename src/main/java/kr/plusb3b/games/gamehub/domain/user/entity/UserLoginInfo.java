@@ -47,6 +47,13 @@ public class UserLoginInfo {
 
      */
 
+    public UserLoginInfo(User user, Long loginInfoId, LocalDateTime loginTime, String ipAddress) {
+        this.user = user;
+        this.loginInfoId = loginInfoId;
+        this.loginTime = loginTime;
+        this.ipAddress = ipAddress;
+    }
+
     //로그인 시간 업데이트
     public void updateLoginTime(LocalDateTime loginTime) {
         this.loginTime = loginTime;

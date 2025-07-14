@@ -34,6 +34,12 @@ public class FileUpload {
     public Map<String, String> getFileUrlAndType(List<MultipartFile> fileData) {
         Map<String, String> resultMap = new HashMap<>();
 
+        // ✅ null 또는 빈 리스트인 경우 바로 리턴
+        if (fileData == null || fileData.isEmpty()) {
+            return resultMap;
+        }
+
+
         for (MultipartFile file : fileData) {
             try {
                 // 원본 파일명 확인 및 기본 이름 설정

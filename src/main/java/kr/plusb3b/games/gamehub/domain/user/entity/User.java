@@ -120,7 +120,7 @@ public class User {
 
     //계정의 상태가 활성화인지?
     public boolean isActivateUser(){
-        return mbAct == 1;
+        return this.mbAct == 1;
     }
 
     public void deactivateUser(){
@@ -134,6 +134,13 @@ public class User {
     //신고 횟수 증가 로직
     public void increaseReportCnt(){
         this.mbReportCnt++;
+    }
+
+    //prod 값을 통해 role 구분
+
+    public Role prodDifferentiate(String userProd){
+        if(userProd.equals("generalUser")) return User.Role.ROLE_USER;
+        else return User.Role.ROLE_ADMIN;
     }
 
 }

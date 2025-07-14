@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @RestController
 //@RequestMapping("/api/v1/game-hub")
-@RequestMapping("/game-hub/deactivate")
+//@RequestMapping("/game-hub/deactivate")
 public class RestDeactivateUserController {
 
     private final UserAuthRepository userAuthRepo;

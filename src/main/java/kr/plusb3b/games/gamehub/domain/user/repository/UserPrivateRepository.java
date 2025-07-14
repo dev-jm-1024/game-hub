@@ -1,6 +1,7 @@
 package kr.plusb3b.games.gamehub.domain.user.repository;
 
 import jakarta.transaction.Transactional;
+import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserPrivate;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -24,6 +25,8 @@ public interface UserPrivateRepository extends JpaRepository<UserPrivate, Long> 
 
     @Query("SELECT up FROM UserPrivate up WHERE up.user.mbId = :mbId")
     Optional<UserPrivate> findUserPrivateByMbId(@Param("mbId") Long mbId);
+
+    Optional<UserPrivate> findByUser(User user);
 
 
 

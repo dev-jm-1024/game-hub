@@ -1,6 +1,11 @@
 package kr.plusb3b.games.gamehub.api.controller.board;
 
 import jakarta.servlet.http.HttpServletRequest;
+import kr.plusb3b.games.gamehub.domain.board.entity.Board;
+import kr.plusb3b.games.gamehub.domain.board.repository.BoardRepository;
+import kr.plusb3b.games.gamehub.domain.board.service.BoardService;
+import kr.plusb3b.games.gamehub.domain.board.service.CommentService;
+import kr.plusb3b.games.gamehub.domain.board.service.PostsService;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.application.board.BoardServiceImpl;
 import kr.plusb3b.games.gamehub.application.board.PostsServiceImpl;
@@ -22,9 +27,11 @@ import java.util.*;
 public class BoardController {
 
     private final PostFilesRepository postFilesRepo;
-    private final BoardServiceImpl boardServiceImpl;
-    private final PostsServiceImpl postsServiceImpl;
+    private final BoardService boardService;
+    private final PostsService postsService;
     private final AccessControlService access;
+    private final BoardRepository boardRepo;
+    private final CommentService commentService;
     //private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(BoardController.class);4
 
 //    @Value("${app.max.boardSize}")
@@ -32,23 +39,22 @@ public class BoardController {
 //    int maxBoardSize = Integer.parseInt(maxBoardSizeString);
 
 
-    public BoardController(PostFilesRepository postFilesRepo, BoardServiceImpl boardServiceImpl,
-                           PostsServiceImpl postsServiceImpl, AccessControlService access) {
+    public BoardController(PostFilesRepository postFilesRepo,  BoardService boardService,
+                           PostsService postsService, AccessControlService access,
+                           BoardRepository boardRepo, CommentService commentService) {
         this.postFilesRepo = postFilesRepo;
-        this.boardServiceImpl = boardServiceImpl;
-        this.postsServiceImpl = postsServiceImpl;
+        this.boardService = boardService;
+        this.postsService = postsService;
         this.access = access;
+        this.boardRepo = boardRepo;
+        this.commentService = commentService;
     }
 
     @GetMapping
     public String boardMainPage(Model model) {
-        // 게시판별로 게시물 분류 및 필터링/정렬
-        Map<String, List<Posts>> postsByBoard = boardServiceImpl.loadTop5LatestPostsByBoard();
-
-        // View에 전달
+        Map<Board, List<Posts>> postsByBoard = boardService.loadTop5LatestPostsByBoard();
         model.addAttribute("postsByBoard", postsByBoard);
-
-        return "board/main-board"; // 템플릿 경로
+        return "board/main-board";
     }
 
 
@@ -57,21 +63,18 @@ public class BoardController {
     @GetMapping("/{boardId}/view")
     public String dispatchBoardPost(@PathVariable("boardId") String boardId, Model model) {
 
-        List<SummaryPostDto> summaryPosts = postsServiceImpl.summaryPosts(boardId);
+        Board board = boardRepo.findById(boardId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
 
-        //postAct 1인 데이터 Model로 넘기기
+        List<SummaryPostDto> summaryPosts = postsService.summaryPosts(boardId);
+
         model.addAttribute("summaryPosts", summaryPosts);
+        model.addAttribute("board", board); // ← 요거 추가!
 
         return "board/common/post-list";
     }
 
 
-    //글 작성 페이지 경로 처리
-    @GetMapping("/new")
-    public String showPostPage(@RequestParam("boardId") String boardId, Model model) {
-        model.addAttribute("boardId", boardId);
-        return "board/common/post-form";
-    }
 
 
     // GlobalExceptionHandler
@@ -82,53 +85,6 @@ public class BoardController {
         return "error/post-not-found"; // 사용자 친화적인 에러 페이지
     }
 
-
-    // /boards/{boardId}/{postsId}/view
-    @GetMapping("/{boardId}/{postId}/view")
-    public String showPostsViewPage(@PathVariable("boardId") String boardId,
-                                    @PathVariable("postId") Long postId, Model model,
-                                    HttpServletRequest request){
-
-
-        Posts posts = postsServiceImpl.detailPosts(boardId, postId);
-        PostFiles postFiles = postFilesRepo.findPostFilesByPost_PostId(postId)
-                        .orElseThrow(() -> new PostsNotFoundException(postId));
-
-        try{
-
-            User user = access.getAuthenticatedUser(request);
-            if(user == null) throw new IllegalArgumentException("사용자를 찾을 수 없습니다");
-
-            boolean isAuthor = postsServiceImpl.isAuthor(request, posts);
-
-            /********************로그인한 회원이 게시물 쓴건지 확인************************/
-            if(!isAuthor) model.addAttribute("isAuthUser", true);
-            else model.addAttribute("isAuthUser", false);
-
-
-            //View 에다가 데이터 전송
-            model.addAttribute("postsData", posts);
-            model.addAttribute("postFiles", postFiles);
-
-
-        }catch (AuthenticationCredentialsNotFoundException e) {
-            e.printStackTrace();
-        }
-
-
-        return "board/common/post-detail";
-    }
-
-    @GetMapping("/posts/edit")
-    public String showPostsEditPage(@RequestParam("postId") Long postId,
-                                    @RequestParam("boardId") String boardId,
-                                    Model model) {
-
-        Posts postData = postsServiceImpl.detailPosts(boardId, postId); // 수정: 단일 Posts 리턴
-        model.addAttribute("postData", postData);
-
-        return "/board/common/post-edit-form";
-    }
 
 
 }

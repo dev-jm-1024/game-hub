@@ -15,8 +15,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import kr.plusb3b.games.gamehub.upload.FileUpload;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -49,11 +53,13 @@ public class RestBoardController {
         this.boardServiceImpl = boardServiceImpl;
     }
 
-    @PostMapping("/{boardId}/posts")
+    @PostMapping(value = "/{boardId}/posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> insertPosts(@PathVariable("boardId") String boardId,
-                                         @ModelAttribute PostRequestDto postRequestDto,
+                                         @RequestPart("data") @Valid PostRequestDto postRequestDto,
+                                         @RequestPart(value = "files", required = false) List<MultipartFile> files,
                                          HttpServletRequest request) {
+
         try {
             // 1. 사용자 인증
             User user = access.getAuthenticatedUser(request);
@@ -65,15 +71,17 @@ public class RestBoardController {
             CreatePostsVO defaultPostValues = new CreatePostsVO(); // viewCount=0, postAct=1 등
             Posts savedPost = postsServiceImpl.createPost(postRequestDto, defaultPostValues, boardId, request);
 
-            // 3. 첨부파일 업로드 및 저장
-            Map<String, String> fileUrlAndType = fileUpload.getFileUrlAndType(postRequestDto.getFiles());
-            List<PostFiles> savedFiles = postFilesServiceImpl.uploadPostFile(savedPost, fileUrlAndType);
+            // 3. 첨부파일이 있는 경우에만 업로드 및 저장
+            if (files != null && !files.isEmpty()) {
+                Map<String, String> fileUrlAndType = fileUpload.getFileUrlAndType(files);
+                List<PostFiles> savedFiles = postFilesServiceImpl.uploadPostFile(savedPost, fileUrlAndType);
 
-            if (savedFiles.isEmpty()) {
-                throw new IllegalStateException("첨부파일이 하나도 저장되지 않았습니다.");
+                if (savedFiles.isEmpty()) {
+                    log.warn("파일 첨부 요청은 있었지만 저장된 파일이 없습니다.");
+                }
             }
 
-            // 4. 응답 반환
+            // 4. 성공 응답
             return ResponseEntity.status(HttpStatus.CREATED).body("게시글이 성공적으로 등록되었습니다.");
 
         } catch (IllegalArgumentException e) {
@@ -84,6 +92,7 @@ public class RestBoardController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("게시글 저장 중 서버 오류가 발생했습니다.");
         }
     }
+
 
 
     @PatchMapping("/{boardId}/posts/{postId}")

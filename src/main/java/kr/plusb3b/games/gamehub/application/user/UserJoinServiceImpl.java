@@ -1,5 +1,6 @@
 package kr.plusb3b.games.gamehub.application.user;
 
+import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.dto.UserSignupDto;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserAuth;
@@ -9,11 +10,16 @@ import kr.plusb3b.games.gamehub.domain.user.vo.UserSignupVO;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserAuthRepository;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserPrivateRepository;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
+import kr.plusb3b.games.gamehub.security.AccessControlService;
 import kr.plusb3b.games.gamehub.security.SnowflakeIdGenerator;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserJoinServiceImpl implements UserJoinService {
@@ -22,26 +28,22 @@ public class UserJoinServiceImpl implements UserJoinService {
     private final UserAuthRepository userAuthRepo;
     private final UserPrivateRepository userPrivateRepo;
     private final PasswordEncoder passwordEncoder;
+    private final AccessControlService access;
 
     public UserJoinServiceImpl(UserRepository userRepo, UserAuthRepository userAuthRepo, UserPrivateRepository userPrivateRepo,
-                               PasswordEncoder passwordEncoder) {
+                               PasswordEncoder passwordEncoder, AccessControlService access) {
         this.userRepo = userRepo;
         this.userAuthRepo = userAuthRepo;
         this.userPrivateRepo = userPrivateRepo;
         this.passwordEncoder = passwordEncoder;
+        this.access = access;
     }
 
     @Override
     public void signupUser(UserSignupDto usd, UserSignupVO usv) {
 
-        String prodDifferentiate = usd.getProd();
-        User.Role role;
-
-        if(prodDifferentiate.equals("generalUser")){
-            role = (User.Role.ROLE_USER);
-        }else{
-            role = (User.Role.ROLE_PRODUCER);
-        }
+        User ddd = new User();
+        User.Role role = ddd.prodDifferentiate(usd.getProd());
 
         User user = buildUser(usd, usv, role);
         UserAuth userAuth = buildUserAuth(usd, user);
@@ -50,21 +52,28 @@ public class UserJoinServiceImpl implements UserJoinService {
         userRepo.save(user);
         userAuthRepo.save(userAuth);
         userPrivateRepo.save(userPrivate);
+
     }
 
     @Override
-    public boolean isLogin(User user) {
-        return false;
+    public boolean isLogin(HttpServletRequest request) {
+
+        User user = access.getAuthenticatedUser(request);
+        return user != null;
     }
 
     @Override
-    public boolean checkDistinctLoginId(String loginId) {
-        return false;
+    public boolean isDuplicatedLoginId(String loginId) {
+        Optional<UserAuth> userAuthOpt = userAuthRepo.findById(loginId);
+        return userAuthOpt.isPresent();
+
     }
 
     @Override
     public boolean checkDistinctEmail(String email) {
-        return false;
+        return userPrivateRepo.findAll().stream()
+                .map(UserPrivate::getPriEmail)
+                .anyMatch(e -> e.equals(email));  // 이메일이 하나도 없으면 true (중복 X)
     }
 
 

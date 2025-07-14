@@ -44,8 +44,8 @@
 
     <div class="board-section" th:each="entry : ${postsByBoard}">
         <h2>
-            <a th:href="@{'/board/' + ${entry.key} + '/view'}"
-               th:text="${entry.key}">게시판 ID</a> <!-- board 이름이 필요하면 Map 말고 Board 객체 필요 -->
+            <a th:href="@{'/board/' + ${entry.key.boardId} + '/view'}"
+               th:text="${entry.key.boardName}">게시판 이름</a>
         </h2>
 
         <div th:if="${entry.value != null and !entry.value.isEmpty()}">
@@ -56,7 +56,7 @@
                 <tbody>
                 <tr th:each="post : ${entry.value}">
                     <td>
-                        <a th:href="@{'/board/' + ${entry.key} + '/' + ${post.postId} + '/view'}"
+                        <a th:href="@{'/board/' + ${entry.key.boardId} + '/' + ${post.postId} + '/view'}"
                            th:text="${post.postTitle}">제목</a>
                     </td>
                     <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">날짜</td>
@@ -71,11 +71,10 @@
         </div>
 
         <form th:action="@{'/board/new'}" method="get">
-            <input type="hidden" name="boardId" th:value="${entry.key}">
+            <input type="hidden" name="boardId" th:value="${entry.key.boardId}">
             <button type="submit">글쓰기</button>
         </form>
     </div>
 </main>
-
 </body>
 </html>

@@ -60,4 +60,54 @@ public class Comments {
 
     public Comments() {}
 
+    public Comments(Long commentId, Posts posts, User user, String commentContent,
+                    int likeCount, int dislikeCount, int reportCount,
+                    LocalDate createdAt, int commentAct) {
+        this.commentId = commentId;
+        this.posts = posts;
+        this.user = user;
+        this.commentContent = commentContent;
+        this.likeCount = likeCount;
+        this.dislikeCount = dislikeCount;
+        this.reportCount = reportCount;
+        this.createdAt = createdAt;
+        this.commentAct = commentAct;
+    }
+
+    //댓글이 활성화되어있는 지?
+    public boolean isCommentsActivate(){
+        return this.commentAct==1;
+    }
+
+    public void changeDeactivateComments(){
+        this.commentAct=0;
+    }
+
+    public void changeActivateComments(){
+        this.commentAct=1;
+    }
+
+    public void increaseLikeCount(){
+        this.likeCount++;
+    }
+
+    public void decreaseLikeCount(){
+        this.likeCount--;
+    }
+
+    public void increaseDislikeCount(){
+        this.dislikeCount++;
+    }
+
+    public void decreaseDislikeCount(){
+        this.dislikeCount--;
+    }
+
+    public void increaseReportCount(){
+        this.reportCount++;
+    }
+
+    public void decreaseReportCount(){
+        this.reportCount--;
+    }
 }

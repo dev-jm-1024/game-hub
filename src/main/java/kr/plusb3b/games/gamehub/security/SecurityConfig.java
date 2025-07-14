@@ -49,10 +49,20 @@ public class SecurityConfig {
                 // 모든 요청에 대해 인증 없이 허용
                 .authorizeHttpRequests(
                         auth -> auth
-                                .requestMatchers("/board/api/v1/**").authenticated() // ✅ 인증 필요
+                                // ✅ 정적 리소스 허용 추가
+                                .requestMatchers(
+                                        "/main-contents-skin/**",  // ← 여기에 추가
+                                        "/css/**", "/js/**", "/images/**", "/webjars/**"
+                                ).permitAll()
+
+                                // ✅ 인증 필요한 API 경로
+                                .requestMatchers("/board/api/v1/**").authenticated()
                                 .requestMatchers("/game/api/v1/**").authenticated()
+
+                                // 나머지는 허용
                                 .anyRequest().permitAll()
                 )
+
                 .formLogin(form -> form.disable())
 
                 // 2. 로그인 설정 (form 기반)

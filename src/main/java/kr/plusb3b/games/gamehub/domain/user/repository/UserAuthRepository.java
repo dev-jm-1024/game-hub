@@ -1,6 +1,7 @@
 package kr.plusb3b.games.gamehub.domain.user.repository;
 
 import jakarta.transaction.Transactional;
+import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserAuth;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -31,5 +32,7 @@ public interface UserAuthRepository extends JpaRepository<UserAuth, String> {
     @Modifying
     @Query("UPDATE UserAuth ua SET ua.authUserId = :authUserId WHERE ua.user.mbId = :mbId")
     int updateUserAuth(@Param("authUserId") String authUserId, @Param("mbId") Long mbId);
+
+    Optional<UserAuth> findByUser(User user);
 
 }

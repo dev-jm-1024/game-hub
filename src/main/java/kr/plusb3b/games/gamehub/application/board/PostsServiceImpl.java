@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -86,14 +87,16 @@ public class PostsServiceImpl implements PostsService {
     @Override
     public Posts detailPosts(String boardId, Long postId) {
 
-        return postsRepo.findAll().stream()
-                .filter(posts -> posts.getBoard().getBoardId().equals(boardId))
-                .filter(posts -> posts.getPostId().equals(postId))
+        Posts result = postsRepo.findById(postId).stream()
                 .filter(Posts::isActivatePosts)
                 .findFirst()
-                .orElseThrow(() -> new EntityNotFoundException("해당 게시글을 찾을 수 없습니다."));
+                .orElseThrow(()-> new PostsNotFoundException("찾을 수 없음"));
+
+        return result;
+
 
     }
+
 
     @Override
     public boolean deactivatePost(Long postId) {

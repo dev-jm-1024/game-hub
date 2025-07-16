@@ -48,4 +48,8 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
                                         @Param("boardId") String boardId);
 
 
+    Optional<Posts> findByPostIdAndBoard_BoardIdAndPostAct(Long postId, String boardId, int postAct);
+
+
+
 }

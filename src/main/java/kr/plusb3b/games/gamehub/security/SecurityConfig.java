@@ -56,10 +56,11 @@ public class SecurityConfig {
                                 ).permitAll()
 
                                 // ✅ 인증 필요한 API 경로
-                                .requestMatchers("/board/api/v1/**").authenticated()
-                                .requestMatchers("/game/api/v1/**").authenticated()
+                                .requestMatchers("/api/v1/**").authenticated()
+                                //.requestMatchers("/board/api/v1/**").authenticated()
+                                //.requestMatchers("/game/api/v1/**").authenticated()
 
-                                // 나머지는 허용
+                                // 나머지는 허용s
                                 .anyRequest().permitAll()
                 )
 
@@ -97,6 +98,7 @@ public class SecurityConfig {
                         // CSRF 토큰을 쿠키에 저장하고, JS에서 접근 가능하도록 설정 (HttpOnly=false)
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 )
+
 
                 // 5. JWT 인증 필터 등록 (기존 UsernamePasswordAuthenticationFilter 앞에 삽입)
                 .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);

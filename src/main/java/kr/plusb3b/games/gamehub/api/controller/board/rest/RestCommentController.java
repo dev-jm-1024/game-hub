@@ -14,10 +14,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
@@ -35,7 +32,15 @@ public class RestCommentController {
 
     @PostMapping("/posts/{postId}/comments")
     public ResponseEntity<?> submitComment(@RequestBody @Validated RequestCommentDto requestCommentDto,
+                                           @PathVariable Long postId,
                                            HttpServletRequest request) {
+
+        // PathVariable의 postId와 RequestBody의 postId 일치 확인
+        if (!postId.equals(requestCommentDto.getPostId())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("경로의 postId와 요청 본문의 postId가 일치하지 않습니다.");
+        }
+
         try {
             // 1. 로그인 사용자 확인
             User user = access.getAuthenticatedUser(request);

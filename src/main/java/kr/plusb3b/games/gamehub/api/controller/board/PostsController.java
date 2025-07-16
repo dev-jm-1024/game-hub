@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/board")
@@ -51,6 +52,8 @@ public class PostsController {
         return "board/common/post-form";
     }
 
+
+
     // /boards/{boardId}/{postsId}/view
     @GetMapping("/{boardId}/{postId}/view")
     public String showPostsViewPage(@PathVariable("boardId") String boardId,
@@ -59,8 +62,14 @@ public class PostsController {
 
 
         Posts posts = postsService.detailPosts(boardId, postId);
-        PostFiles postFiles = postFilesRepo.findPostFilesByPost_PostId(postId)
-                .orElseThrow(() -> new PostsNotFoundException(postId));
+
+        if(posts==null){
+            return "redirect:/board";
+        }
+
+        Optional<PostFiles> postFilesOpt = postFilesRepo.findPostFilesByPost_PostId(postId);
+        postFilesOpt.ifPresent(postFiles -> model.addAttribute("postFiles", postFiles));
+        model.addAttribute("hasPostFile", postFilesOpt.isPresent());
 
         //해당 게시물의 댓글 가져오기
 
@@ -83,8 +92,7 @@ public class PostsController {
             //게시물 데이터
             model.addAttribute("postsData", posts);
 
-            //첨부파일 데이터
-            model.addAttribute("postFiles", postFiles);
+
 
             //댓글 데이터
             model.addAttribute("commentsList", commentsList);

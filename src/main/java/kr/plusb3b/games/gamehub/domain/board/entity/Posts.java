@@ -20,11 +20,11 @@ public class Posts {
     private Long postId;
 
     @ManyToOne
-    @JoinColumn(name = "boardId")
+    @JoinColumn(name = "board_id")
     private Board board; // 게시판 외래키
 
     @ManyToOne//여러개가 하나를 참조
-    @JoinColumn(name = "mbId")
+    @JoinColumn(name = "mb_Id")
     private User user; // 작성자 외래키
 
     @NotBlank(message = "제목을 입력하세요")
@@ -36,6 +36,8 @@ public class Posts {
     private int viewCount; //조회수
     private LocalDate createdAt;
     private LocalDate updatedAt;
+
+    @Column(name = "post_act")
     private int postAct;
 
     public Posts() {}

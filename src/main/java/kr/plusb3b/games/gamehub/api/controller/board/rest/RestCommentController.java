@@ -1,14 +1,10 @@
 package kr.plusb3b.games.gamehub.api.controller.board.rest;
 
 import jakarta.servlet.http.HttpServletRequest;
-import kr.plusb3b.games.gamehub.domain.board.entity.Comments;
-import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
 import kr.plusb3b.games.gamehub.domain.board.dto.RequestCommentDto;
 import kr.plusb3b.games.gamehub.domain.board.service.CommentService;
 import kr.plusb3b.games.gamehub.domain.board.vo.CreateCommentsVO;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
-import kr.plusb3b.games.gamehub.domain.board.repository.CommentsRepository;
-import kr.plusb3b.games.gamehub.domain.board.repository.PostsRepository;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
@@ -31,7 +27,7 @@ public class RestCommentController {
     }
 
     @PostMapping("/posts/{postId}/comments")
-    public ResponseEntity<?> submitComment(@RequestBody @Validated RequestCommentDto requestCommentDto,
+    public ResponseEntity<?> submitComment(@ModelAttribute @Validated RequestCommentDto requestCommentDto,
                                            @PathVariable Long postId,
                                            HttpServletRequest request) {
 

@@ -37,9 +37,9 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public boolean createComment(CreateCommentsVO cvo, RequestCommentDto requestCommentDto, User user) {
 
-        // 1. 댓글 ID 생성
-        SnowflakeIdGenerator sf = new SnowflakeIdGenerator(0, 0);
-        Long commentId = sf.nextId();
+        // 1. 댓글 ID 생성 -- 필요없음. 자동생성임
+//        SnowflakeIdGenerator sf = new SnowflakeIdGenerator(0, 0);
+//        Long commentId = sf.nextId();
 
         // 2. 게시글 조회
         Posts post = postsRepo.findById(requestCommentDto.getPostId())
@@ -47,7 +47,7 @@ public class CommentServiceImpl implements CommentService {
 
         // 3. 댓글 엔티티 생성
         Comments comment = new Comments(
-                commentId,
+                //commentId,
                 post,
                 user,
                 requestCommentDto.getCommentContent(),
@@ -67,6 +67,9 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional(readOnly = true)
     public List<Comments> getComments(String boardId, Long postId) {
+
+        Board board = boardRepo.findById(boardId)
+                .orElseThrow(()-> new IllegalArgumentException("해당 게시판이 존재하지 않습니다"));
 
         Posts posts = postsRepo.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 게시물을 찾을 수 없습니다"));

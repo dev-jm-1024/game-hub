@@ -26,9 +26,9 @@
         </tr>
 
         <!-- 게시글이 있을 경우 -->
-        <tr th:each="post, stat : ${summaryPosts}">
+        <tr th:each="post, stat : ${summaryPosts}" href="https://naver.com">
             <td th:text="${stat.count}">1</td>
-            <td th:text="${post.title}">글 제목</td>
+            <td th:text="${post.title}"><a href="https://naver.com">글 작성자</a></td>
             <td th:text="${post.author}">작성자</td>
             <td th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">작성일</td>
             <td>0</td> <!-- 조회수는 SummaryPostDto에 없으므로 일단 0으로 표시 -->

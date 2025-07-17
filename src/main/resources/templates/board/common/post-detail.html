@@ -121,60 +121,43 @@
     /* ------------------------------------------------------------------
      * 댓글 등록 – POST /api/v1/posts/{postId}/comments
      * ------------------------------------------------------------------ */
-    document.getElementById('commentForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+    // document.getElementById('commentForm').addEventListener('submit', async (e) => {
+    //     e.preventDefault();
+    //
+    //     const form = e.target;
+    //     const formData = new FormData(form);
+    //     const commentText = formData.get("commentContent")?.trim();
+    //
+    //     if (!commentText) {
+    //         alert("댓글 내용을 입력해주세요.");
+    //         return;
+    //     }
+    //
+    //     formData.set("commentContent", commentText); // trim 반영
+    //
+    //     try {
+    //         const postId = formData.get("postId");
+    //
+    //         const res = await fetch(`/api/v1/posts/${postId}/comments`, {
+    //             method: 'POST',
+    //             credentials: 'include',
+    //             headers: {
+    //                 'Content-Type': 'application/x-www-form-urlencoded',
+    //                 [csrfHeader]: csrfToken
+    //             },
+    //             body: new URLSearchParams(formData)
+    //         });
+    //
+    //         if (!res.ok) throw new Error(await res.text());
+    //
+    //         alert("댓글 등록 성공!");
+    //         window.location.reload();
+    //     } catch (err) {
+    //         console.error("댓글 등록 실패:", err);
+    //         alert("댓글 등록 실패: " + err.message);
+    //     }
+    // });
 
-        const form          = e.target;
-        const commentInput  = form.querySelector('input[name="commentContent"]');
-        const commentText   = commentInput.value.trim();
-        if (!commentText) {
-            alert('댓글 내용을 입력해주세요.');
-            commentInput.focus();
-            return;
-        }
-
-        const postId  = form.querySelector('input[name="postId"]').value;
-        const boardId = form.querySelector('input[name="boardId"]').value;
-
-        // 디버깅용 로그
-        console.log('CSRF Token:', csrfToken);
-        console.log('CSRF Header:', csrfHeader);
-        console.log('Post ID:', postId);
-        console.log('Request Body:', {
-            commentContent: commentText,
-            postId: parseInt(postId),
-            boardId: parseInt(boardId)
-        });
-
-        try {
-            const res = await fetch(`/api/v1/posts/${postId}/comments`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                    [csrfHeader]: csrfToken  // Thymeleaf에서 주입된 값 사용
-                },
-                body: JSON.stringify({
-                    commentContent: commentText,
-                    postId: parseInt(postId),     // 숫자로 변환
-                    boardId: parseInt(boardId)    // 숫자로 변환
-                })
-            });
-
-            if (!res.ok) {
-                const errorText = await res.text();
-                console.error('Response status:', res.status);
-                console.error('Error response:', errorText);
-                throw new Error(errorText || res.status);
-            }
-
-            alert('댓글 등록 성공!');
-            window.location.reload();
-        } catch (err) {
-            console.error('댓글 등록 실패:', err);
-            alert('댓글 등록 실패: ' + err.message);
-        }
-    });
 </script>
 
 </body>

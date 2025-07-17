@@ -80,10 +80,11 @@ public class PostsController {
             User user = access.getAuthenticatedUser(request);
             if(user == null) throw new IllegalArgumentException("사용자를 찾을 수 없습니다");
 
-            boolean isAuthor = postsService.isAuthor(request, posts);
+            boolean isAuthor = postsService.isAuthor(request, postId);
+            System.out.println("isAuthor Result: "+isAuthor); //25.07.17 17:04 기준 true 나옴
 
             /********************로그인한 회원이 게시물 쓴건지 확인************************/
-            if(!isAuthor) model.addAttribute("isAuthUser", true);
+            if(isAuthor) model.addAttribute("isAuthUser", true);
             else model.addAttribute("isAuthUser", false);
 
 

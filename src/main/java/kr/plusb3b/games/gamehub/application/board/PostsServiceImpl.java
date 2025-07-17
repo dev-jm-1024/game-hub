@@ -113,12 +113,14 @@ public class PostsServiceImpl implements PostsService {
     }
 
     @Override
-    public boolean isAuthor(HttpServletRequest request, Posts posts) {
+    public boolean isAuthor(HttpServletRequest request, Long postId) {
 
         User user = access.getAuthenticatedUser(request);
-        User author = posts.getUser();
+        List<User> author = postsRepo.findById(postId).stream()
+                .map(Posts::getUser)
+                .collect(Collectors.toList());
 
-        return user.equals(author);
+        return author.get(0).equals(user);
     }
 
     @Override

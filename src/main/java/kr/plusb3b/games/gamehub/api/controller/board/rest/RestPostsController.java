@@ -17,8 +17,6 @@ import kr.plusb3b.games.gamehub.upload.FileUpload;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,7 +27,7 @@ import static org.reflections.Reflections.log;
 
 @RestController("RestBoardController")
 @RequestMapping(path="/api/v1/board") // 경로 수정 ver
-public class RestBoardController {
+public class RestPostsController {
 
 
 //    @Value("${app.api.version}")
@@ -42,7 +40,7 @@ public class RestBoardController {
     private final PostFilesServiceImpl postFilesServiceImpl;
     private final BoardServiceImpl boardServiceImpl;
 
-    public RestBoardController(PostsRepository postsRepo, AccessControlService access,
+    public RestPostsController(PostsRepository postsRepo, AccessControlService access,
                                FileUpload fileUpload, PostsServiceImpl postsServiceImpl,
                                PostFilesServiceImpl postFilesServiceImpl, BoardServiceImpl boardServiceImpl) {
         this.postsRepo = postsRepo;

@@ -31,7 +31,7 @@ public interface PostsService {
     void increaseViewCount(Long postId);
 
     //작성자와 로그인한 사용자가 같은가?
-    boolean isAuthor(HttpServletRequest request, Posts posts);
+    boolean isAuthor(HttpServletRequest request, Long postId);
 
     boolean validatePost(Long postId);
 

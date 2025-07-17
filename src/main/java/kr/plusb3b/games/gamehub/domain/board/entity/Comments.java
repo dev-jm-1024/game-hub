@@ -60,10 +60,9 @@ public class Comments {
 
     public Comments() {}
 
-    public Comments(Long commentId, Posts posts, User user, String commentContent,
+    public Comments(Posts posts, User user, String commentContent,
                     int likeCount, int dislikeCount, int reportCount,
                     LocalDate createdAt, int commentAct) {
-        this.commentId = commentId;
         this.posts = posts;
         this.user = user;
         this.commentContent = commentContent;

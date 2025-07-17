@@ -56,7 +56,7 @@ public class SecurityConfig {
                                 ).permitAll()
 
                                 // ✅ 인증 필요한 API 경로
-                                .requestMatchers("/api/v1/**").authenticated()
+                                //.requestMatchers("/api/v1/**").authenticated()
                                 //.requestMatchers("/board/api/v1/**").authenticated()
                                 //.requestMatchers("/game/api/v1/**").authenticated()
 

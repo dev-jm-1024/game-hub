@@ -13,4 +13,6 @@ public interface CommentService {
 
     List<Comments> getComments(String boardId, Long postId);
 
+    boolean updateCommentContents(Long commentId, String commentContent);
+
 }

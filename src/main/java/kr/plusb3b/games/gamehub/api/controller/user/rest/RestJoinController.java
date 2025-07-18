@@ -53,7 +53,11 @@ public class RestJoinController {
         SnowflakeIdGenerator snowflake = new SnowflakeIdGenerator(0,0);
         user.setMbId(snowflake.nextId()); //mbId 생성
         user.setMbNickname(requestUserJoinInfoDto.getMbNickname()); //mbNickname 생성
+
+        //이 부분 변경해야함
         user.setMbProfileUrl(empty); //프로필 url 생성
+
+        //이 부분 변경해야함
         user.setMbStatusMessage(empty); //상태 메세지 생성
         user.setMbJoinDate(now); //가입날짜
         user.setMbAct(1); //mbAct 1로

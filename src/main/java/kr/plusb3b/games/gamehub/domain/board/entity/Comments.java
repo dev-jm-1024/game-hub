@@ -109,4 +109,9 @@ public class Comments {
     public void decreaseReportCount(){
         this.reportCount--;
     }
+
+    //댓글 내용 업데이트
+    public void changeCommentContent(String commentContent){
+        this.commentContent = commentContent;
+    }
 }

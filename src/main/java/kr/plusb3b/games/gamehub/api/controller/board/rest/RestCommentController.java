@@ -2,6 +2,8 @@ package kr.plusb3b.games.gamehub.api.controller.board.rest;
 
 import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.domain.board.dto.RequestCommentDto;
+import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
+import kr.plusb3b.games.gamehub.domain.board.repository.PostsRepository;
 import kr.plusb3b.games.gamehub.domain.board.service.CommentService;
 import kr.plusb3b.games.gamehub.domain.board.vo.CreateCommentsVO;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
@@ -20,10 +22,13 @@ public class RestCommentController {
 
     private final AccessControlService access;
     private final CommentService commentService;
+    private final PostsRepository postsRepo;
 
-    public RestCommentController(AccessControlService access, CommentService commentService) {
+    public RestCommentController(AccessControlService access, CommentService commentService,
+                                 PostsRepository postsRepo) {
         this.access = access;
         this.commentService = commentService;
+        this.postsRepo = postsRepo;
     }
 
     @PostMapping("/posts/{postId}/comments")
@@ -68,4 +73,24 @@ public class RestCommentController {
                     .body("알 수 없는 오류가 발생했습니다.");
         }
     }
+
+    //댓글 내용 업데이트
+    @PatchMapping("/posts/{postId}/comments/{commentId}")
+    public ResponseEntity<?> updateComment(@PathVariable Long postId, @PathVariable Long commentId, @RequestBody String content,
+                                           HttpServletRequest request) {
+
+        User user = access.getAuthenticatedUser(request);
+        if(user == null) return ResponseEntity.status(HttpStatus.NON_AUTHORITATIVE_INFORMATION).body("로그인 상태가 아닙니다! 로그인 진행해주세요!");
+
+
+        boolean result = commentService.updateCommentContents(commentId, content);
+
+        if(!result) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("알 수 없는 오류가 발생했습니다.");
+
+        return ResponseEntity.status(HttpStatus.OK).body("댓글 수정에 성공하였습니다");
+    }
+
+
+    //싫어요, 좋아요 증가 로직
+
 }

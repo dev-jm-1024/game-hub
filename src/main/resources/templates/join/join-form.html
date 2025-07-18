@@ -49,6 +49,18 @@
             </select>
         </div>
 
+        <!--mbStatusMessage-->
+
+        <div>
+            <label for="mbStatusMessage">상태메세지</label>
+            <input type="text" id="mbStatusMessage" name="mbStatusMessage" required>
+        </div>
+
+        <div>
+            <label for="files">프로필 사진</label>
+            <input type="file" id="files" name="files" multiple accept="image/*" />
+        </div>
+
         <div>
             <button type="submit" id="joinBtn" disabled>가입하기</button>
             <button type="button" onclick="history.back()">취소</button>

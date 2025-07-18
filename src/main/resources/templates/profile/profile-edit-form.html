@@ -23,6 +23,11 @@
     <label for="mbStatusMessage">상태 메세지</label>
     <input type="text" id="mbStatusMessage" name="mbStatusMessage" th:value="${user.getMbStatusMessage()}">
 
+    <div>
+        <label for="files">프로필 사진</label>
+        <input type="file" id="files" name="files" multiple accept="image/*" />
+    </div>
+
     <label for="priGender">성별</label>
     <select id="priGender" name="priGender" required>
         <option value="">선택하세요</option>

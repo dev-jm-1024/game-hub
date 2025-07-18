@@ -82,4 +82,20 @@ public class CommentServiceImpl implements CommentService {
         return commentsRepo.findByPosts_PostIdAndCommentActOrderByCreatedAtDesc(postId, 1);
     }
 
+    @Override
+    @Transactional
+    public boolean updateCommentContents(Long commentId, String commentContent) {
+
+        Comments comments = commentsRepo.findById(commentId)
+                .orElseThrow(()->new IllegalArgumentException("댓글이 존재하지 않습니다."));
+
+        // 내용이 같은 경우엔 아무것도 안 함
+        if (comments.getCommentContent().equals(commentContent)) {
+            return false;
+        }
+        comments.changeCommentContent(commentContent);
+
+        return true;
+    }
+
 }

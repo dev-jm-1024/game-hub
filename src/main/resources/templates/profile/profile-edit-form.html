@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>회원정보 수정</title>
@@ -9,19 +9,24 @@
 <body>
 <form id="profile">
     <label for="authUserId">로그인 아이디</label>
-    <input type="text" id="authUserId" name="authUserId" th:value="${userAuth.getAuthUserId()}">
+    <input type="text" id="authUserId" name="authUserId"
+           th:value="${userDetailsDto.userAuth.authUserId}" />
 
     <label for="priEmail">이메일</label>
-    <input type="email" id="priEmail" name="priEmail" th:value="${userPrivate.getPriEmail()}">
+    <input type="email" id="priEmail" name="priEmail"
+           th:value="${userDetailsDto.userPrivate.priEmail}" />
 
     <label for="priBirth">생일</label>
-    <input type="text" id="priBirth" name="priBirth" th:value="${userPrivate.getPriBirth()}">
+    <input type="text" id="priBirth" name="priBirth"
+           th:value="${#temporals.format(userDetailsDto.userPrivate.priBirth, 'yyyy-MM-dd')}" />
 
     <label for="mbNickName">닉네임</label>
-    <input type="text" id="mbNickName" name="mbNickName" th:value="${user.getMbNickname()}">
+    <input type="text" id="mbNickName" name="mbNickName"
+           th:value="${userDetailsDto.user.mbNickname}" />
 
     <label for="mbStatusMessage">상태 메세지</label>
-    <input type="text" id="mbStatusMessage" name="mbStatusMessage" th:value="${user.getMbStatusMessage()}">
+    <input type="text" id="mbStatusMessage" name="mbStatusMessage"
+           th:value="${userDetailsDto.user.mbStatusMessage}" />
 
     <div>
         <label for="files">프로필 사진</label>
@@ -31,12 +36,12 @@
     <label for="priGender">성별</label>
     <select id="priGender" name="priGender" required>
         <option value="">선택하세요</option>
-        <option value="M" th:selected="${userPrivate.getPriGender() == 'M'}">남성</option>
-        <option value="F" th:selected="${userPrivate.getPriGender() == 'F'}">여성</option>
+        <option value="M" th:selected="${userDetailsDto.userPrivate.priGender == 'M'}">남성</option>
+        <option value="F" th:selected="${userDetailsDto.userPrivate.priGender == 'F'}">여성</option>
     </select>
 
-    <input type="hidden" name="mbId" th:value="${user.getMbId()}">
-    <input type="hidden" name="mbProfileUrl" th:value="${user.getMbProfileUrl()}">
+    <input type="hidden" name="mbId" th:value="${userDetailsDto.user.mbId}" />
+    <input type="image" name="mbProfileUrl" th:value="${userDetailsDto.user.mbProfileUrl}" />
 
     <button type="submit">update</button>
 </form>

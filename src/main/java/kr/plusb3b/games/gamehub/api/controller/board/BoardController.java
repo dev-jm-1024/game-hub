@@ -74,17 +74,4 @@ public class BoardController {
         return "board/common/post-list";
     }
 
-
-
-
-    // GlobalExceptionHandler
-    @ExceptionHandler(PostsNotFoundException.class)
-    public String handlePostNotFound(PostsNotFoundException ex, Model model) {
-        model.addAttribute("errorMessage", "해당 게시글이 존재하지 않습니다.");
-        model.addAttribute("errorCode", "ERR-POST-404");
-        return "error/post-not-found"; // 사용자 친화적인 에러 페이지
-    }
-
-
-
 }

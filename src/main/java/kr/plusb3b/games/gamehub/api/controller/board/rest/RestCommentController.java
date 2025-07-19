@@ -91,6 +91,6 @@ public class RestCommentController {
     }
 
 
-    //싫어요, 좋아요 증가 로직
+    //싫어요, 좋아요 증가 로직 구현 예정
 
 }

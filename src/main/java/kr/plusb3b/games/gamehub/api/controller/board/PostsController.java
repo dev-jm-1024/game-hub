@@ -15,10 +15,7 @@ import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -118,4 +115,11 @@ public class PostsController {
         return "/board/common/post-edit-form";
     }
 
+    // GlobalExceptionHandler
+    @ExceptionHandler(PostsNotFoundException.class)
+    public String handlePostNotFound(PostsNotFoundException ex, Model model) {
+        model.addAttribute("errorMessage", "해당 게시글이 존재하지 않습니다.");
+        model.addAttribute("errorCode", "ERR-POST-404");
+        return "error/post-not-found"; // 사용자 친화적인 에러 페이지
+    }
 }

@@ -12,8 +12,11 @@ import kr.plusb3b.games.gamehub.domain.user.repository.UserPrivateRepository;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import kr.plusb3b.games.gamehub.security.SnowflakeIdGenerator;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -41,20 +44,29 @@ public class UserJoinServiceImpl implements UserJoinService {
 
     @Override
     public void signupUser(UserSignupDto usd, UserSignupVO usv) {
+        try {
+            // prod 값으로 역할 구분
+            User tempUser = new User();
+            User.Role role = tempUser.prodDifferentiate(usd.getProd());
 
-        User ddd = new User();
-        User.Role role = ddd.prodDifferentiate(usd.getProd());
+            // 각 엔티티 조립
+            User user = buildUser(usd, usv, role);
+            UserAuth userAuth = buildUserAuth(usd, user);
+            UserPrivate userPrivate = buildUserPrivate(usd, user);
 
-        User user = buildUser(usd, usv, role);
-        UserAuth userAuth = buildUserAuth(usd, user);
-        UserPrivate userPrivate = buildUserPrivate(usd, user);
+            // 저장
+            userRepo.save(user);
+            userAuthRepo.save(userAuth);
+            userPrivateRepo.save(userPrivate);
 
-        userRepo.save(user);
-        userAuthRepo.save(userAuth);
-        userPrivateRepo.save(userPrivate);
-
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 회원가입 요청입니다: " + e.getMessage());
+        } catch (DataIntegrityViolationException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "중복된 사용자 정보가 존재합니다.");
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "회원가입 중 알 수 없는 오류가 발생했습니다.");
+        }
     }
-
     @Override
     public boolean isLogin(HttpServletRequest request) {
 

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController
+//@RestController
 public class RestUserSignupController {
 
 //    private final UserJoinService userJoinService;
@@ -38,6 +38,6 @@ public class RestUserSignupController {
 //                    .body("회원가입 실패: " + e.getMessage());
 //        }
 //    }
-
+//
 
 }

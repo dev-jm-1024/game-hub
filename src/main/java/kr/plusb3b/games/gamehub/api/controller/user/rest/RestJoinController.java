@@ -1,14 +1,18 @@
 package kr.plusb3b.games.gamehub.api.controller.user.rest;
 
 import kr.plusb3b.games.gamehub.domain.user.dto.RequestUserJoinInfoDto;
+import kr.plusb3b.games.gamehub.domain.user.dto.UserSignupDto;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserAuth;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserPrivate;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserAuthRepository;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserPrivateRepository;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
+import kr.plusb3b.games.gamehub.domain.user.service.UserJoinService;
+import kr.plusb3b.games.gamehub.domain.user.vo.UserSignupVO;
 import kr.plusb3b.games.gamehub.security.SnowflakeIdGenerator;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,83 +24,27 @@ import java.time.LocalDateTime;
 //@RequestMapping("/game-hub/api/v1")
 public class RestJoinController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder; //추가
-    private final UserAuthRepository userAuthRepository;
-    private final UserPrivateRepository userPrivateRepository;
+    private final UserJoinService userJoinService;
 
-
-    public RestJoinController(UserRepository userRepository,
-                              PasswordEncoder passwordEncoder,
-                              UserAuthRepository userAuthRepository,
-                              UserPrivateRepository userPrivateRepository
-
-                             ) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.userAuthRepository = userAuthRepository;
-        this.userPrivateRepository = userPrivateRepository;
-
+    public RestJoinController(UserJoinService userJoinService) {
+        this.userJoinService = userJoinService;
     }
 
     //new API Path : /users
     //past API path: /join/new
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<?> registerUser(@RequestBody RequestUserJoinInfoDto requestUserJoinInfoDto) {
-
-        String empty="";
-        LocalDateTime noTime = null;
-        LocalDateTime now = LocalDateTime.now();
-
-        User user = new User();
-        SnowflakeIdGenerator snowflake = new SnowflakeIdGenerator(0,0);
-        user.setMbId(snowflake.nextId()); //mbId 생성
-        user.setMbNickname(requestUserJoinInfoDto.getMbNickname()); //mbNickname 생성
-
-        //이 부분 변경해야함
-        user.setMbProfileUrl(empty); //프로필 url 생성
-
-        //이 부분 변경해야함
-        user.setMbStatusMessage(empty); //상태 메세지 생성
-        user.setMbJoinDate(now); //가입날짜
-        user.setMbAct(1); //mbAct 1로
-
-
-        String prod = requestUserJoinInfoDto.getProd();
-        if(prod.equals("generalUser")){
-            user.setMbRole(User.Role.ROLE_USER);
-        }else{
-            user.setMbRole(User.Role.ROLE_PRODUCER);
-        }
-
-        user.setMbReportCnt(0);
-
-        UserAuth userAuth = new UserAuth();
-        userAuth.setUser(user);
-        userAuth.setAuthUserId(requestUserJoinInfoDto.getAuthUserId());
-        userAuth.setAuthPassword(passwordEncoder.encode(
-                requestUserJoinInfoDto.getAuthPassword())
-        );
-        userAuth.setAuthLastLogin(noTime);
-
-        UserPrivate userPrivate = new UserPrivate();
-        SnowflakeIdGenerator snowflakeIdGenerator = new SnowflakeIdGenerator(1,0);
-        userPrivate.setPriMbId(snowflakeIdGenerator.nextId());
-        userPrivate.setUser(user);
-        userPrivate.setPriEmail(requestUserJoinInfoDto.getPriEmail());
-        userPrivate.setPriBirth(requestUserJoinInfoDto.getPriBirth());
-        userPrivate.setPriGender(requestUserJoinInfoDto.getPriGender());
-
+    public ResponseEntity<?> registerUser(@RequestBody UserSignupDto userSignupDto) {
         try {
-            userRepository.save(user);
-            userAuthRepository.save(userAuth);
-            userPrivateRepository.save(userPrivate);
+            userJoinService.signupUser(userSignupDto, new UserSignupVO()); // VO는 내부에서 채워질 수 있도록 빈 객체 전달
             return ResponseEntity.ok("회원가입 성공");
-        } catch (DataAccessException e) {
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("잘못된 요청: " + e.getMessage());
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 존재하는 사용자입니다.");
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("회원가입 실패: " + e.getMessage());
         }
-
     }
 }

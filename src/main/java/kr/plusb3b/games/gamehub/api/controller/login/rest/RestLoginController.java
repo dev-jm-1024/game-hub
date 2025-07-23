@@ -5,80 +5,91 @@ import jakarta.servlet.http.HttpServletResponse;
 import kr.plusb3b.games.gamehub.application.user.UserLoginServiceImpl;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserAuth;
-import kr.plusb3b.games.gamehub.domain.user.entity.UserLoginInfo;
-import kr.plusb3b.games.gamehub.security.jwt.JwtProvider;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserAuthRepository;
-import kr.plusb3b.games.gamehub.domain.user.repository.UserLoginInfoRepository;
-import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
-import kr.plusb3b.games.gamehub.security.SnowflakeIdGenerator;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 @RestController
-//@RequestMapping("/api/v1/auth")
-//@RequestMapping("/game-hub/api/v1/login") : past API path
-public class RestLoginController
-{
+@RequestMapping("/api/v1")
+public class RestLoginController {
+
     @Value("${app.api.version}")
     private String appApiVersion;
 
     private final UserAuthRepository userAuthRepo;
-    private final UserLoginServiceImpl userLoginServiceImpl;
+    private final UserLoginServiceImpl userLoginService;
 
-    public RestLoginController(UserAuthRepository userAuthRepo, UserLoginServiceImpl userLoginServiceImpl) {
+    public RestLoginController(UserAuthRepository userAuthRepo, UserLoginServiceImpl userLoginService) {
         this.userAuthRepo = userAuthRepo;
-        this.userLoginServiceImpl = userLoginServiceImpl;
+        this.userLoginService = userLoginService;
     }
 
-    //로그인 체크
+    // 로그인 체크
     @PostMapping("/login")
-    //new API Path : /login
-    //checkLogin(@RequestBody LoginCheckDto loginCheckDto)
     public ResponseEntity<?> checkLogin(@RequestParam("authUserId") String authUserId,
-                                        @RequestParam("authPassword") String authPassword,HttpServletRequest request,
+                                        @RequestParam("authPassword") String authPassword,
+                                        HttpServletRequest request,
                                         HttpServletResponse response) {
-// 유효성 검사: 빈 값
+
+        // 1. 유효성 검사: 빈 값 체크
         if (authUserId == null || authUserId.trim().isEmpty() ||
                 authPassword == null || authPassword.trim().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("아이디 혹은 비밀번호가 누락되었습니다");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("아이디 혹은 비밀번호가 누락되었습니다");
         }
 
-        // 아이디 존재 여부 확인
-        Optional<UserAuth> userAuthOpt = userAuthRepo.findByAuthUserId(authUserId);
+        // 2. 아이디를 통해 DB에 존재하는지 확인
+        Optional<UserAuth> userAuthOpt = userLoginService.findUserAuthByLoginId(authUserId);
         if (userAuthOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("존재하지 않는 아이디입니다");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("아이디가 존재하지 않습니다.");
         }
 
         UserAuth userAuth = userAuthOpt.get();
-        User user = userAuth.getUser();
 
-        // 계정 활성화 여부 확인
-        if (!user.isActivateUser()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("탈퇴된 계정입니다");
+        // 3. 사용자 정보 가져오기
+        Optional<User> userOpt = userLoginService.getUserByAuth(userAuth);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("사용자 정보를 찾을 수 없습니다.");
         }
 
-        // 비밀번호 일치 확인
-        if (!userLoginServiceImpl.isPasswordMatch(userAuth, authPassword)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("비밀번호가 일치하지 않습니다");
+        User user = userOpt.get();
+
+        // 4. 계정의 활성화 상태 확인
+        if (!userLoginService.isUserActivated(user)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("현재 탈퇴된 상태입니다. 관리자에게 문의해주세요.");
         }
 
-        // JWT 토큰 생성 및 쿠키로 설정
-        userLoginServiceImpl.issueJwtCookie(response, userAuth.getAuthUserId());
+        // 5. 비밀번호 검증
+        if (!userLoginService.isPasswordMatch(userAuth, authPassword)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("비밀번호가 일치하지 않습니다.");
+        }
 
-        // 로그인 기록 저장
-        userLoginServiceImpl.saveLoginHistory(user, request);
+        // 6. 로그인 성공 처리
+        try {
+            // JWT 토큰 발급 및 쿠키 설정
+            userLoginService.issueJwtCookie(response, authUserId);
 
-        return ResponseEntity.ok("로그인 성공");
+            // 로그인 기록 저장
+            boolean isLoginHistorySaved = userLoginService.saveLoginHistory(user, request);
+            if (!isLoginHistorySaved) {
+                // 로그인 기록 저장 실패는 로그만 남기고 로그인은 성공으로 처리
+                System.err.println("로그인 기록 저장에 실패했습니다. 사용자 ID: " + authUserId);
+            }
+
+            return ResponseEntity.ok("로그인 성공");
+
+        } catch (Exception e) {
+            System.err.println("로그인 처리 중 오류 발생: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("로그인 처리 중 오류가 발생했습니다.");
+        }
     }
-
-
-
 }

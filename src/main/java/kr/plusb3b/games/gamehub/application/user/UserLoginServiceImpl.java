@@ -65,8 +65,9 @@ public class UserLoginServiceImpl implements UserLoginService {
     @Override
     public void issueJwtCookie(HttpServletResponse response, String loginId) {
         String token = jwtProvider.createToken(loginId);
+        System.out.println("[token]: "+token);
         ResponseCookie cookie = createJwtCookie(token);
-        response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     /** 로그인 기록 저장 */

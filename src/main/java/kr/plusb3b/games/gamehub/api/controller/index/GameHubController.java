@@ -2,12 +2,16 @@ package kr.plusb3b.games.gamehub.api.controller.index;
 
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
 import kr.plusb3b.games.gamehub.domain.board.repository.BoardRepository;
+import kr.plusb3b.games.gamehub.domain.user.entity.User;
+import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import jakarta.servlet.http.HttpServletRequest;
+
 
 import java.util.List;
 
@@ -16,6 +20,8 @@ import java.util.List;
 public class GameHubController {
 
     private final BoardRepository boardRepo;
+    private final AccessControlService access;
+
     @Value("${app.api.version}")
     private String apiVersion;
 
@@ -23,45 +29,35 @@ public class GameHubController {
     private String deactivatePath;
 
 
-    public GameHubController( BoardRepository boardRepo) {
+    public GameHubController( BoardRepository boardRepo, AccessControlService access) {
         this.boardRepo = boardRepo;
+        this.access = access;
     }
 
 
+
     @GetMapping
-    public String showMainPage(Authentication authentication, Model model) {
+    public String showMainPage(HttpServletRequest request, Model model) {
 
-        System.out.println("[Controller] 인증객체: " + authentication);
-
-        // ✅ 로그인 여부 판별 (SecurityContext에 인증 객체 있는지)
-        boolean isMember = authentication != null && authentication.isAuthenticated();
-        System.out.println("isMember: "+isMember);
-
-        // ✅ userId 꺼내기 (현재는 문자열로 저장되어 있음)
-        String userId = isMember ? (String) authentication.getPrincipal() : null;
 
         // (선택) DB에서 userId로 유저 정보 조회하여 닉네임, 프로필 이미지 등 세팅 가능
         String testImageUrl = "https://search.pstatic.net/sunny/?src=https%3A%2F%2Fi.pinimg.com" +
                 "%2Foriginals%2F9f%2F85%2Ffc%2F9f85fc037501419f146f81e5a2ab7a98.jpg" +
                 "&type=sc960_832";
 
-        //게시판 정보 Model에 줘야함
+        model.addAttribute("isAdmin", true); // 추후 권한 분기 처리
+        model.addAttribute("deactivatePath", deactivatePath); // 비활성화 경로
 
-        //1. boardId, boardName 조회
-        List<Board> boardList = boardRepo.findAll();
-        boolean checkBoardListEmpty = boardList.isEmpty();
+        User user = access.getAuthenticatedUser(request);
+        boolean isLoggedIn = (user != null);
 
-        if(!checkBoardListEmpty) {
-            model.addAttribute("boardList", boardList);
+        System.out.println("isLoggedIn : " + isLoggedIn);
+        model.addAttribute("isLoggedIn", isLoggedIn);
+
+        if (isLoggedIn) {
+            model.addAttribute("nickname", user.getMbNickname());
+            model.addAttribute("profileImage", testImageUrl);
         }
-
-
-
-        model.addAttribute("isAdmin", true); // 나중에 권한에 따라 분기 처리 가능
-        model.addAttribute("profileImage", testImageUrl);
-        model.addAttribute("isLoggedIn", isMember);
-        model.addAttribute("nickname", userId); // 일단 userId를 닉네임으로 사용
-        model.addAttribute("deactivatePath", deactivatePath);
 
         return "main-contents/index";
     }

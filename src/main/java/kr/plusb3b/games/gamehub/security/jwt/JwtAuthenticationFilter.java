@@ -61,33 +61,51 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 //        // 8. 다음 필터로 요청 전달
 //        filterChain.doFilter(request, response);
 //    }
-@Override
+    @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+
+        String requestURI = request.getRequestURI();
+        System.out.println("=== JWT 필터 실행 ===");
+        System.out.println("요청 URI: " + requestURI);
 
         String token = null;
 
         // ✅ 쿠키에서 "jwt" 추출
         if (request.getCookies() != null) {
+            System.out.println("쿠키 개수: " + request.getCookies().length);
             for (Cookie cookie : request.getCookies()) {
+                System.out.println("쿠키명: " + cookie.getName() + ", 값: " + cookie.getValue());
                 if (cookie.getName().equals("jwt")) {
                     token = cookie.getValue();
+                    System.out.println("JWT 토큰 발견: " + token);
                 }
             }
+        } else {
+            System.out.println("쿠키가 없습니다.");
         }
 
-        if (token != null && jwtProvider.validateToken(token)) {
-            String userId = jwtProvider.getUserId(token);
+        if (token != null) {
+            boolean isValid = jwtProvider.validateToken(token);
+            System.out.println("토큰 유효성: " + isValid);
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(userId, null, List.of());
+            if (isValid) {
+                String userId = jwtProvider.getUserId(token);
+                System.out.println("추출된 사용자 ID: " + userId);
 
-            SecurityContextHolder.getContext().setAuthentication(auth);
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(userId, null, List.of());
+
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                System.out.println("인증 정보 설정 완료");
+            }
+        } else {
+            System.out.println("JWT 토큰이 없습니다.");
         }
 
+        System.out.println("=== JWT 필터 종료 ===");
         filterChain.doFilter(request, response);
     }
-
 }
 

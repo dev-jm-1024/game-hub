@@ -1,39 +1,38 @@
 package kr.plusb3b.games.gamehub.api.controller.user.rest;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import kr.plusb3b.games.gamehub.domain.user.dto.ChangePasswordDto;
 import kr.plusb3b.games.gamehub.domain.user.dto.RequestUserUpdateDto;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserAuth;
-import kr.plusb3b.games.gamehub.domain.user.entity.UserPrivate;
-import kr.plusb3b.games.gamehub.security.jwt.JwtProvider;
+import kr.plusb3b.games.gamehub.domain.user.service.UserDeleteService;
+import kr.plusb3b.games.gamehub.domain.user.service.UserUpdateService;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserAuthRepository;
-import kr.plusb3b.games.gamehub.domain.user.repository.UserPrivateRepository;
-import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+
+import static org.reflections.Reflections.log;
 
 @RestController
 @RequestMapping("/api/v1")
 public class RestUserController {
 
-    private final UserPrivateRepository userPrivateRepo;
-    private final UserAuthRepository userAuthRepo;
-    private final UserRepository userRepo;
-    private final JwtProvider jwtProvider;
     private final AccessControlService access;
+    private final UserUpdateService userUpdateService;
+    private final UserAuthRepository userAuthRepo;
+    private final UserDeleteService userDeleteService;
 
-    public RestUserController(UserPrivateRepository userPrivateRepo, UserAuthRepository userAuthRepo,
-                              UserRepository userRepo,JwtProvider jwtProvider, AccessControlService access) {
-        this.userPrivateRepo = userPrivateRepo;
-        this.userAuthRepo = userAuthRepo;
-        this.userRepo = userRepo;
-        this.jwtProvider = jwtProvider;
+    public RestUserController(AccessControlService access, UserUpdateService userUpdateService,
+                              UserAuthRepository userAuthRepo, UserDeleteService userDeleteService) {
         this.access = access;
+        this.userUpdateService = userUpdateService;
+        this.userAuthRepo = userAuthRepo;
+        this.userDeleteService = userDeleteService;
     }
 
     @PatchMapping("/user/{mbId}")
@@ -41,135 +40,92 @@ public class RestUserController {
                                         @PathVariable("mbId") Long mbId,
                                         HttpServletRequest request) {
         try {
-            // 1. JWT 쿠키 추출
-            Cookie[] cookies = request.getCookies();
-            String jwt = null;
-            if (cookies != null) {
-                for (Cookie cookie : cookies) {
-                    if ("jwt".equals(cookie.getName())) {
-                        jwt = cookie.getValue();
-                        break;
-                    }
-                }
+            User authUser = access.getAuthenticatedUser(request);
+            boolean realMbId = authUser.getMbId().equals(mbId);
+
+            if (!realMbId) {
+                log.warn("사용자 권한 없음 - 요청 mbId: {}, 로그인 사용자 ID: {}", mbId, authUser.getMbId());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("접근 권한이 없습니다.");
             }
 
-            // 2. JWT 유효성 검사
-            if (jwt == null || !jwtProvider.validateToken(jwt)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
-            }
+            userUpdateService.updateUserProfile(mbId, updateDto);
+            log.info("사용자 정보 업데이트 성공 - 사용자 ID: {}", mbId);
+            return ResponseEntity.ok("사용자 정보가 업데이트되었습니다.");
 
-            // 3. 사용자 인증 및 권한 검사
-            String authUserId = jwtProvider.getUserId(jwt);
-            Optional<UserAuth> userAuthOpt = userAuthRepo.findByAuthUserId(authUserId);
-            if (userAuthOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("사용자를 찾을 수 없습니다.");
-            }
-
-            User user = userAuthOpt.get().getUser();
-            if (!Objects.equals(user.getMbId(), mbId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("권한이 없습니다.");
-            }
-            if (user.getMbAct() == 0) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("탈퇴한 회원입니다.");
-            }
-
-            // 4. 기존 정보 조회
-            Optional<UserAuth> oldUserAuthOpt = userAuthRepo.findByUser_MbId(mbId);
-            Optional<UserPrivate> oldUserPrivateOpt = userPrivateRepo.findUserPrivateByMbId(mbId);
-            if (oldUserAuthOpt.isEmpty() || oldUserPrivateOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("회원 정보가 존재하지 않습니다.");
-            }
-
-            UserAuth oldUserAuth = oldUserAuthOpt.get();
-            UserPrivate oldUserPrivate = oldUserPrivateOpt.get();
-
-            // 5. 병합된 정보 생성
-            RequestUserUpdateDto oldDto = new RequestUserUpdateDto(
-                    oldUserAuth.getAuthUserId(),
-                    oldUserPrivate.getPriEmail(),
-                    oldUserPrivate.getPriBirth(),
-                    user.getMbNickname(),
-                    user.getMbStatusMessage(),
-                    oldUserPrivate.getPriGender(),
-                    user.getMbProfileUrl()
-            );
-
-            RequestUserUpdateDto mergedDto = mergeUserUpdateDto(oldDto, updateDto);
-
-            // 6. 변경사항 없으면 리턴
-            if (mergedDto.equals(oldDto)) {
-                return ResponseEntity.status(HttpStatus.NO_CONTENT).body("변경된 내용이 없습니다.");
-            }
-
-            // 7. DB 업데이트
-            int userResult = userRepo.updateUserByMbId(
-                    mergedDto.getMbNickName(),
-                    mergedDto.getMbProfileUrl(),
-                    mergedDto.getMbStatusMessage(),
-                    mbId
-            );
-
-            int authResult = userAuthRepo.updateUserAuth(
-                    mergedDto.getAuthUserId(),
-                    mbId
-            );
-
-            int privateResult = userPrivateRepo.updateUserPrivate(
-                    mergedDto.getPriBirth(),
-                    mergedDto.getPriEmail(),
-                    mergedDto.getPriGender(),
-                    mbId
-            );
-
-            // 8. 처리 결과
-            if (userResult >= 0 && authResult >= 0 && privateResult >= 0) {
-                return ResponseEntity.ok("회원 정보가 성공적으로 수정되었습니다.");
-            } else {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("일부 정보 수정에 실패했습니다.");
-            }
+        } catch (IllegalArgumentException e) {
+            log.warn("잘못된 요청: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류 발생");
+            log.error("서버 오류로 인해 사용자 정보 업데이트 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("사용자 정보 업데이트 중 오류가 발생했습니다.");
         }
     }
 
-    //아이디 중복 확인해주는 메소드
-    @GetMapping("/user/check-id")
-    public ResponseEntity<?> checkDuplicateUserId(@RequestParam String userId){
+    @PatchMapping("/user/password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordDto changePasswordDto,
+                                            HttpServletRequest request) {
+        try {
+            User user = access.getAuthenticatedUser(request);
+            log.info("비밀번호 변경 요청 - 사용자 ID: {}", user.getMbId());
 
-        if(userId == null || userId.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            userUpdateService.updateUserPassword(
+                    user.getMbId(),
+                    changePasswordDto.getOldPassword(),
+                    changePasswordDto.getNewPassword()
+            );
+
+            log.info("비밀번호 변경 성공 - 사용자 ID: {}", user.getMbId());
+            return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+
+        } catch (IllegalArgumentException e) {
+            log.warn("비밀번호 변경 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
+        } catch (Exception e) {
+            log.error("서버 오류로 인해 비밀번호 변경 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("비밀번호 변경 중 오류가 발생했습니다.");
         }
-
-        Optional<UserAuth> userAuthOpt = userAuthRepo.findByAuthUserId(userId);
-
-
-        if(userAuthOpt.isEmpty()){
-            return ResponseEntity.status(HttpStatus.OK).body("사용 가능한 아이디 입니다!");
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body("존재하는 아이디 입니다!");
-        }
-
     }
 
 
-    private static RequestUserUpdateDto mergeUserUpdateDto(
-            RequestUserUpdateDto oldDto,
-            RequestUserUpdateDto newDto) {
+    @PatchMapping("/user/{mbId}/deactivate")
+    public ResponseEntity<?> deactivateUser(@RequestParam("authUserId")String authUserId,
+                                            @RequestParam("authUserPassword") String authUserPassword,
+                                            HttpServletRequest request) {
 
-        return new RequestUserUpdateDto(
-                newDto.getAuthUserId() != null ? newDto.getAuthUserId() : oldDto.getAuthUserId(),
-                newDto.getPriEmail() != null ? newDto.getPriEmail() : oldDto.getPriEmail(),
-                newDto.getPriBirth() != null ? newDto.getPriBirth() : oldDto.getPriBirth(),
-                newDto.getMbNickName() != null ? newDto.getMbNickName() : oldDto.getMbNickName(),
-                newDto.getMbStatusMessage() != null ? newDto.getMbStatusMessage() : oldDto.getMbStatusMessage(),
-                newDto.getPriGender() != null ? newDto.getPriGender() : oldDto.getPriGender(),
-                newDto.getMbProfileUrl() != null ? newDto.getMbProfileUrl() : oldDto.getMbProfileUrl()
-        );
+        // 1. 필수 입력값 확인
+        if (!StringUtils.hasText(authUserId) || !StringUtils.hasText(authUserPassword)) {
+            return ResponseEntity.badRequest().body("아이디 또는 비밀번호가 누락되었습니다.");
+        }
+
+        // 2. 아이디 유효성 확인
+        Optional<UserAuth> userAuthOpt = userAuthRepo.findByAuthUserId(authUserId);
+        if (userAuthOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("존재하지 않는 아이디입니다.");
+        }
+
+        // 3. 로그인된 사용자 확인
+        User currentUser = access.getAuthenticatedUser(request);
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("로그인이 필요합니다.");
+        }
+
+        try {
+            // 4. 비밀번호 검증 + 탈퇴 처리
+            boolean success = userDeleteService.deactivateUser(currentUser.getMbId(), authUserPassword);
+            if (success) {
+                return ResponseEntity.ok("회원 탈퇴가 완료되었습니다. 30일간 정보가 보관된 후 완전 삭제됩니다.");
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("회원 탈퇴 처리 중 오류가 발생했습니다.");
+            }
+
+        } catch (IllegalArgumentException e) {
+            // 비밀번호 불일치 또는 기타 도메인 예외
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
     }
-
-
-
 }

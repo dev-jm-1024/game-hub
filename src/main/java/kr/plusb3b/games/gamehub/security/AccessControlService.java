@@ -51,7 +51,7 @@ public class AccessControlService {
 
         // 2. JWT 존재 여부 확인
         if (jwt == null || !jwtProvider.validateToken(jwt)) {
-            throw new IllegalStateException("로그인이 필요합니다.");
+            return null;
         }
 
         // 3. JWT에서 사용자 ID 추출

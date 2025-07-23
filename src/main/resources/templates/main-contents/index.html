@@ -58,7 +58,11 @@
 </head>
 <body>
 <!-- 헤더 영역 -->
-<header th:replace="main-contents/header-frag/header :: header"></header>
+<!-- ✅ 로그인 상태 관련 model 값을 header에 넘겨줘야 조건 분기가 정상 동작 -->
+<header th:replace="main-contents/header-frag/header :: header"
+        th:with="isLoggedIn=${isLoggedIn}, nickname=${nickname}, profileImage=${profileImage}, deactivatePath=${deactivatePath}">
+</header>
+
 
 <!-- 네비게이션 영역 -->
 <nav th:replace="main-contents/nav-frag/nav :: nav"></nav>

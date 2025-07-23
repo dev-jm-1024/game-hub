@@ -45,7 +45,7 @@
         </div>
 
         <!-- 로그인 상태일 때 -->
-        <div class="logged-user" th:if="${isLoggedIn}">
+        <div class="logged-user" th:if="${isLoggedIn}" style="z-index: 100;">
             <div class="user-profile">
                 <img th:src="${profileImage}"
                      alt="프로필 이미지"

@@ -21,12 +21,12 @@ public class Comments {
 
     //어떤 게시글의 댓글인지? 외래키임
     @ManyToOne
-    @JoinColumn(name = "postId")
+    @JoinColumn(name = "post_id")
     private Posts posts;
 
     //작성자 아이디 (내부 식별 아이디. 로그인 아이디 아님)
     @ManyToOne
-    @JoinColumn(name="mbId")
+    @JoinColumn(name="mb_id")
     private User user;
 
     //댓글 내용

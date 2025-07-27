@@ -18,19 +18,11 @@ import java.util.Optional;
 @Component
 public class AccessControlService {
 
-    private final UserRepository userRepo;
     private final JwtProvider jwtProvider;
-    private final BoardRepository boardRepo;
-    private final PostsRepository postsRepo;
     private final UserAuthRepository userAuthRepo;
 
-    public AccessControlService(UserRepository userRepo, JwtProvider jwtProvider,
-                                BoardRepository boardRepo, PostsRepository postsRepo,
-                                UserAuthRepository userAuthRepo) {
-        this.userRepo = userRepo;
+    public AccessControlService(JwtProvider jwtProvider, UserAuthRepository userAuthRepo) {
         this.jwtProvider = jwtProvider;
-        this.boardRepo = boardRepo;
-        this.postsRepo = postsRepo;
         this.userAuthRepo = userAuthRepo;
     }
 
@@ -73,30 +65,6 @@ public class AccessControlService {
         }
 
         return user;
-
-
-        //test
     }
 
-    public boolean validateBoardAndPost(String boardId, Long postId) {
-
-        boolean checkBoardId = boardId.isEmpty();
-        boolean checkPostId = postId == null;
-
-        //1차로 boardId, postId 값 검사
-        if(!checkBoardId && !checkPostId){
-
-            try{
-                Optional<Board> optionalBoard = boardRepo.findById(boardId);
-                Optional<Posts> optionalPosts = postsRepo.findById(postId);
-
-                if(optionalBoard.isPresent() || optionalPosts.isPresent()) return true;
-                else{throw new IllegalArgumentException("게시판 혹은 게시물이 존재하지 않음");}
-            }catch(IllegalArgumentException e){
-                e.printStackTrace();
-            }
-        }
-
-        return false;
-    }
 }

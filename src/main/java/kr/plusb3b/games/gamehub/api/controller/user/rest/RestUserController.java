@@ -90,7 +90,7 @@ public class RestUserController {
 
 
     @PatchMapping("/user/{mbId}/deactivate")
-    public ResponseEntity<?> deactivateUser(@RequestParam("authUserId")String authUserId,
+    public ResponseEntity<?> deactivateUserStatus(@RequestParam("authUserId")String authUserId,
                                             @RequestParam("authUserPassword") String authUserPassword,
                                             HttpServletRequest request) {
 

@@ -40,18 +40,18 @@ public class PostsServiceImpl implements PostsService {
 
         User user = access.getAuthenticatedUser(request);
 
-        Posts posts = new Posts(
-                board, user,
+        return postsRepo.save(new Posts(
+                board,
+                user,
                 postRequestDto.getPostTitle(),
                 postRequestDto.getPostContent(),
                 createPostsVO.getViewCount(),
-                LocalDate.now(),
+                LocalDate.now(), //createdAt
                 createPostsVO.getUpdatedAt(),
-                createPostsVO.getPostAct()
+                createPostsVO.getPostAct(),
+                createPostsVO.getImportantAct()
 
-        );
-
-        return postsRepo.save(posts);
+        ));
     }
 
     @Override

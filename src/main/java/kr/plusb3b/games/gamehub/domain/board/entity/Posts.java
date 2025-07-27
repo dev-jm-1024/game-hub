@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Entity
@@ -34,17 +36,22 @@ public class Posts {
     private String postContent; //게시물 내용
 
     private int viewCount; //조회수
+
     private LocalDate createdAt;
     private LocalDate updatedAt;
 
     @Column(name = "post_act")
     private int postAct;
 
+    //게시물 최상단 부분에 올라갈 게시물 활성화 값
+    private int importantAct;
+
     public Posts() {}
 
     //Posts 객체
-    public Posts( Board board, User user, String postTitle, String postContent,
-                 int viewCount, LocalDate createdAt, LocalDate updatedAt, int postAct) {
+    public Posts(Board board, User user, String postTitle,
+                 String postContent, int viewCount, LocalDate createdAt,
+                 LocalDate updatedAt, int postAct, int importantAct) {
         this.board = board;
         this.user = user;
         this.postTitle = postTitle;
@@ -53,7 +60,14 @@ public class Posts {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.postAct = postAct;
+        this.importantAct = importantAct;
     }
+
+    @OneToMany(mappedBy = "posts", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comments> comments = new ArrayList<>();
+
+    @OneToOne(mappedBy = "posts", cascade = CascadeType.ALL, orphanRemoval = true)
+    private PostsReactionCount reactionCount;
 
     //글 제목 작성
     public void createTitle(String title){
@@ -97,6 +111,16 @@ public class Posts {
     //postAct의 값이 1인지 확인해주는 메소드
     public boolean isActivatePosts(){
         return this.postAct == 1;
+    }
+
+    //importantAct 활성화
+    public void changeActivateImportant(){
+        this.importantAct = 1;
+    }
+
+    //importantAct 비활성화
+    public void changeDeactivateImportant(){
+        this.importantAct = 0;
     }
 }
 

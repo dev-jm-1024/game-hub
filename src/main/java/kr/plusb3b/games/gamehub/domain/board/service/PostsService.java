@@ -35,5 +35,9 @@ public interface PostsService {
 
     boolean validatePost(Long postId);
 
+    //게시물 중요도 활성화
+
+    //게시물 중요도 비활성화
+
 }
 

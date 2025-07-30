@@ -1,6 +1,7 @@
 package kr.plusb3b.games.gamehub.domain.board.service;
 
 import jakarta.servlet.http.HttpServletRequest;
+import kr.plusb3b.games.gamehub.domain.board.entity.PostsReactionCount;
 import kr.plusb3b.games.gamehub.domain.board.vo.PostsReactionCountVO;
 
 public interface PostsInteractionService {
@@ -28,4 +29,7 @@ public interface PostsInteractionService {
 
     //조회수 증가
     boolean increaseViewCount(Long postId, HttpServletRequest request);
+
+    //게시물의 좋아요 및 싫어요 등에 대한 정보
+    PostsReactionCount getPostsReactionCount(Long postId);
 }

@@ -13,24 +13,41 @@ import java.time.LocalDate;
 public class UserPostsReaction {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long reactionId;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "mb_id") // 사용자
+    @ManyToOne
+    @JoinColumn(name = "mb_id")
     private User user;
 
-    @ManyToOne(optional = false)
+    @ManyToOne
     @JoinColumn(name = "post_id")
-    private Posts post;
+    private Posts posts;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private ReactionType reactionType; // LIKE, DISLIKE
+    private ReactionType reactionType;
 
-    private LocalDate createdAt = LocalDate.now();
+    @Column(name = "created_at")
+    private LocalDate createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDate.now();
+    }
+
+    // 기본 생성자
+    public UserPostsReaction() {}
+
+    public UserPostsReaction(Long reactionId,User user, Posts posts,
+                             ReactionType reactionType, LocalDate createdAt) {
+        this.reactionId = reactionId;
+        this.user = user;
+        this.posts = posts;
+        this.reactionType = reactionType;
+        this.createdAt = createdAt;
+    }
 
     public enum ReactionType {
-        LIKE, DISLIKE, REPORT
+        LIKE, DISLIKE, REPORT, NONE
     }
 }

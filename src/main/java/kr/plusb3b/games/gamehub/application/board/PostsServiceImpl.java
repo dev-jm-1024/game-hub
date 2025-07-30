@@ -33,25 +33,27 @@ public class PostsServiceImpl implements PostsService {
     }
 
     @Override
-    public Posts createPost(PostRequestDto postRequestDto, CreatePostsVO createPostsVO, String boardId, HttpServletRequest request) {
+    public Posts createPost(PostRequestDto postRequestDto, CreatePostsVO createPostsVO,
+                            String boardId, HttpServletRequest request) {
 
         Board board = boardRepo.findById(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
 
         User user = access.getAuthenticatedUser(request);
 
-        return postsRepo.save(new Posts(
+        Posts posts = new Posts(
                 board,
                 user,
                 postRequestDto.getPostTitle(),
                 postRequestDto.getPostContent(),
                 createPostsVO.getViewCount(),
-                LocalDate.now(), //createdAt
+                LocalDate.now(),
                 createPostsVO.getUpdatedAt(),
                 createPostsVO.getPostAct(),
                 createPostsVO.getImportantAct()
+        );
 
-        ));
+        return postsRepo.save(posts);
     }
 
     @Override

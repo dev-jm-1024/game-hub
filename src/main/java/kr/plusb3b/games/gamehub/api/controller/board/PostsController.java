@@ -5,12 +5,16 @@ import kr.plusb3b.games.gamehub.domain.board.dto.PostsNotFoundException;
 import kr.plusb3b.games.gamehub.domain.board.entity.Comments;
 import kr.plusb3b.games.gamehub.domain.board.entity.PostFiles;
 import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
+import kr.plusb3b.games.gamehub.domain.board.entity.PostsReactionCount;
 import kr.plusb3b.games.gamehub.domain.board.repository.BoardRepository;
 import kr.plusb3b.games.gamehub.domain.board.repository.PostFilesRepository;
 import kr.plusb3b.games.gamehub.domain.board.service.BoardService;
 import kr.plusb3b.games.gamehub.domain.board.service.CommentService;
+import kr.plusb3b.games.gamehub.domain.board.service.PostsInteractionService;
 import kr.plusb3b.games.gamehub.domain.board.service.PostsService;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
+import kr.plusb3b.games.gamehub.domain.user.entity.UserPostsReaction;
+import kr.plusb3b.games.gamehub.domain.user.service.UserInteractionProvider;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.stereotype.Controller;
@@ -25,24 +29,26 @@ import java.util.Optional;
 public class PostsController {
 
     private final PostFilesRepository postFilesRepo;
-    private final BoardService boardService;
     private final PostsService postsService;
     private final AccessControlService access;
-    private final BoardRepository boardRepo;
     private final CommentService commentService;
+    private final UserInteractionProvider userInteractionProvider;
+    private final PostsInteractionService postsInteractionService;
 
-    public PostsController(PostFilesRepository postFilesRepo, BoardService boardService,
-                           PostsService postsService, AccessControlService access, BoardRepository boardRepo,
-                           CommentService commentService) {
+    public PostsController(PostFilesRepository postFilesRepo, PostsService postsService,
+                           AccessControlService access, CommentService commentService,
+                           UserInteractionProvider userInteractionProvider,
+                           PostsInteractionService postsInteractionService) {
+
         this.postFilesRepo = postFilesRepo;
-        this.boardService = boardService;
         this.postsService = postsService;
         this.access = access;
-        this.boardRepo = boardRepo;
         this.commentService = commentService;
+        this.userInteractionProvider = userInteractionProvider;
+        this.postsInteractionService = postsInteractionService;
     }
 
-        //글 작성 페이지 경로 처리
+    //글 작성 페이지 경로 처리
     @GetMapping("/new")
     public String showPostPage(@RequestParam("boardId") String boardId, Model model) {
         model.addAttribute("boardId", boardId);
@@ -85,14 +91,25 @@ public class PostsController {
             else model.addAttribute("isAuthUser", false);
 
 
-            //View 에다가 데이터 전송
+            /**********************View 에다가 데이터 전송**********************/
 
-            //게시물 데이터
+            //1. 게시물 데이터
             model.addAttribute("postsData", posts);
 
+            //2. 사용자의 좋아요나 싫어요 같은 거 눌렀는 지 여부
+            UserPostsReaction.ReactionType reactType =
+                userInteractionProvider.getUserReactionType(posts, user);
+
+            model.addAttribute("reactType", reactType);
+
+            //3. 게시물의 interaction count 데이터
+            PostsReactionCount postsReactionCount =
+                postsInteractionService.getPostsReactionCount(postId);
+
+            model.addAttribute("postsReactionCount", postsReactionCount);
 
 
-            //댓글 데이터
+            //4. 댓글 데이터
             model.addAttribute("commentsList", commentsList);
 
 

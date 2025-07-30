@@ -20,7 +20,7 @@ public class UserAuth {
     private String authUserId; // 로그인 ID
 
     @OneToOne
-    @JoinColumn(name = "mb_Id")
+    @JoinColumn(name = "mb_id")
     private User user;
 
     private String authPassword;

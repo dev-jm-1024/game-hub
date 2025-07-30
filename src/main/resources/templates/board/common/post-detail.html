@@ -6,6 +6,55 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" th:href="@{/board-skin/common-skin/post-skin/css/post-detail.css}">
+    <style>
+        .like-button, .dislike-button {
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+            transition: all 0.3s ease;
+            margin: 0 5px;
+        }
+
+        .like-button:hover {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+
+        .like-button.liked {
+            background-color: #ff6b6b;
+            color: white;
+            border-color: #ff6b6b;
+        }
+
+        .dislike-button:hover {
+            border-color: #6b6bff;
+            color: #6b6bff;
+        }
+
+        .dislike-button.disliked {
+            background-color: #6b6bff;
+            color: white;
+            border-color: #6b6bff;
+        }
+
+        .like-button:disabled, .dislike-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .post-reactions {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .like-count {
+            margin-left: 8px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body class="post-detail-body">
 
@@ -47,6 +96,44 @@
         </div>
     </div>
 
+    <!-- 좋아요 섹션 - reactType과 postsReactionCount 기반으로 초기 상태 설정 -->
+    <div class="post-reactions">
+        <button id="like-button"
+                class="like-button"
+                th:classappend="${reactType != null and reactType.toString() == 'LIKE'} ? 'liked' : ''">
+            <span id="like-icon"
+                  th:text="${reactType != null and reactType.toString() == 'LIKE'} ? '💔' : '❤️'">❤️</span>
+            <span id="like-text"
+                  th:text="${reactType != null and reactType.toString() == 'LIKE'} ? '좋아요 취소' : '좋아요'">좋아요</span>
+            <span id="like-count" class="like-count"
+                  th:text="${postsReactionCount != null ? postsReactionCount.likeCount : 0}">0</span>
+        </button>
+
+        <!-- 싫어요 버튼 (선택사항) -->
+        <button id="dislike-button"
+                class="dislike-button"
+                th:classappend="${reactType != null and reactType.toString() == 'DISLIKE'} ? 'disliked' : ''">
+            <span id="dislike-icon"
+                  th:text="${reactType != null and reactType.toString() == 'DISLIKE'} ? '👍' : '👎'">👎</span>
+            <span id="dislike-text"
+                  th:text="${reactType != null and reactType.toString() == 'DISLIKE'} ? '싫어요 취소' : '싫어요'">싫어요</span>
+            <span id="dislike-count" class="dislike-count"
+                  th:text="${postsReactionCount != null ? postsReactionCount.dislikeCount : 0}">0</span>
+        </button>
+    </div>
+
+    <!-- 전체 반응 통계 (선택사항) -->
+    <div class="reaction-stats" th:if="${postsReactionCount != null}" style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">
+        총 반응: <span th:text="${postsReactionCount.likeCount + postsReactionCount.dislikeCount}">0</span>개
+        (좋아요 <span th:text="${postsReactionCount.likeCount}">0</span>개,
+        싫어요 <span th:text="${postsReactionCount.dislikeCount}">0</span>개)
+    </div>
+
+    <!-- 현재 반응 상태 디버그 표시 (개발 중에만 사용) -->
+    <div class="debug-info" style="font-size: 12px; color: #666; margin: 10px 0;">
+        현재 반응: <span th:text="${reactType != null ? reactType : 'NONE'}">NONE</span>
+    </div>
+
     <div class="post-actions" id="memberForm" th:if="${isAuthUser}">
         <form id="updatePosts" method="get" action="/board/posts/edit" class="action-form">
             <input type="hidden" name="postId" th:value="${postsData.getPostId}">
@@ -67,34 +154,18 @@
 
     <!-- 댓글 입력폼 포함 -->
     <div id="comment-section" class="comment-section">
-        <!-- ✅ 댓글 입력 폼 삽입 (comment-form.html의 form 부분) -->
         <div th:replace="~{board/comment/comment-form :: commentFormFragment}"></div>
-
         <hr class="comment-separator">
-
-        <!-- ✅ 댓글 목록 뷰 삽입 (comment-view.html의 리스트 부분) -->
         <div th:replace="~{board/comment/comment-view :: commentListFragment}"></div>
     </div>
 </div>
 
 <script th:inline="javascript">
-    /* ------------------------------------------------------------------
-     * 방법 1: Thymeleaf에서 직접 CSRF 토큰 주입 (권장)
-     * ------------------------------------------------------------------ */
+    /* CSRF 토큰 설정 */
     const csrfToken = /*[[${_csrf.token}]]*/ '';
     const csrfHeader = /*[[${_csrf.headerName}]]*/ '';
 
-    /* ------------------------------------------------------------------
-     * 방법 2: 쿠키에서 XSRF-TOKEN 값을 읽어오는 함수 (대체 방법)
-     * ------------------------------------------------------------------ */
-    function getCsrfTokenFromCookie() {
-        const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
-        return match ? decodeURIComponent(match[1]) : null;
-    }
-
-    /* ------------------------------------------------------------------
-     * 게시글 삭제(비활성화) – PATCH /api/v1/board/{boardId}/posts/{postId}/deactivate
-     * ------------------------------------------------------------------ */
+    /* 게시글 삭제 로직 */
     document.getElementById('deletePosts').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -107,7 +178,7 @@
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    [csrfHeader]: csrfToken  // Thymeleaf에서 주입된 값 사용
+                    [csrfHeader]: csrfToken
                 },
                 body: new URLSearchParams(new FormData(e.target))
             });
@@ -121,46 +192,110 @@
         }
     });
 
-    /* ------------------------------------------------------------------
-     * 댓글 등록 – POST /api/v1/posts/{postId}/comments
-     * ------------------------------------------------------------------ */
-    // document.getElementById('commentForm').addEventListener('submit', async (e) => {
-    //     e.preventDefault();
-    //
-    //     const form = e.target;
-    //     const formData = new FormData(form);
-    //     const commentText = formData.get("commentContent")?.trim();
-    //
-    //     if (!commentText) {
-    //         alert("댓글 내용을 입력해주세요.");
-    //         return;
-    //     }
-    //
-    //     formData.set("commentContent", commentText); // trim 반영
-    //
-    //     try {
-    //         const postId = formData.get("postId");
-    //
-    //         const res = await fetch(`/api/v1/posts/${postId}/comments`, {
-    //             method: 'POST',
-    //             credentials: 'include',
-    //             headers: {
-    //                 'Content-Type': 'application/x-www-form-urlencoded',
-    //                 [csrfHeader]: csrfToken
-    //             },
-    //             body: new URLSearchParams(formData)
-    //         });
-    //
-    //         if (!res.ok) throw new Error(await res.text());
-    //
-    //         alert("댓글 등록 성공!");
-    //         window.location.reload();
-    //     } catch (err) {
-    //         console.error("댓글 등록 실패:", err);
-    //         alert("댓글 등록 실패: " + err.message);
-    //     }
-    // });
+    /* 좋아요 로직 - reactType과 postsReactionCount 기반으로 수정 */
+    const postId = /*[[${postsData.postId}]]*/ '';
+    const currentReactType = /*[[${reactType}]]*/ 'NONE';
+    const initialLikeCount = /*[[${postsReactionCount != null ? postsReactionCount.likeCount : 0}]]*/ 0;
+    const initialDislikeCount = /*[[${postsReactionCount != null ? postsReactionCount.dislikeCount : 0}]]*/ 0;
 
+    const likeButton = document.getElementById('like-button');
+    const likeIcon = document.getElementById('like-icon');
+    const likeText = document.getElementById('like-text');
+    const likeCountSpan = document.getElementById('like-count');
+
+    const dislikeButton = document.getElementById('dislike-button');
+    const dislikeIcon = document.getElementById('dislike-icon');
+    const dislikeText = document.getElementById('dislike-text');
+    const dislikeCountSpan = document.getElementById('dislike-count');
+
+    // reactType 기반으로 초기 상태 설정
+    let liked = currentReactType === 'LIKE';
+    let disliked = currentReactType === 'DISLIKE';
+    let currentLikeCount = initialLikeCount;
+    let currentDislikeCount = initialDislikeCount;
+
+    console.log('초기 상태 - reactType:', currentReactType, 'liked:', liked, 'disliked:', disliked);
+    console.log('초기 카운트 - like:', currentLikeCount, 'dislike:', currentDislikeCount);
+
+    // 좋아요 버튼 클릭
+    likeButton.addEventListener('click', async () => {
+        likeButton.disabled = true;
+
+        const method = liked ? 'PATCH' : 'POST';
+        const url = `/api/v1/board/posts/${postId}/like`;
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                credentials: 'include',
+                headers: {
+                    [csrfHeader]: csrfToken
+                }
+            });
+
+            const resultText = await res.text();
+
+            if (!res.ok) {
+                throw new Error(resultText || `HTTP ${res.status}`);
+            }
+
+            // 상태 업데이트
+            if (disliked) {
+                // 싫어요 → 좋아요로 변경
+                disliked = false;
+                liked = true;
+                currentDislikeCount--;
+                currentLikeCount++;
+            } else {
+                // 좋아요 토글
+                liked = !liked;
+                currentLikeCount += liked ? 1 : -1;
+            }
+
+            // UI 업데이트
+            updateReactionUI();
+
+            console.log('좋아요 처리 성공:', resultText);
+
+        } catch (err) {
+            console.error('좋아요 처리 실패:', err);
+            alert('좋아요 처리 실패: ' + err.message);
+        } finally {
+            likeButton.disabled = false;
+        }
+    });
+
+    // 싫어요 버튼 클릭 (향후 구현)
+    dislikeButton.addEventListener('click', async () => {
+        console.log('싫어요 기능은 아직 구현되지 않았습니다.');
+        // TODO: 싫어요 API 구현 후 추가
+    });
+
+    function updateReactionUI() {
+        // 좋아요 버튼 업데이트
+        if (liked) {
+            likeButton.classList.add('liked');
+            likeIcon.textContent = '💔';
+            likeText.textContent = '좋아요 취소';
+        } else {
+            likeButton.classList.remove('liked');
+            likeIcon.textContent = '❤️';
+            likeText.textContent = '좋아요';
+        }
+        likeCountSpan.textContent = currentLikeCount;
+
+        // 싫어요 버튼 업데이트
+        if (disliked) {
+            dislikeButton.classList.add('disliked');
+            dislikeIcon.textContent = '👍';
+            dislikeText.textContent = '싫어요 취소';
+        } else {
+            dislikeButton.classList.remove('disliked');
+            dislikeIcon.textContent = '👎';
+            dislikeText.textContent = '싫어요';
+        }
+        dislikeCountSpan.textContent = currentDislikeCount;
+    }
 </script>
 
 <script th:src="@{/board-skin/common-skin/post-skin/js/post-detail.js}"></script>

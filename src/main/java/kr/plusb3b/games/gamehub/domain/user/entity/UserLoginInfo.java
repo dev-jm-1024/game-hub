@@ -16,7 +16,7 @@ public class UserLoginInfo {
 
     //외래키
     @ManyToOne
-    @JoinColumn(name="mbId")
+    @JoinColumn(name="mb_id")
     private User user;
 
     //로그인 기록 고유 아이디

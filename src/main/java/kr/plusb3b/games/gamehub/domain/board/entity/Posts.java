@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.cglib.core.Local;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class Posts {
     private Board board; // 게시판 외래키
 
     @ManyToOne//여러개가 하나를 참조
-    @JoinColumn(name = "mb_Id")
+    @JoinColumn(name = "mb_id")
     private User user; // 작성자 외래키
 
     @NotBlank(message = "제목을 입력하세요")
@@ -48,10 +49,20 @@ public class Posts {
 
     public Posts() {}
 
-    //Posts 객체
-    public Posts(Board board, User user, String postTitle,
-                 String postContent, int viewCount, LocalDate createdAt,
-                 LocalDate updatedAt, int postAct, int importantAct) {
+
+    @OneToMany(mappedBy = "posts", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comments> comments = new ArrayList<>();
+
+    @OneToOne(mappedBy = "posts", cascade = CascadeType.ALL, orphanRemoval = true)
+    private PostsReactionCount reactionCount;
+
+    public Posts(
+            Board board, User user,
+            String postTitle, String postContent,
+            int viewCount,
+            LocalDate createdAt, LocalDate updatedAt,
+            int postAct, int importantAct
+    ){
         this.board = board;
         this.user = user;
         this.postTitle = postTitle;
@@ -62,12 +73,6 @@ public class Posts {
         this.postAct = postAct;
         this.importantAct = importantAct;
     }
-
-    @OneToMany(mappedBy = "posts", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Comments> comments = new ArrayList<>();
-
-    @OneToOne(mappedBy = "posts", cascade = CascadeType.ALL, orphanRemoval = true)
-    private PostsReactionCount reactionCount;
 
     //글 제목 작성
     public void createTitle(String title){

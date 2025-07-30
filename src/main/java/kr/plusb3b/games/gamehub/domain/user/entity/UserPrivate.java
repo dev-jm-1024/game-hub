@@ -20,7 +20,7 @@ public class UserPrivate {
 
     // User와 1:1 매핑, 외래키 + PK 공유
     @OneToOne
-    @JoinColumn(name = "mbId")
+    @JoinColumn(name = "mb_id")
     private User user;
 
     //사용자 이메일

@@ -13,12 +13,13 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "users")
+@Table(name = "user")
 @Getter
 @Setter
 public class User {
 
     @Id
+    @Column(name = "mb_id")
     private Long mbId;
 
     private String mbNickname;

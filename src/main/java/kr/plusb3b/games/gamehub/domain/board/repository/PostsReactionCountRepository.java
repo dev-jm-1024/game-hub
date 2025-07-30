@@ -13,23 +13,23 @@ public interface PostsReactionCountRepository extends JpaRepository<PostsReactio
     @Modifying(clearAutomatically = true)
     @Transactional
     @Query("UPDATE PostsReactionCount pr SET pr.likeCount = pr.likeCount + 1 WHERE pr.posts.postId = :postId")
-    void incrementLikeCountByPostId(@Param("postId") Long postId);
+    int incrementLikeCountByPostId(@Param("postId") Long postId);
 
     // ✅ 좋아요 수 감소
     @Modifying(clearAutomatically = true)
     @Transactional
     @Query("UPDATE PostsReactionCount pr SET pr.likeCount = pr.likeCount - 1 WHERE pr.posts.postId = :postId AND pr.likeCount > 0")
-    void decrementLikeCountByPostId(@Param("postId") Long postId);
+    int decrementLikeCountByPostId(@Param("postId") Long postId);
 
     // ✅ 싫어요 수 증가
     @Modifying(clearAutomatically = true)
     @Transactional
     @Query("UPDATE PostsReactionCount pr SET pr.dislikeCount = pr.dislikeCount + 1 WHERE pr.posts.postId = :postId")
-    void incrementDislikeCountByPostId(@Param("postId") Long postId);
+    int incrementDislikeCountByPostId(@Param("postId") Long postId);
 
     // ✅ 싫어요 수 감소
     @Modifying(clearAutomatically = true)
     @Transactional
     @Query("UPDATE PostsReactionCount pr SET pr.dislikeCount = pr.dislikeCount - 1 WHERE pr.posts.postId = :postId AND pr.dislikeCount > 0")
-    void decrementDislikeCountByPostId(@Param("postId") Long postId);
+    int decrementDislikeCountByPostId(@Param("postId") Long postId);
 }

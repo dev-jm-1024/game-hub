@@ -2,6 +2,7 @@ package kr.plusb3b.games.gamehub.domain.user.entity;
 
 import jakarta.persistence.*;
 import kr.plusb3b.games.gamehub.domain.board.entity.Comments;
+import kr.plusb3b.games.gamehub.domain.board.entity.CommentsReactionCount;
 import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
 import kr.plusb3b.games.gamehub.domain.game.entity.Games;
 import lombok.Getter;
@@ -63,6 +64,12 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserPostsReaction> postReactions = new ArrayList<>();
+
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserCommentsReaction> userCommentsReactionList = new ArrayList<>();
+
+
 
     //여분컬럼1~10
     /*

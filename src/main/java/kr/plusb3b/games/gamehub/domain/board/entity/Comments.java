@@ -3,10 +3,13 @@ package kr.plusb3b.games.gamehub.domain.board.entity;
 
 import jakarta.persistence.*;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
+import kr.plusb3b.games.gamehub.domain.user.entity.UserCommentsReaction;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -43,6 +46,13 @@ public class Comments {
 
     //댓글 활성화 여부
     private int commentAct;
+
+    @OneToOne(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private CommentsReactionCount reactionCount;
+
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserCommentsReaction> reactions = new ArrayList<>();
+
 
     //여분컬럼
     /*

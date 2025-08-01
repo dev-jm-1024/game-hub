@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface CommentService {
 
-    boolean createComment(CreateCommentsVO cvo, RequestCommentDto requestCommentDto, User user);
+    Comments createComment(CreateCommentsVO cvo, RequestCommentDto requestCommentDto, User user);
 
     List<Comments> getComments(String boardId, Long postId);
 

@@ -1,8 +1,10 @@
 package kr.plusb3b.games.gamehub.domain.board.service;
 
 import jakarta.servlet.http.HttpServletRequest;
+import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
 import kr.plusb3b.games.gamehub.domain.board.entity.PostsReactionCount;
 import kr.plusb3b.games.gamehub.domain.board.vo.PostsReactionCountVO;
+import kr.plusb3b.games.gamehub.domain.user.entity.User;
 
 public interface PostsInteractionService {
 
@@ -10,22 +12,22 @@ public interface PostsInteractionService {
     boolean savePostsReactionCount(Long postId, PostsReactionCountVO prcVO);
 
     //좋아요 누르기
-    boolean likePost(Long postId, String authUserId, HttpServletRequest request);
+    boolean likePost(User user, Posts posts);
 
     //좋아요 취소
-    boolean likePostCancel(Long postId, String authUserId, HttpServletRequest request);
+    boolean likePostCancel(User user, Posts posts);
 
     //싫어요
-    boolean dislikePost(Long postId, String authUserId, HttpServletRequest request);
+    boolean dislikePost(User user, Posts posts);
 
     //싫어요 취소
-    boolean dislikePostCancel(Long postId, String authUserId, HttpServletRequest request);
+    boolean dislikePostCancel(User user, Posts posts);
 
     //신고하기
-    boolean reportPost(Long postId, String authUserId, HttpServletRequest request);
+    boolean reportPost(User user, Posts posts);
 
     //신고하기 취소
-    boolean reportPostCancel(Long postId, String authUserId, HttpServletRequest request);
+    boolean reportPostCancel(User user, Posts posts);
 
     //조회수 증가
     boolean increaseViewCount(Long postId, HttpServletRequest request);

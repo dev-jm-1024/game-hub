@@ -2,9 +2,12 @@ package kr.plusb3b.games.gamehub.api.controller.board.rest;
 
 import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.domain.board.dto.RequestCommentDto;
+import kr.plusb3b.games.gamehub.domain.board.entity.Comments;
 import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
 import kr.plusb3b.games.gamehub.domain.board.repository.PostsRepository;
 import kr.plusb3b.games.gamehub.domain.board.service.CommentService;
+import kr.plusb3b.games.gamehub.domain.board.service.CommentsInteractionService;
+import kr.plusb3b.games.gamehub.domain.board.vo.CommentsReactionCountVO;
 import kr.plusb3b.games.gamehub.domain.board.vo.CreateCommentsVO;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
@@ -22,13 +25,13 @@ public class RestCommentController {
 
     private final AccessControlService access;
     private final CommentService commentService;
-    private final PostsRepository postsRepo;
+    private final CommentsInteractionService commentsInteractionService;
 
     public RestCommentController(AccessControlService access, CommentService commentService,
-                                 PostsRepository postsRepo) {
+                                 CommentsInteractionService commentsInteractionService) {
         this.access = access;
         this.commentService = commentService;
-        this.postsRepo = postsRepo;
+        this.commentsInteractionService = commentsInteractionService;
     }
 
     @PostMapping("/posts/{postId}/comments")
@@ -36,28 +39,33 @@ public class RestCommentController {
                                            @PathVariable Long postId,
                                            HttpServletRequest request) {
 
-        // PathVariable의 postId와 RequestBody의 postId 일치 확인
+        // 1. PathVariable과 요청 DTO 간 postId 일치 여부 확인
         if (!postId.equals(requestCommentDto.getPostId())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("경로의 postId와 요청 본문의 postId가 일치하지 않습니다.");
         }
 
         try {
-            // 1. 로그인 사용자 확인
+            // 2. 로그인한 사용자 확인
             User user = access.getAuthenticatedUser(request);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("로그인이 필요합니다.");
             }
 
-            // 2. 댓글 기본 VO는 서비스 내부에서 처리해도 무방
-            boolean result = commentService.createComment(new CreateCommentsVO(), requestCommentDto, user);
-            if (result) {
+            // 3. 댓글 생성
+            Comments savedComment = commentService.createComment(new CreateCommentsVO(), requestCommentDto, user);
+
+            // 4. 댓글 반응 카운트 초기화
+            boolean reactionInitResult = commentsInteractionService
+                    .saveCommentsReactionCount(savedComment.getCommentId(), new CommentsReactionCountVO());
+
+            if (savedComment != null && reactionInitResult) {
                 return ResponseEntity.status(HttpStatus.CREATED)
                         .body("댓글이 성공적으로 등록되었습니다.");
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("댓글 등록에 실패했습니다.");
+                        .body("댓글 등록 또는 반응 초기화에 실패했습니다.");
             }
 
         } catch (DataAccessException dae) {
@@ -70,9 +78,10 @@ public class RestCommentController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("알 수 없는 오류가 발생했습니다.");
+                    .body("알 수 없는 서버 오류가 발생했습니다.");
         }
     }
+
 
     //댓글 내용 업데이트
     @PatchMapping("/posts/{postId}/comments/{commentId}")
@@ -89,8 +98,5 @@ public class RestCommentController {
 
         return ResponseEntity.status(HttpStatus.OK).body("댓글 수정에 성공하였습니다");
     }
-
-
-    //싫어요, 좋아요 증가 로직 구현 예정
 
 }

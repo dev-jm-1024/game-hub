@@ -22,15 +22,13 @@ import java.util.Optional;
 public class PostsInteractionServiceImpl implements PostsInteractionService {
 
     private final PostsRepository postsRepo;
-    private final AccessControlService access;
     private final PostsReactionCountRepository postsReactionCountRepo;
     private final UserPostsReactionRepository userPostsReactionRepo;
 
-    public PostsInteractionServiceImpl(PostsRepository postsRepo, AccessControlService access,
+    public PostsInteractionServiceImpl(PostsRepository postsRepo,
                                        PostsReactionCountRepository postsReactionCountRepo,
                                        UserPostsReactionRepository userPostsReactionRepo) {
         this.postsRepo = postsRepo;
-        this.access = access;
         this.postsReactionCountRepo = postsReactionCountRepo;
         this.userPostsReactionRepo = userPostsReactionRepo;
     }
@@ -54,125 +52,194 @@ public class PostsInteractionServiceImpl implements PostsInteractionService {
 
     @Override
     @Transactional
-    public boolean likePost(Long postId, String authUserId, HttpServletRequest request) {
-
-        // 1. 로그인 확인
-        User user = access.getAuthenticatedUser(request);
-        if (user == null) return false;
-
-        // 2. 게시물 존재 확인
-        Optional<Posts> postOpt = postsRepo.findById(postId);
-        if (postOpt.isEmpty()) return false;
-        Posts post = postOpt.get();
-
-        // 3. 기존 반응 확인
-        Optional<UserPostsReaction> reactOpt = userPostsReactionRepo.findByUserAndPosts(user, post);
-
+    public boolean likePost(User user, Posts posts) {
         try {
+            // 1. 기존의 사용자 reaction 확인
+            Optional<UserPostsReaction> reactOpt = userPostsReactionRepo.findByUserAndPosts(user, posts);
+
             if (reactOpt.isPresent()) {
                 UserPostsReaction reaction = reactOpt.get();
 
                 if (reaction.getReactionType() == UserPostsReaction.ReactionType.LIKE) {
-                    // 이미 좋아요 → 좋아요 취소
+                    // 케이스 1: 이미 좋아요 → 좋아요 취소
+                    System.out.println("좋아요 취소 처리 시작");
+
                     userPostsReactionRepo.delete(reaction);
-                    postsReactionCountRepo.decrementLikeCountByPostId(postId);
+                    userPostsReactionRepo.flush(); // 즉시 DB 반영
+
+                    int decrementResult = postsReactionCountRepo.decrementLikeCountByPostId(posts.getPostId());
+                    System.out.println("좋아요 카운트 감소 결과: " + decrementResult);
+
+                    return true;
 
                 } else if (reaction.getReactionType() == UserPostsReaction.ReactionType.DISLIKE) {
-                    // 싫어요 → 좋아요로 변경
-                    postsReactionCountRepo.decrementDislikeCountByPostId(postId);
+                    // 케이스 2: 싫어요 → 좋아요로 변경
+                    System.out.println("싫어요→좋아요 변경 처리 시작");
+
+                    // 싫어요 카운트 감소
+                    int decrementDislikeResult = postsReactionCountRepo.decrementDislikeCountByPostId(posts.getPostId());
+                    System.out.println("싫어요 카운트 감소 결과: " + decrementDislikeResult);
+
+                    // 반응 타입 변경
                     reaction.setReactionType(UserPostsReaction.ReactionType.LIKE);
-                    userPostsReactionRepo.save(reaction); // 저장 추가
-                    postsReactionCountRepo.incrementLikeCountByPostId(postId);
+                    userPostsReactionRepo.save(reaction);
+                    userPostsReactionRepo.flush();
+
+                    // 좋아요 카운트 증가
+                    int incrementLikeResult = postsReactionCountRepo.incrementLikeCountByPostId(posts.getPostId());
+                    System.out.println("좋아요 카운트 증가 결과: " + incrementLikeResult);
+
+                    return true;
                 }
-
-            } else {
-                // 처음 좋아요
-                SnowflakeIdGenerator sf = new SnowflakeIdGenerator(0, 0);
-                Long reactionId = sf.nextId();
-
-                UserPostsReaction newReaction = new UserPostsReaction(
-                        reactionId,
-                        user,
-                        post,
-                        UserPostsReaction.ReactionType.LIKE,
-                        LocalDate.now()
-                );
-
-                UserPostsReaction saved = userPostsReactionRepo.save(newReaction);
-                userPostsReactionRepo.flush(); // 강제로 DB에 즉시 반영
-                System.out.println("저장 성공! ID: " + saved.getReactionId());
-
-                postsReactionCountRepo.incrementLikeCountByPostId(postId);
             }
+
+            // 케이스 3: 반응이 없는 경우 → 새로운 좋아요 등록
+            System.out.println("새로운 좋아요 등록 처리 시작");
+
+            // 좋아요 카운트 증가
+            int incrementResult = postsReactionCountRepo.incrementLikeCountByPostId(posts.getPostId());
+            System.out.println("좋아요 카운트 증가 결과: " + incrementResult);
+
+            if (incrementResult == 0) {
+                System.out.println("좋아요 카운트 증가 실패");
+                return false;
+            }
+
+            // 새로운 반응 기록 생성
+            SnowflakeIdGenerator sf = new SnowflakeIdGenerator(0, 1);
+            Long reactionId = sf.nextId();
+
+            UserPostsReaction newReaction = new UserPostsReaction(
+                    reactionId,
+                    user,
+                    posts,
+                    UserPostsReaction.ReactionType.LIKE,
+                    LocalDate.now()
+            );
+
+            UserPostsReaction savedReaction = userPostsReactionRepo.save(newReaction);
+            userPostsReactionRepo.flush();
+
+            if (savedReaction == null) {
+                System.out.println("사용자 반응 저장 실패");
+                return false;
+            }
+
+            System.out.println("새로운 좋아요 등록 성공! ID: " + savedReaction.getReactionId());
+            return true;
+
         } catch (Exception e) {
             System.out.println("좋아요 처리 실패: " + e.getMessage());
             e.printStackTrace();
-            throw e; // 트랜잭션 롤백
+            throw e;
         }
-
-        return true;
     }
 
     @Override
     @Transactional
-    public boolean likePostCancel(Long postId, String authUserId, HttpServletRequest request) {
+    public boolean dislikePost(User user, Posts posts) {
+        try {
+            // 1. 기존의 사용자 reaction 확인
+            Optional<UserPostsReaction> reactOpt = userPostsReactionRepo.findByUserAndPosts(user, posts);
 
-        // 1. 로그인 사용자 확인
-        User user = access.getAuthenticatedUser(request);
-        if (user == null) return false;
+            if (reactOpt.isPresent()) {
+                UserPostsReaction reaction = reactOpt.get();
 
-        // 2. 로그인 ID 검증
-        boolean checkAuthUserId = user.getUserAuth().getAuthUserId().equals(authUserId);
-        if (!checkAuthUserId) return false;
+                if (reaction.getReactionType() == UserPostsReaction.ReactionType.DISLIKE) {
+                    // 케이스 1: 이미 싫어요 → 싫어요 취소
+                    System.out.println("싫어요 취소 처리 시작");
 
-        // 3. 게시글 존재 여부 확인
-        Posts post = postsRepo.findById(postId).orElse(null);
-        if (post == null) return false;
-
-        // 4. 해당 유저가 좋아요 눌렀는지 확인
-        Optional<UserPostsReaction> reactionOpt =
-                userPostsReactionRepo.findByUserAndPosts(user, post);
-
-        // 해당 사용자가 interaction 기록 있는지 확인하기
-        if (reactionOpt.isPresent()) { // 기존에 사용자가 interaction가 있는 경우
-            UserPostsReaction reaction = reactionOpt.get();
-
-            // 좋아요 기록이 있으면 삭제해야함
-            if (reaction.getReactionType().equals(UserPostsReaction.ReactionType.LIKE)) {
-                try {
                     userPostsReactionRepo.delete(reaction);
-                    postsReactionCountRepo.decrementLikeCountByPostId(postId);
-                    return true; // 좋아요 취소 성공
-                } catch (Exception e) {
-                    System.out.println("좋아요 취소 실패: " + e.getMessage());
-                    e.printStackTrace();
-                    throw e; // 트랜잭션 롤백
+                    userPostsReactionRepo.flush();
+
+                    int decrementResult = postsReactionCountRepo.decrementDislikeCountByPostId(posts.getPostId());
+                    System.out.println("싫어요 카운트 감소 결과: " + decrementResult);
+
+                    return true;
+
+                } else if (reaction.getReactionType() == UserPostsReaction.ReactionType.LIKE) {
+                    // 케이스 2: 좋아요 → 싫어요로 변경
+                    System.out.println("좋아요→싫어요 변경 처리 시작");
+
+                    // 좋아요 카운트 감소
+                    int decrementLikeResult = postsReactionCountRepo.decrementLikeCountByPostId(posts.getPostId());
+                    System.out.println("좋아요 카운트 감소 결과: " + decrementLikeResult);
+
+                    // 반응 타입 변경
+                    reaction.setReactionType(UserPostsReaction.ReactionType.DISLIKE);
+                    userPostsReactionRepo.save(reaction);
+                    userPostsReactionRepo.flush();
+
+                    // 싫어요 카운트 증가
+                    int incrementDislikeResult = postsReactionCountRepo.incrementDislikeCountByPostId(posts.getPostId());
+                    System.out.println("싫어요 카운트 증가 결과: " + incrementDislikeResult);
+
+                    return true;
                 }
             }
-            // 싫어요나 다른 반응이 있는 경우는 좋아요 취소 대상이 아니므로 false 반환
+
+            // 케이스 3: 반응이 없는 경우 → 새로운 싫어요 등록
+            System.out.println("새로운 싫어요 등록 처리 시작");
+
+            // 싫어요 카운트 증가
+            int incrementResult = postsReactionCountRepo.incrementDislikeCountByPostId(posts.getPostId());
+            System.out.println("싫어요 카운트 증가 결과: " + incrementResult);
+
+            if (incrementResult == 0) {
+                System.out.println("싫어요 카운트 증가 실패");
+                return false;
+            }
+
+            // 새로운 반응 기록 생성
+            SnowflakeIdGenerator sf = new SnowflakeIdGenerator(0, 1);
+            Long reactionId = sf.nextId();
+
+            UserPostsReaction newReaction = new UserPostsReaction(
+                    reactionId,
+                    user,
+                    posts,
+                    UserPostsReaction.ReactionType.DISLIKE,
+                    LocalDate.now()
+            );
+
+            UserPostsReaction savedReaction = userPostsReactionRepo.save(newReaction);
+            userPostsReactionRepo.flush();
+
+            if (savedReaction == null) {
+                System.out.println("사용자 반응 저장 실패");
+                return false;
+            }
+
+            System.out.println("새로운 싫어요 등록 성공! ID: " + savedReaction.getReactionId());
+            return true;
+
+        } catch (Exception e) {
+            System.out.println("싫어요 처리 실패: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-        // 반응 기록이 없거나 좋아요가 아닌 경우
-        return false;
-    }
-
-
-    @Override
-    public boolean dislikePost(Long postId, String authUserId, HttpServletRequest request) {
-        return false;
     }
 
     @Override
-    public boolean dislikePostCancel(Long postId, String authUserId, HttpServletRequest request) {
+    @Transactional
+    public boolean likePostCancel(User user, Posts posts) {
+        // likePost()에서 토글 처리하므로 동일하게 호출
+        return likePost(user, posts);
+    }
+
+    @Override
+    @Transactional
+    public boolean dislikePostCancel(User user, Posts posts) {
+        // dislikePost()에서 토글 처리하므로 동일하게 호출
+        return dislikePost(user, posts);
+    }
+    @Override
+    public boolean reportPost(User user, Posts posts) {
         return false;
     }
 
     @Override
-    public boolean reportPost(Long postId, String authUserId, HttpServletRequest request) {
-        return false;
-    }
-
-    @Override
-    public boolean reportPostCancel(Long postId, String authUserId, HttpServletRequest request) {
+    public boolean reportPostCancel(User user, Posts posts) {
         return false;
     }
 

@@ -30,35 +30,5 @@ public class PostsReactionCount {
         this.dislikeCount = dislikeCount;
         this.reportCount = reportCount;
     }
-
-    // 좋아요 증가
-    public void increaseLikeCount() {
-        this.likeCount++;
-    }
-
-    // 좋아요 감소
-    public void decreaseLikeCount() {
-        if (this.likeCount > 0) this.likeCount--;
-    }
-
-    // 싫어요 증가
-    public void increaseDislikeCount() {
-        this.dislikeCount++;
-    }
-
-    // 싫어요 감소
-    public void decreaseDislikeCount() {
-        if (this.dislikeCount > 0) this.dislikeCount--;
-    }
-
-    // 신고 증가
-    public void increaseReportCount() {
-        this.reportCount++;
-    }
-
-    // 신고 감소
-    public void decreaseReportCount() {
-        if (this.reportCount > 0) this.reportCount--;
-    }
 }
 

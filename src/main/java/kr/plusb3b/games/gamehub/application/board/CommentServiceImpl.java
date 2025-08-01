@@ -35,19 +35,14 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public boolean createComment(CreateCommentsVO cvo, RequestCommentDto requestCommentDto, User user) {
+    public Comments createComment(CreateCommentsVO cvo, RequestCommentDto requestCommentDto, User user) {
 
-        // 1. 댓글 ID 생성 -- 필요없음. 자동생성임
-//        SnowflakeIdGenerator sf = new SnowflakeIdGenerator(0, 0);
-//        Long commentId = sf.nextId();
-
-        // 2. 게시글 조회
+        // 1. 게시글 조회
         Posts post = postsRepo.findById(requestCommentDto.getPostId())
                 .orElseThrow(() -> new IllegalArgumentException("해당 게시글을 찾을 수 없습니다."));
 
-        // 3. 댓글 엔티티 생성
+        // 2. 댓글 엔티티 생성
         Comments comment = new Comments(
-                //commentId,
                 post,
                 user,
                 requestCommentDto.getCommentContent(),
@@ -58,11 +53,10 @@ public class CommentServiceImpl implements CommentService {
                 cvo.getCommentAct()
         );
 
-        // 4. 저장
-        commentsRepo.save(comment);
-
-        return true; // 저장 성공 시 true 반환
+        // 3. 저장 및 반환
+        return commentsRepo.save(comment);
     }
+
 
     @Override
     @Transactional(readOnly = true)

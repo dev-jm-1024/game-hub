@@ -1,22 +1,33 @@
 package kr.plusb3b.games.gamehub.domain.board.service;
 
+import kr.plusb3b.games.gamehub.domain.board.entity.Comments;
+import kr.plusb3b.games.gamehub.domain.board.entity.CommentsReactionCount;
+import kr.plusb3b.games.gamehub.domain.board.vo.CommentsReactionCountVO;
+import kr.plusb3b.games.gamehub.domain.user.entity.User;
+
 public interface CommentsInteractionService {
 
-    //좋아요 누르기
-    void likeComment(Long commentId, Long authUserId);
+    // CommentsReactionCount 객체 조립 및 삽입
+    boolean saveCommentsReactionCount(Long commentId, CommentsReactionCountVO crcVO);
 
-    //좋아요 취소
-    void likeCommentCancel(Long commentId, Long authUserId);
+    // 좋아요 누르기
+    boolean likeComment(User user, Comments comment);
 
-    //싫어요
-    void dislikeComment(Long commentId, Long authUserId);
+    // 좋아요 취소
+    boolean likeCommentCancel(User user, Comments comment);
 
-    //싫어요 취소
-    void dislikeCommentCancel(Long commentId, Long authUserId);
+    // 싫어요 누르기
+    boolean dislikeComment(User user, Comments comment);
 
-    //신고하기
-    void reportComment(Long commentId, Long authUserId);
+    // 싫어요 취소
+    boolean dislikeCommentCancel(User user, Comments comment);
 
-    //신고하기 취소
-    void reportCommentCancel(Long commentId, Long authUserId);
+    // 댓글 신고하기
+    boolean reportComment(User user, Comments comment);
+
+    // 댓글 신고 취소
+    boolean reportCommentCancel(User user, Comments comment);
+
+    // 댓글 리액션 카운트 정보 조회
+    CommentsReactionCount getCommentsReactionCount(Long commentId);
 }

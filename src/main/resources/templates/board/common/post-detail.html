@@ -6,6 +6,21 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" th:href="@{/board-skin/common-skin/post-skin/css/post-detail.css}">
+
+    <!-- 서버 데이터를 JavaScript에 전달하는 스크립트 (중요!) -->
+    <script th:inline="javascript">
+        // 전역 변수로 서버 데이터 설정
+        window.postDetailData = {
+            postId: /*[[${postsData.postId}]]*/ null,
+            reactType: /*[[${reactType}]]*/ 'NONE',
+            likeCount: /*[[${postsReactionCount != null ? postsReactionCount.likeCount : 0}]]*/ 0,
+            dislikeCount: /*[[${postsReactionCount != null ? postsReactionCount.dislikeCount : 0}]]*/ 0,
+            isLoggedIn: /*[[${reactType != null or isAuthUser != null}]]*/ false
+        };
+
+        console.log('서버 데이터 로드됨:', window.postDetailData);
+    </script>
+
     <style>
         .like-button, .dislike-button {
             padding: 8px 16px;
@@ -50,14 +65,33 @@
             text-align: center;
         }
 
-        .like-count {
+        .like-count, .dislike-count {
             margin-left: 8px;
             font-weight: bold;
+        }
+
+        .login-message {
+            text-align: center;
+            margin: 20px 0;
+            color: #666;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .login-message a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .login-message a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body class="post-detail-body">
 
+<!-- 기존 HTML 구조는 그대로 유지 -->
 <div class="post-detail-container">
     <div class="post-header">
         <h1 class="post-title" th:text="${postsData.getPostTitle()}">게시글 제목</h1>
@@ -96,11 +130,12 @@
         </div>
     </div>
 
-    <!-- 좋아요 섹션 - reactType과 postsReactionCount 기반으로 초기 상태 설정 -->
-    <div class="post-reactions">
+    <!-- 로그인 사용자용 좋아요/싫어요 섹션 -->
+    <div class="post-reactions" th:if="${reactType != null or isAuthUser != null}">
         <button id="like-button"
                 class="like-button"
-                th:classappend="${reactType != null and reactType.toString() == 'LIKE'} ? 'liked' : ''">
+                th:classappend="${reactType != null and reactType.toString() == 'LIKE'} ? 'liked' : ''"
+                aria-label="좋아요 버튼">
             <span id="like-icon"
                   th:text="${reactType != null and reactType.toString() == 'LIKE'} ? '💔' : '❤️'">❤️</span>
             <span id="like-text"
@@ -109,10 +144,10 @@
                   th:text="${postsReactionCount != null ? postsReactionCount.likeCount : 0}">0</span>
         </button>
 
-        <!-- 싫어요 버튼 (선택사항) -->
         <button id="dislike-button"
                 class="dislike-button"
-                th:classappend="${reactType != null and reactType.toString() == 'DISLIKE'} ? 'disliked' : ''">
+                th:classappend="${reactType != null and reactType.toString() == 'DISLIKE'} ? 'disliked' : ''"
+                aria-label="싫어요 버튼">
             <span id="dislike-icon"
                   th:text="${reactType != null and reactType.toString() == 'DISLIKE'} ? '👍' : '👎'">👎</span>
             <span id="dislike-text"
@@ -122,16 +157,16 @@
         </button>
     </div>
 
-    <!-- 전체 반응 통계 (선택사항) -->
+    <!-- 비로그인 사용자용 메시지 -->
+    <div class="login-message" th:unless="${reactType != null or isAuthUser != null}">
+        <p>좋아요/싫어요를 누르려면 <a href="/login">로그인</a>이 필요합니다.</p>
+    </div>
+
+    <!-- 전체 반응 통계 -->
     <div class="reaction-stats" th:if="${postsReactionCount != null}" style="text-align: center; margin: 10px 0; font-size: 14px; color: #666;">
         총 반응: <span th:text="${postsReactionCount.likeCount + postsReactionCount.dislikeCount}">0</span>개
         (좋아요 <span th:text="${postsReactionCount.likeCount}">0</span>개,
         싫어요 <span th:text="${postsReactionCount.dislikeCount}">0</span>개)
-    </div>
-
-    <!-- 현재 반응 상태 디버그 표시 (개발 중에만 사용) -->
-    <div class="debug-info" style="font-size: 12px; color: #666; margin: 10px 0;">
-        현재 반응: <span th:text="${reactType != null ? reactType : 'NONE'}">NONE</span>
     </div>
 
     <div class="post-actions" id="memberForm" th:if="${isAuthUser}">
@@ -159,144 +194,6 @@
         <div th:replace="~{board/comment/comment-view :: commentListFragment}"></div>
     </div>
 </div>
-
-<script th:inline="javascript">
-    /* CSRF 토큰 설정 */
-    const csrfToken = /*[[${_csrf.token}]]*/ '';
-    const csrfHeader = /*[[${_csrf.headerName}]]*/ '';
-
-    /* 게시글 삭제 로직 */
-    document.getElementById('deletePosts').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const boardId = e.target.querySelector('input[name="boardId"]').value;
-        const postId  = e.target.querySelector('input[name="postId"]').value;
-
-        try {
-            const res = await fetch(`/api/v1/board/${boardId}/posts/${postId}/deactivate`, {
-                method: 'PATCH',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    [csrfHeader]: csrfToken
-                },
-                body: new URLSearchParams(new FormData(e.target))
-            });
-
-            if (!res.ok) throw new Error(await res.text() || res.status);
-            alert('삭제 성공');
-            window.location.href = '/board';
-        } catch (err) {
-            console.error('삭제 실패:', err);
-            alert('삭제 실패: ' + err.message);
-        }
-    });
-
-    /* 좋아요 로직 - reactType과 postsReactionCount 기반으로 수정 */
-    const postId = /*[[${postsData.postId}]]*/ '';
-    const currentReactType = /*[[${reactType}]]*/ 'NONE';
-    const initialLikeCount = /*[[${postsReactionCount != null ? postsReactionCount.likeCount : 0}]]*/ 0;
-    const initialDislikeCount = /*[[${postsReactionCount != null ? postsReactionCount.dislikeCount : 0}]]*/ 0;
-
-    const likeButton = document.getElementById('like-button');
-    const likeIcon = document.getElementById('like-icon');
-    const likeText = document.getElementById('like-text');
-    const likeCountSpan = document.getElementById('like-count');
-
-    const dislikeButton = document.getElementById('dislike-button');
-    const dislikeIcon = document.getElementById('dislike-icon');
-    const dislikeText = document.getElementById('dislike-text');
-    const dislikeCountSpan = document.getElementById('dislike-count');
-
-    // reactType 기반으로 초기 상태 설정
-    let liked = currentReactType === 'LIKE';
-    let disliked = currentReactType === 'DISLIKE';
-    let currentLikeCount = initialLikeCount;
-    let currentDislikeCount = initialDislikeCount;
-
-    console.log('초기 상태 - reactType:', currentReactType, 'liked:', liked, 'disliked:', disliked);
-    console.log('초기 카운트 - like:', currentLikeCount, 'dislike:', currentDislikeCount);
-
-    // 좋아요 버튼 클릭
-    likeButton.addEventListener('click', async () => {
-        likeButton.disabled = true;
-
-        const method = liked ? 'PATCH' : 'POST';
-        const url = `/api/v1/board/posts/${postId}/like`;
-
-        try {
-            const res = await fetch(url, {
-                method: method,
-                credentials: 'include',
-                headers: {
-                    [csrfHeader]: csrfToken
-                }
-            });
-
-            const resultText = await res.text();
-
-            if (!res.ok) {
-                throw new Error(resultText || `HTTP ${res.status}`);
-            }
-
-            // 상태 업데이트
-            if (disliked) {
-                // 싫어요 → 좋아요로 변경
-                disliked = false;
-                liked = true;
-                currentDislikeCount--;
-                currentLikeCount++;
-            } else {
-                // 좋아요 토글
-                liked = !liked;
-                currentLikeCount += liked ? 1 : -1;
-            }
-
-            // UI 업데이트
-            updateReactionUI();
-
-            console.log('좋아요 처리 성공:', resultText);
-
-        } catch (err) {
-            console.error('좋아요 처리 실패:', err);
-            alert('좋아요 처리 실패: ' + err.message);
-        } finally {
-            likeButton.disabled = false;
-        }
-    });
-
-    // 싫어요 버튼 클릭 (향후 구현)
-    dislikeButton.addEventListener('click', async () => {
-        console.log('싫어요 기능은 아직 구현되지 않았습니다.');
-        // TODO: 싫어요 API 구현 후 추가
-    });
-
-    function updateReactionUI() {
-        // 좋아요 버튼 업데이트
-        if (liked) {
-            likeButton.classList.add('liked');
-            likeIcon.textContent = '💔';
-            likeText.textContent = '좋아요 취소';
-        } else {
-            likeButton.classList.remove('liked');
-            likeIcon.textContent = '❤️';
-            likeText.textContent = '좋아요';
-        }
-        likeCountSpan.textContent = currentLikeCount;
-
-        // 싫어요 버튼 업데이트
-        if (disliked) {
-            dislikeButton.classList.add('disliked');
-            dislikeIcon.textContent = '👍';
-            dislikeText.textContent = '싫어요 취소';
-        } else {
-            dislikeButton.classList.remove('disliked');
-            dislikeIcon.textContent = '👎';
-            dislikeText.textContent = '싫어요';
-        }
-        dislikeCountSpan.textContent = currentDislikeCount;
-    }
-</script>
 
 <script th:src="@{/board-skin/common-skin/post-skin/js/post-detail.js}"></script>
 </body>

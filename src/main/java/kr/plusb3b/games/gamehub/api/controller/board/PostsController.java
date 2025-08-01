@@ -2,17 +2,12 @@ package kr.plusb3b.games.gamehub.api.controller.board;
 
 import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.domain.board.dto.PostsNotFoundException;
-import kr.plusb3b.games.gamehub.domain.board.entity.Comments;
-import kr.plusb3b.games.gamehub.domain.board.entity.PostFiles;
-import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
-import kr.plusb3b.games.gamehub.domain.board.entity.PostsReactionCount;
+import kr.plusb3b.games.gamehub.domain.board.entity.*;
 import kr.plusb3b.games.gamehub.domain.board.repository.BoardRepository;
 import kr.plusb3b.games.gamehub.domain.board.repository.PostFilesRepository;
-import kr.plusb3b.games.gamehub.domain.board.service.BoardService;
-import kr.plusb3b.games.gamehub.domain.board.service.CommentService;
-import kr.plusb3b.games.gamehub.domain.board.service.PostsInteractionService;
-import kr.plusb3b.games.gamehub.domain.board.service.PostsService;
+import kr.plusb3b.games.gamehub.domain.board.service.*;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
+import kr.plusb3b.games.gamehub.domain.user.entity.UserCommentsReaction;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserPostsReaction;
 import kr.plusb3b.games.gamehub.domain.user.service.UserInteractionProvider;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
@@ -21,7 +16,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Controller
@@ -34,11 +31,14 @@ public class PostsController {
     private final CommentService commentService;
     private final UserInteractionProvider userInteractionProvider;
     private final PostsInteractionService postsInteractionService;
+    private final CommentsInteractionService commentsInteractionService;
+
 
     public PostsController(PostFilesRepository postFilesRepo, PostsService postsService,
                            AccessControlService access, CommentService commentService,
                            UserInteractionProvider userInteractionProvider,
-                           PostsInteractionService postsInteractionService) {
+                           PostsInteractionService postsInteractionService,
+                           CommentsInteractionService commentsInteractionService) {
 
         this.postFilesRepo = postFilesRepo;
         this.postsService = postsService;
@@ -46,6 +46,7 @@ public class PostsController {
         this.commentService = commentService;
         this.userInteractionProvider = userInteractionProvider;
         this.postsInteractionService = postsInteractionService;
+        this.commentsInteractionService = commentsInteractionService;
     }
 
     //글 작성 페이지 경로 처리
@@ -98,7 +99,7 @@ public class PostsController {
 
             //2. 사용자의 좋아요나 싫어요 같은 거 눌렀는 지 여부
             UserPostsReaction.ReactionType reactType =
-                userInteractionProvider.getUserReactionType(posts, user);
+                userInteractionProvider.getUserPostsReactionType(posts, user);
 
             model.addAttribute("reactType", reactType);
 
@@ -109,8 +110,28 @@ public class PostsController {
             model.addAttribute("postsReactionCount", postsReactionCount);
 
 
-            //4. 댓글 데이터
+            // 4. 댓글 목록
             model.addAttribute("commentsList", commentsList);
+
+            // 4.1 댓글별 리액션 카운트
+            Map<Long, CommentsReactionCount> commentReactionMap = new HashMap<>();
+            for (Comments comment : commentsList) {
+                CommentsReactionCount crc = commentsInteractionService.getCommentsReactionCount(comment.getCommentId());
+                commentReactionMap.put(comment.getCommentId(), crc);
+            }
+            model.addAttribute("commentReactionMap", commentReactionMap);
+
+            // 4.2 로그인 유저가 남긴 댓글별 반응 정보
+            Map<Long, UserCommentsReaction.ReactionType> userCommentReactionMap = new HashMap<>();
+            for (Comments comment : commentsList) {
+                UserCommentsReaction.ReactionType reactionType =
+                        userInteractionProvider.getUserCommentsReactionType(comment, user);
+                userCommentReactionMap.put(comment.getCommentId(), reactionType);
+            }
+            model.addAttribute("userCommentReactionMap", userCommentReactionMap);
+
+
+
 
 
         }catch (AuthenticationCredentialsNotFoundException e) {

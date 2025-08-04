@@ -180,6 +180,51 @@ public class RestPostsInteractionController {
         }
     }
 
+    // 신고 등록: PATCH /api/v1/board/posts/{postId}/reactions/report
+    @PatchMapping("/{postId}/reactions/report")
+    public ResponseEntity<?> reportPost(@PathVariable("postId") Long postId,
+                                        HttpServletRequest request) {
+
+        // 1. 로그인 확인
+        User user = access.getAuthenticatedUser(request);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("로그인이 필요합니다");
+        }
+
+        // 2. 게시물 존재 확인
+        Optional<Posts> postsOpt = postsRepo.findById(postId);
+        if (postsOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("게시물이 존재하지 않습니다");
+        }
+
+        Posts posts = postsOpt.get();
+
+        // 3. 자신의 게시물 신고 방지
+        if (user.getMbId().equals(posts.getUser().getMbId())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("자신의 게시물은 신고할 수 없습니다");
+        }
+
+        // 4. 신고 처리
+        try {
+            boolean result = postInteract.reportPost(user, posts);
+
+            if (result) {
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body("신고가 접수되었습니다");
+            } else {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("이미 신고한 게시물입니다");
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("서버 오류가 발생했습니다");
+        }
+    }
+
     // 게시물 반응 조회: GET /api/v1/board/posts/{postId}/reactions
     @GetMapping("/{postId}/reactions")
     public ResponseEntity<?> getPostReactions(@PathVariable("postId") Long postId) {

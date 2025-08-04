@@ -32,4 +32,10 @@ public interface PostsReactionCountRepository extends JpaRepository<PostsReactio
     @Transactional
     @Query("UPDATE PostsReactionCount pr SET pr.dislikeCount = pr.dislikeCount - 1 WHERE pr.posts.postId = :postId AND pr.dislikeCount > 0")
     int decrementDislikeCountByPostId(@Param("postId") Long postId);
+
+    // ✅ 신고횟수 증가
+    @Modifying(clearAutomatically = true)
+    @Transactional
+    @Query("UPDATE PostsReactionCount pr SET pr.reportCount = pr.reportCount + 1 WHERE pr.posts.postId = :postId")
+    int incrementReportCountByPostId(@Param("postId") Long postId);
 }

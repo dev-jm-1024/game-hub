@@ -7,6 +7,8 @@ import java.time.LocalDate;
 @Getter
 public class SummaryPostDto {
 
+    private String boardId;
+    private Long postId;
     private String author;
     private String title;
     private LocalDate createdAt;
@@ -14,7 +16,10 @@ public class SummaryPostDto {
 
     public SummaryPostDto() {}
 
-    public SummaryPostDto(String author, String title, LocalDate createdAt) {
+    public SummaryPostDto(String boardId, Long postId, String author,
+                          String title, LocalDate createdAt) {
+        this.boardId = boardId;
+        this.postId = postId;
         this.author = author;
         this.title = title;
         this.createdAt = createdAt;

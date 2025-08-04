@@ -11,7 +11,7 @@ import java.util.Objects;
 public class RequestUserUpdateDto {
 
     private String authUserId; //로그인 아이디
-//    private String authPassword; //로그인 비밀번호
+    //    private String authPassword; //로그인 비밀번호
     private String priEmail; //이메일
     private LocalDate priBirth; //사용자 생일
     private String mbNickName; //사용자 닉네임
@@ -30,6 +30,19 @@ public class RequestUserUpdateDto {
         this.mbStatusMessage = mbStatusMessage;
         this.priGender = priGender;
         this.mbProfileUrl = mbProfileUrl;
+    }
+
+    @Override
+    public String toString() {
+        return "RequestUserUpdateDto{" +
+                "authUserId='" + authUserId + '\'' +
+                ", priEmail='" + priEmail + '\'' +
+                ", priBirth=" + priBirth +
+                ", mbNickName='" + mbNickName + '\'' +
+                ", mbStatusMessage='" + mbStatusMessage + '\'' +
+                ", priGender='" + priGender + '\'' +
+                ", mbProfileUrl='" + mbProfileUrl + '\'' +
+                '}';
     }
 
     @Override

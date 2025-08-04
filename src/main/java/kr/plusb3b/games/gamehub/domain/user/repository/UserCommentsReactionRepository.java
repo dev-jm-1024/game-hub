@@ -14,13 +14,13 @@ import java.util.Optional;
 public interface UserCommentsReactionRepository extends JpaRepository<UserCommentsReaction, Long> {
 
     // ✅ 유저가 댓글에 남긴 반응 조회
-    Optional<UserCommentsReaction> findByUserAndComments(User user, Comments comments);
+    Optional<UserCommentsReaction> findByUserAndComment(User user, Comments comment);
 
     // ✅ 유저의 댓글 반응 수정 (LIKE, DISLIKE, REPORT 등)
     @Modifying(clearAutomatically = true)
     @Transactional
     @Query("UPDATE UserCommentsReaction ucr SET ucr.reactionType = :reactionType " +
-            "WHERE ucr.comments.commentId = :commentId AND ucr.user.mbId = :userId")
+            "WHERE ucr.comment.commentId = :commentId AND ucr.user.mbId = :userId")
     int updateReactionTypeByCommentIdAndUserId(
             @Param("commentId") Long commentId,
             @Param("userId") Long userId,

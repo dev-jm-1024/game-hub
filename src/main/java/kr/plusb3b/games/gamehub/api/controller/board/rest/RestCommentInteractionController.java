@@ -196,4 +196,49 @@ public class RestCommentInteractionController {
                     .body("서버 오류가 발생했습니다");
         }
     }
+
+    // 댓글 신고: PATCH /api/v1/board/posts/comments/{commentId}/reactions/report
+    @PatchMapping("/{commentId}/reactions/report")
+    public ResponseEntity<?> reportComment(@PathVariable("commentId") Long commentId,
+                                           HttpServletRequest request) {
+
+        // 1. 로그인 확인
+        User user = access.getAuthenticatedUser(request);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("로그인이 필요합니다");
+        }
+
+        // 2. 댓글 존재 확인
+        Optional<Comments> commentsOpt = commentsRepo.findById(commentId);
+        if (commentsOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("댓글이 존재하지 않습니다");
+        }
+
+        Comments comment = commentsOpt.get();
+
+        // 3. 자신의 댓글 신고 방지
+        if (user.getMbId().equals(comment.getUser().getMbId())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("자신의 댓글은 신고할 수 없습니다");
+        }
+
+        // 4. 댓글 신고 처리
+        try {
+            boolean result = commentsInteract.reportComment(user, comment);
+
+            if (result) {
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body("댓글 신고가 접수되었습니다");
+            } else {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("이미 신고한 댓글입니다");
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("서버 오류가 발생했습니다");
+        }
+    }
 }

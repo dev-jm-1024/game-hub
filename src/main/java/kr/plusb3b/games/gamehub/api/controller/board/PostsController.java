@@ -76,7 +76,6 @@ public class PostsController {
         model.addAttribute("hasPostFile", postFilesOpt.isPresent());
 
         //해당 게시물의 댓글 가져오기
-
         List<Comments> commentsList = commentService.getComments(boardId, postId);
 
         try{
@@ -99,21 +98,24 @@ public class PostsController {
 
             //2. 사용자의 좋아요나 싫어요 같은 거 눌렀는 지 여부
             UserPostsReaction.ReactionType reactType =
-                userInteractionProvider.getUserPostsReactionType(posts, user);
+                    userInteractionProvider.getUserPostsReactionType(posts, user);
 
             model.addAttribute("reactType", reactType);
 
             //3. 게시물의 interaction count 데이터
             PostsReactionCount postsReactionCount =
-                postsInteractionService.getPostsReactionCount(postId);
+                    postsInteractionService.getPostsReactionCount(postId);
 
             model.addAttribute("postsReactionCount", postsReactionCount);
 
+            //4. 사용자가 해당 게시물을 신고했는지 여부 확인
+            boolean isUserReported = userInteractionProvider.getUserPostsReportReactionType(posts, user);
+            model.addAttribute("isUserReported", isUserReported);
 
-            // 4. 댓글 목록
+            // 5. 댓글 목록
             model.addAttribute("commentsList", commentsList);
 
-            // 4.1 댓글별 리액션 카운트
+            // 5.1 댓글별 리액션 카운트
             Map<Long, CommentsReactionCount> commentReactionMap = new HashMap<>();
             for (Comments comment : commentsList) {
                 CommentsReactionCount crc = commentsInteractionService.getCommentsReactionCount(comment.getCommentId());
@@ -121,7 +123,7 @@ public class PostsController {
             }
             model.addAttribute("commentReactionMap", commentReactionMap);
 
-            // 4.2 로그인 유저가 남긴 댓글별 반응 정보
+            // 5.2 로그인 유저가 남긴 댓글별 반응 정보
             Map<Long, UserCommentsReaction.ReactionType> userCommentReactionMap = new HashMap<>();
             for (Comments comment : commentsList) {
                 UserCommentsReaction.ReactionType reactionType =
@@ -130,18 +132,20 @@ public class PostsController {
             }
             model.addAttribute("userCommentReactionMap", userCommentReactionMap);
 
-
-
-
+            // 5.3 로그인 유저가 신고한 댓글별 신고 여부 정보 (추가)
+            Map<Long, Boolean> userCommentReportMap = new HashMap<>();
+            for (Comments comment : commentsList) {
+                boolean isCommentReported = userInteractionProvider.getUserCommentsReportReactionType(comment, user);
+                userCommentReportMap.put(comment.getCommentId(), isCommentReported);
+            }
+            model.addAttribute("userCommentReportMap", userCommentReportMap);
 
         }catch (AuthenticationCredentialsNotFoundException e) {
             e.printStackTrace();
         }
 
-
         return "board/common/post-detail";
     }
-
     @GetMapping("/posts/edit")
     public String showPostsEditPage(@RequestParam("postId") Long postId,
                                     @RequestParam("boardId") String boardId,

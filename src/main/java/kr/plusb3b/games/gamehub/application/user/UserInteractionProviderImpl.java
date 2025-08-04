@@ -38,15 +38,41 @@ public class UserInteractionProviderImpl implements UserInteractionProvider {
         }
     }
 
+    @Override
+    public boolean getUserPostsReportReactionType(Posts posts, User user) {
+        Optional<UserPostsReaction> reactionOpt = userPostsReactionRepo.findByUserAndPosts(user, posts);
+
+        if(reactionOpt.isPresent()) {
+            if(reactionOpt.get().getReactionType() == UserPostsReaction.ReactionType.REPORT) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     //댓글 관련 로직 적어야함
     @Override
     public UserCommentsReaction.ReactionType getUserCommentsReactionType(Comments comments, User user) {
-        Optional<UserCommentsReaction> reactionOpt = userCommentsReactionRepo.findByUserAndComments(user, comments);
+        Optional<UserCommentsReaction> reactionOpt = userCommentsReactionRepo.findByUserAndComment(user, comments);
 
         if(reactionOpt.isPresent()) {
             return reactionOpt.get().getReactionType();
         }else{
             return UserCommentsReaction.ReactionType.NONE;
         }
+    }
+
+    @Override
+    public boolean getUserCommentsReportReactionType(Comments comments, User user) {
+        Optional<UserCommentsReaction> reactionOpt = userCommentsReactionRepo.findByUserAndComment(user, comments);
+
+        if(reactionOpt.isPresent()) {
+            if(reactionOpt.get().getReactionType().equals(UserCommentsReaction.ReactionType.REPORT)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

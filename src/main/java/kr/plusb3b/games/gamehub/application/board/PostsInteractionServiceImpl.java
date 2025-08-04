@@ -8,10 +8,11 @@ import kr.plusb3b.games.gamehub.domain.board.service.PostsInteractionService;
 import kr.plusb3b.games.gamehub.domain.board.vo.PostsReactionCountVO;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserPostsReaction;
+import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
+import kr.plusb3b.games.gamehub.domain.user.service.UserInteractionProvider;
 import kr.plusb3b.games.gamehub.security.SnowflakeIdGenerator;
 import org.springframework.transaction.annotation.Transactional;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserPostsReactionRepository;
-import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.stereotype.Service;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -24,13 +25,19 @@ public class PostsInteractionServiceImpl implements PostsInteractionService {
     private final PostsRepository postsRepo;
     private final PostsReactionCountRepository postsReactionCountRepo;
     private final UserPostsReactionRepository userPostsReactionRepo;
+    private final UserInteractionProvider userInteractionProvider;
+    private final UserRepository userRepo;
 
     public PostsInteractionServiceImpl(PostsRepository postsRepo,
                                        PostsReactionCountRepository postsReactionCountRepo,
-                                       UserPostsReactionRepository userPostsReactionRepo) {
+                                       UserPostsReactionRepository userPostsReactionRepo,
+                                       UserInteractionProvider userInteractionProvider,
+                                       UserRepository userRepo) {
         this.postsRepo = postsRepo;
         this.postsReactionCountRepo = postsReactionCountRepo;
         this.userPostsReactionRepo = userPostsReactionRepo;
+        this.userInteractionProvider = userInteractionProvider;
+        this.userRepo = userRepo;
     }
 
     @Override
@@ -233,11 +240,71 @@ public class PostsInteractionServiceImpl implements PostsInteractionService {
         // dislikePost()에서 토글 처리하므로 동일하게 호출
         return dislikePost(user, posts);
     }
-    @Override
-    public boolean reportPost(User user, Posts posts) {
-        return false;
-    }
 
+    @Override
+    @Transactional
+    public boolean reportPost(User user, Posts posts) {
+        try {
+            // 1. 자신의 게시물을 신고하는 것을 방지
+            if (user.getMbId().equals(posts.getUser().getMbId())) {
+                System.out.println("자신의 게시물은 신고할 수 없습니다.");
+                return false;
+            }
+
+            // 2. 사용자가 해당 게시물을 이미 신고했는지 확인
+            boolean isUserReported = userInteractionProvider.getUserPostsReportReactionType(posts, user);
+
+            if (isUserReported) {
+                System.out.println("이미 신고한 게시물입니다.");
+                return false; // 이미 신고한 게시물인 경우 false 반환
+            }
+
+            // 3. 게시물의 신고 카운트 증가
+            int result1 = postsReactionCountRepo.incrementReportCountByPostId(posts.getPostId());
+            System.out.println("게시물 신고 카운트 증가 결과: " + result1);
+
+            if (result1 == 0) {
+                System.out.println("게시물 신고 카운트 증가 실패");
+                return false;
+            }
+
+            // 4. 게시물 작성자의 신고 받은 횟수 증가 (posts.getUser()가 작성자)
+            User postAuthor = posts.getUser();
+            postAuthor.increaseReportCnt(); // User 엔티티의 메서드 사용
+            userRepo.save(postAuthor);
+            userRepo.flush();
+
+            System.out.println("게시물 작성자 신고 횟수 증가 완료");
+
+            // 5. 사용자의 신고 기록 추가
+            SnowflakeIdGenerator sf = new SnowflakeIdGenerator(0, 1);
+            Long reactionId = sf.nextId();
+
+            UserPostsReaction reportReaction = new UserPostsReaction(
+                    reactionId,
+                    user,
+                    posts,
+                    UserPostsReaction.ReactionType.REPORT,
+                    LocalDate.now()
+            );
+
+            UserPostsReaction savedReaction = userPostsReactionRepo.save(reportReaction);
+            userPostsReactionRepo.flush();
+
+            if (savedReaction == null) {
+                System.out.println("사용자 신고 기록 저장 실패");
+                return false;
+            }
+
+            System.out.println("신고 처리 성공! 신고 기록 ID: " + savedReaction.getReactionId());
+            return true;
+
+        } catch (Exception e) {
+            System.out.println("신고 처리 실패: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // @Transactional에 의해 롤백됨
+        }
+    }
     @Override
     public boolean reportPostCancel(User user, Posts posts) {
         return false;

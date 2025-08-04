@@ -76,6 +76,8 @@ public class PostsServiceImpl implements PostsService {
         List<SummaryPostDto> result = postsRepo.findByBoard_BoardId(boardId).stream()
                 .filter(Posts::isActivatePosts)
                 .map(post -> new SummaryPostDto(
+                        post.getBoard().getBoardId(),
+                        post.getPostId(),
                         post.getUser().getMbNickname(),
                         post.getPostTitle(),
                         post.getCreatedAt()

@@ -31,8 +31,11 @@ public class UserSignupDto {
     //사용자 성별
     private String priGender;
 
-    //사용자 상태 메시지 추가
     //사용자 프로필 URL 추가
+    //private String mbProfileUrl;
+
+    //사용자 상태 메시지 추가
+    private String mbStatusMessage;
 
     //사용자 역할(권한)
     private User.Role mbRole;

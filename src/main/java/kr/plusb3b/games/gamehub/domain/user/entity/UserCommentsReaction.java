@@ -22,7 +22,7 @@ public class UserCommentsReaction {
 
     @ManyToOne
     @JoinColumn(name = "comment_id")
-    private Comments comments;
+    private Comments comment;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -36,10 +36,10 @@ public class UserCommentsReaction {
 
     public UserCommentsReaction() {}
 
-    public UserCommentsReaction(Long reactionId, User user, Comments comments, ReactionType reactionType, LocalDate createdAt) {
+    public UserCommentsReaction(Long reactionId, User user, Comments comment, ReactionType reactionType, LocalDate createdAt) {
         this.reactionId = reactionId;
         this.user = user;
-        this.comments = comments;
+        this.comment = comment;
         this.reactionType = reactionType;
         this.createdAt = createdAt;
     }

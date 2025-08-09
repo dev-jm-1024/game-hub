@@ -34,14 +34,18 @@ public class FileUpload {
     public Map<String, String> getFileUrlAndType(List<MultipartFile> fileData) {
         Map<String, String> resultMap = new HashMap<>();
 
-        // ✅ null 또는 빈 리스트인 경우 바로 리턴
+        // null 또는 빈 리스트인 경우 바로 리턴
         if (fileData == null || fileData.isEmpty()) {
             return resultMap;
         }
 
-
         for (MultipartFile file : fileData) {
             try {
+                // 빈 파일 건너뛰기
+                if (file.isEmpty()) {
+                    continue;
+                }
+
                 // 원본 파일명 확인 및 기본 이름 설정
                 String originalFilename = file.getOriginalFilename();
                 String extension = "";
@@ -81,11 +85,81 @@ public class FileUpload {
 
             } catch (IOException e) {
                 // 업로드 중 오류 발생 시 로깅
-                System.err.println("[Cloudinary Upload Error] 파일 업로드 실패");
+                System.err.println("[Cloudinary Upload Error] 파일 업로드 실패: " + file.getOriginalFilename());
                 e.printStackTrace();
             }
         }
 
         return resultMap;
+    }
+
+    /**
+     * 프로필 이미지 전용 업로드 메서드
+     * - profile-image-folder preset 사용 (자동으로 profile-images/ 폴더에 저장됨)
+     * - public_id는 preset에서 자동 생성 (파일명 기반 + unique suffix)
+     *
+     * @param profileFile 프로필 이미지 파일
+     * @return 업로드된 프로필 이미지 URL
+     */
+    public String uploadProfileImage(MultipartFile profileFile) {
+        if (profileFile == null || profileFile.isEmpty()) {
+            throw new IllegalArgumentException("업로드할 프로필 이미지가 없습니다.");
+        }
+
+        try {
+            // 이미지 파일 검증
+            String contentType = profileFile.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new IllegalArgumentException("프로필 사진은 이미지 파일만 업로드 가능합니다.");
+            }
+
+            // 파일 크기 제한 (5MB)
+            long maxSize = 5 * 1024 * 1024;
+            if (profileFile.getSize() > maxSize) {
+                throw new IllegalArgumentException("프로필 사진 크기는 5MB를 초과할 수 없습니다.");
+            }
+
+            // 프로필 이미지 전용 preset 사용
+            // preset에서 이미 profile-images/ 폴더와 public_id 자동생성이 설정되어 있음
+            Map<String, Object> uploadOptions = ObjectUtils.asMap(
+                    "upload_preset", "profile-image-folder", // 새로 만든 프로필 전용 preset
+                    "resource_type", "image"
+            );
+
+            Map uploadResult = cloudinary.uploader().upload(profileFile.getBytes(), uploadOptions);
+            String fileUrl = (String) uploadResult.get("secure_url");
+
+            System.out.println("[Profile Image Upload Success] " + profileFile.getOriginalFilename() + " -> " + fileUrl);
+            return fileUrl;
+
+        } catch (IOException e) {
+            System.err.println("[Profile Image Upload Error] 프로필 이미지 업로드 실패");
+            e.printStackTrace();
+            throw new RuntimeException("프로필 이미지 업로드 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 프로필 이미지 업로드 + URL transformation 적용
+     * - 업로드 후 URL에 이미지 최적화 파라미터 추가
+     *
+     * @param profileFile 프로필 이미지 파일
+     * @return 최적화된 프로필 이미지 URL (300x300, 품질 자동 조정)
+     */
+    public String uploadProfileImageWithOptimization(MultipartFile profileFile) {
+        // 기본 업로드 먼저 수행
+        String originalUrl = uploadProfileImage(profileFile);
+
+        // URL에 transformation 파라미터 추가하여 이미지 최적화
+        if (originalUrl.contains("/upload/")) {
+            String optimizedUrl = originalUrl.replace(
+                    "/upload/",
+                    "/upload/w_300,h_300,c_fill,q_auto,f_auto/"
+            );
+            System.out.println("[Profile Image Optimization] " + originalUrl + " -> " + optimizedUrl);
+            return optimizedUrl;
+        }
+
+        return originalUrl;
     }
 }

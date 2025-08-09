@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -84,7 +86,13 @@ public class RestLoginController {
                 System.err.println("로그인 기록 저장에 실패했습니다. 사용자 ID: " + authUserId);
             }
 
-            return ResponseEntity.ok("로그인 성공");
+            // 성공 응답에 사용자 역할 정보 포함
+            Map<String, Object> loginResponse = new HashMap<>();
+            loginResponse.put("message", "로그인 성공");
+            loginResponse.put("role", user.getMbRole().toString());
+            loginResponse.put("nickname", user.getMbNickname());
+
+            return ResponseEntity.ok(loginResponse);
 
         } catch (Exception e) {
             System.err.println("로그인 처리 중 오류 발생: " + e.getMessage());

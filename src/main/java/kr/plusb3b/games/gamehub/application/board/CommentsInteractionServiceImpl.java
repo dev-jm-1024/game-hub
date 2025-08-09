@@ -10,6 +10,7 @@ import kr.plusb3b.games.gamehub.domain.board.vo.CommentsReactionCountVO;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserCommentsReaction;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserCommentsReactionRepository;
+import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
 import kr.plusb3b.games.gamehub.security.SnowflakeIdGenerator;
 import org.springframework.stereotype.Service;
 
@@ -22,13 +23,16 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
     private final CommentsRepository commentsRepo;
     private final CommentsReactionCountRepository commentsReactionRepo;
     private final UserCommentsReactionRepository userCommentsReactionRepo;
+    private final UserRepository userRepo;
 
     public CommentsInteractionServiceImpl(CommentsRepository commentsRepo,
                                           CommentsReactionCountRepository commentsReactionRepo,
-                                          UserCommentsReactionRepository userCommentsReactionRepo) {
+                                          UserCommentsReactionRepository userCommentsReactionRepo,
+                                          UserRepository userRepo) {
         this.commentsRepo = commentsRepo;
         this.commentsReactionRepo = commentsReactionRepo;
         this.userCommentsReactionRepo = userCommentsReactionRepo;
+        this.userRepo = userRepo;
     }
 
     @Override
@@ -51,7 +55,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
     public boolean likeComment(User user, Comments comment) {
         try {
             // 1. 기존의 사용자 reaction 확인
-            Optional<UserCommentsReaction> reactOpt = userCommentsReactionRepo.findByUserAndComments(user, comment);
+            Optional<UserCommentsReaction> reactOpt = userCommentsReactionRepo.findByUserAndComment(user, comment);
 
             if (reactOpt.isPresent()) {
                 UserCommentsReaction reaction = reactOpt.get();
@@ -142,7 +146,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
     public boolean dislikeComment(User user, Comments comment) {
         try {
             // 1. 기존의 사용자 reaction 확인
-            Optional<UserCommentsReaction> reactOpt = userCommentsReactionRepo.findByUserAndComments(user, comment);
+            Optional<UserCommentsReaction> reactOpt = userCommentsReactionRepo.findByUserAndComment(user, comment);
 
             if (reactOpt.isPresent()) {
                 UserCommentsReaction reaction = reactOpt.get();
@@ -245,42 +249,77 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
     @Override
     @Transactional
     public boolean reportComment(User user, Comments comment) {
-        // 이미 신고한 경우 중복 방지
-        Optional<UserCommentsReaction> existingReaction = userCommentsReactionRepo.findByUserAndComments(user, comment);
-        if (existingReaction.isPresent() &&
-                existingReaction.get().getReactionType() == UserCommentsReaction.ReactionType.REPORT) {
-            return false;
+        try {
+            // 1. 자신의 댓글을 신고하는 것을 방지
+            if (user.getMbId().equals(comment.getUser().getMbId())) {
+                System.out.println("자신의 댓글은 신고할 수 없습니다.");
+                return false;
+            }
+
+            // 2. 사용자가 해당 댓글을 이미 신고했는지 확인
+            Optional<UserCommentsReaction> existingReaction = userCommentsReactionRepo.findByUserAndComment(user, comment);
+
+            if (existingReaction.isPresent() &&
+                    existingReaction.get().getReactionType() == UserCommentsReaction.ReactionType.REPORT) {
+                System.out.println("이미 신고한 댓글입니다.");
+                return false; // 이미 신고한 댓글인 경우 false 반환
+            }
+
+            // 3. 댓글의 신고 카운트 증가
+            int result1 = commentsReactionRepo.incrementReportCountByCommentId(comment.getCommentId());
+            System.out.println("댓글 신고 카운트 증가 결과: " + result1);
+
+            if (result1 == 0) {
+                System.out.println("댓글 신고 카운트 증가 실패 - ReactionCount 레코드가 없음. 새로 생성합니다.");
+
+                // CommentsReactionCount 레코드가 없으면 새로 생성
+                CommentsReactionCount newReactionCount = new CommentsReactionCount(
+                        comment, 0, 0, 1  // 좋아요 0, 싫어요 0, 신고 1
+                );
+                commentsReactionRepo.save(newReactionCount);
+                System.out.println("새로운 CommentsReactionCount 레코드 생성 완료");
+            }
+
+            // 4. 댓글 작성자의 신고 받은 횟수 증가
+            User commentAuthor = comment.getUser();
+            commentAuthor.increaseReportCnt(); // User 엔티티의 메서드 사용
+            userRepo.save(commentAuthor); // UserRepository 추가 필요
+            userRepo.flush();
+
+            System.out.println("댓글 작성자 신고 횟수 증가 완료");
+
+            // 5. 사용자의 신고 기록 추가
+            SnowflakeIdGenerator sf = new SnowflakeIdGenerator(0, 1);
+            Long reactionId = sf.nextId();
+
+            UserCommentsReaction reportReaction = new UserCommentsReaction(
+                    reactionId,
+                    user,
+                    comment,
+                    UserCommentsReaction.ReactionType.REPORT,
+                    LocalDate.now()
+            );
+
+            UserCommentsReaction savedReaction = userCommentsReactionRepo.save(reportReaction);
+            userCommentsReactionRepo.flush();
+
+            if (savedReaction == null) {
+                System.out.println("사용자 댓글 신고 기록 저장 실패");
+                return false;
+            }
+
+            System.out.println("댓글 신고 처리 성공! 신고 기록 ID: " + savedReaction.getReactionId());
+            return true;
+
+        } catch (Exception e) {
+            System.out.println("댓글 신고 처리 실패: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // @Transactional에 의해 롤백됨
         }
-
-        commentsReactionRepo.incrementReportCountByCommentId(comment.getCommentId());
-        UserCommentsReaction newReaction = new UserCommentsReaction(
-                new SnowflakeIdGenerator(0, 1).nextId(),
-                user,
-                comment,
-                UserCommentsReaction.ReactionType.REPORT,
-                LocalDate.now()
-        );
-        userCommentsReactionRepo.save(newReaction);
-        return true;
     }
-
     @Override
     @Transactional
     public boolean reportCommentCancel(User user, Comments comment) {
-        Optional<UserCommentsReaction> existingReaction = userCommentsReactionRepo.findByUserAndComments(user, comment);
-
-        if (existingReaction.isEmpty()) {
-            return false;
-        }
-
-        UserCommentsReaction reaction = existingReaction.get();
-        if (reaction.getReactionType() != UserCommentsReaction.ReactionType.REPORT) {
-            return false;
-        }
-
-        // 신고 취소
-        userCommentsReactionRepo.delete(reaction);
-        commentsReactionRepo.decrementReportCountByCommentId(comment.getCommentId());
         return true;
     }
 

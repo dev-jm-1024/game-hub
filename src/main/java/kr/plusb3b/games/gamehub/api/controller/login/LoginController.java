@@ -8,5 +8,4 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/game-hub")
 public class LoginController {
 
-
 }

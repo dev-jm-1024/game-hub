@@ -1,6 +1,7 @@
 package kr.plusb3b.games.gamehub.api.controller.user.rest;
 
 import kr.plusb3b.games.gamehub.domain.user.dto.UserSignupDto;
+import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.service.UserJoinService;
 import kr.plusb3b.games.gamehub.domain.user.vo.UserSignupVO;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -34,15 +35,31 @@ public class RestUserSignupController {
             @RequestPart(value = "file", required = false) MultipartFile file) {
 
         try {
+            // prod 필드를 통한 사용자 타입 검증
+            String prod = userSignupDto.getProd();
+            if (prod == null || (!prod.equals("generalUser") && !prod.equals("producer"))) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("잘못된 사용자 타입입니다. (generalUser 또는 producer만 허용)");
+            }
+
+            // VO는 그대로 사용 (값 변경 안 함)
             UserSignupVO userSignupVO = new UserSignupVO();
+
+            // prod 값에 따라 Role이 설정된 새로운 DTO 생성
+            UserSignupDto processedDto = createProcessedDto(userSignupDto, prod);
 
             // 파일이 있으면 리스트로 변환, 없으면 null
             List<MultipartFile> files = file != null ? List.of(file) : null;
 
-            userJoinService.signupUser(userSignupDto, userSignupVO, files);
+            // 기존 서비스 메서드 시그니처 유지
+            userJoinService.signupUser(processedDto, userSignupVO, files);
 
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body("회원가입이 성공적으로 완료되었습니다.");
+            // 사용자 타입에 따른 성공 메시지
+            String successMessage = "producer".equals(prod) ?
+                    "제작사 회원가입이 성공적으로 완료되었습니다." :
+                    "일반 회원가입이 성공적으로 완료되었습니다.";
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(successMessage);
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -54,6 +71,30 @@ public class RestUserSignupController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("회원가입 실패: " + e.getMessage());
         }
+    }
+
+    /**
+     * prod 값에 따라 Role이 설정된 새로운 DTO 생성
+     * @param originalDto 원본 DTO
+     * @param prod 사용자 타입 (generalUser 또는 producer)
+     * @return Role이 설정된 새로운 DTO
+     */
+    private UserSignupDto createProcessedDto(UserSignupDto originalDto, String prod) {
+        // prod 값에 따라 Role 결정
+        User.Role role = "producer".equals(prod) ? User.Role.ROLE_PRODUCER : User.Role.ROLE_USER;
+
+        return new UserSignupDto(
+                originalDto.getAuthUserId(),
+                originalDto.getAuthPassword(),
+                originalDto.getMbNickname(),
+                originalDto.getTeamName(),
+                originalDto.getPriEmail(),
+                originalDto.getPriBirth(),
+                originalDto.getPriGender(),
+                originalDto.getMbStatusMessage(),
+                role,  // prod에 따라 결정된 Role
+                originalDto.getProd()
+        );
     }
 
     /**

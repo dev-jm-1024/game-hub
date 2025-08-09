@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/game-hub")
@@ -35,7 +36,6 @@ public class GameHubController {
     }
 
 
-
     @GetMapping
     public String showMainPage(HttpServletRequest request, Model model) {
 
@@ -53,6 +53,12 @@ public class GameHubController {
 
         System.out.println("isLoggedIn : " + isLoggedIn);
         model.addAttribute("isLoggedIn", isLoggedIn);
+
+        //게시판 데이터 넘기기
+        List<Board> boardList = boardRepo.findAll().stream()
+                        .filter(Board::isActivateBoard)
+                                .collect(Collectors.toList());
+        model.addAttribute("boardList", boardList);
 
         if (isLoggedIn) {
             model.addAttribute("nickname", user.getMbNickname());
@@ -82,6 +88,18 @@ public class GameHubController {
         String prod="producer";
         model.addAttribute("prod", prod);
         return "join/join-form-producer";
+    }
+
+    //프로듀서 페이지 이동
+    @GetMapping("/prod")
+    public String redirectToProdPage(){
+        return "main-contents/index-prod";
+    }
+
+    //임시로 관리자 페이지 접근
+    @GetMapping("/admin")
+    public String redirectToAdminPage(){
+        return "admin/index";
     }
 
 }

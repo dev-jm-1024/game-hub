@@ -39,5 +39,8 @@ public interface PostsService {
 
     //게시물 중요도 비활성화
 
+    //게시물 통계
+    List<Integer> statsBoard();
+
 }
 

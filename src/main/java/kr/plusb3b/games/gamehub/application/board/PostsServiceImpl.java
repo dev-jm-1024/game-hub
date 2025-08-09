@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -131,5 +132,32 @@ public class PostsServiceImpl implements PostsService {
     public boolean validatePost(Long postId) {
         if (postId == null) return false;
         return postsRepo.existsById(postId);
+    }
+
+    //총 게시글 (totalPosts): 모든 게시판의 전체 게시글 수
+    //활성 게시판 (totalBoards): 현재 활성화된 게시판 수
+    //오늘 작성 (todayPosts): 오늘 작성된 게시글 수
+    @Override
+    public List<Integer> statsBoard(){
+        List<Integer> result = new ArrayList<>();
+
+        int totalPosts = postsRepo.findAll().stream()
+                .filter(Posts::isActivatePosts)
+                .collect(Collectors.toList()).size();
+
+        int totalBoards = boardRepo.findAll().stream()
+                .filter(Board::isActivateBoard)
+                .collect(Collectors.toList()).size();
+
+        int todayPosts = postsRepo.findAll().stream()
+                .filter(Posts::isActivatePosts)
+                .filter(p -> p.getCreatedAt().equals(LocalDate.now()))
+                .collect(Collectors.toList()).size();
+
+        result.add(totalPosts);   // 인덱스 0
+        result.add(totalBoards);  // 인덱스 1
+        result.add(todayPosts);   // 인덱스 2
+
+        return result;
     }
 }

@@ -54,6 +54,17 @@ public class BoardController {
     public String boardMainPage(Model model) {
         Map<Board, List<Posts>> postsByBoard = boardService.loadTop5LatestPostsByBoard();
         model.addAttribute("postsByBoard", postsByBoard);
+
+        //총 게시글 (totalPosts): 모든 게시판의 전체 게시글 수
+        //활성 게시판 (totalBoards): 현재 활성화된 게시판 수
+        //오늘 작성 (todayPosts): 오늘 작성된 게시글 수
+        List<Integer> result = postsService.statsBoard();
+
+        model.addAttribute("totalPosts", result.get(0));
+        model.addAttribute("totalBoards", result.get(1));
+        model.addAttribute("todayPosts", result.get(2));
+
+
         return "board/main-board";
     }
 

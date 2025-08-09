@@ -148,9 +148,9 @@ public class User {
 
     //prod 값을 통해 role 구분
 
+    // User.java의 prodDifferentiate 메서드 수정
     public Role prodDifferentiate(String userProd){
         if(userProd.equals("generalUser")) return User.Role.ROLE_USER;
-        else return User.Role.ROLE_ADMIN;
+        else return User.Role.ROLE_PRODUCER; // 🔄 ROLE_ADMIN → ROLE_PRODUCER
     }
-
 }

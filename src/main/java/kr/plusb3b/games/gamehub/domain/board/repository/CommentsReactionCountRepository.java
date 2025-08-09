@@ -39,9 +39,4 @@ public interface CommentsReactionCountRepository extends JpaRepository<CommentsR
     @Query("UPDATE CommentsReactionCount cr SET cr.reportCount = cr.reportCount + 1 WHERE cr.comment.commentId = :commentId")
     int incrementReportCountByCommentId(@Param("commentId") Long commentId);
 
-    // ✅ 신고 수 감소
-    @Modifying(clearAutomatically = true)
-    @Transactional
-    @Query("UPDATE CommentsReactionCount cr SET cr.reportCount = cr.reportCount - 1 WHERE cr.comment.commentId = :commentId AND cr.reportCount > 0")
-    int decrementReportCountByCommentId(@Param("commentId") Long commentId);
 }

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <title>글 작성</title>
+    <link rel="stylesheet" th:href="@{/board-skin/common-skin/post-skin/css/post-form.css}">
+</head>
+<body class="post-form-body">
+<div class="post-form-container">
+    <h1 class="post-form-title">게시글 작성</h1>
+
+    <form id="postForm" class="post-form">
+        <div class="form-group">
+            <label for="title" class="form-label">제목</label>
+            <input type="text" id="title" class="form-input" required />
+        </div>
+
+        <div class="form-group">
+            <label for="content" class="form-label">내용</label>
+            <textarea id="content" rows="10" class="form-textarea" required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="boardId" class="form-label">카테고리</label>
+            <select id="boardId" class="form-select" required>
+                <option value="free" th:selected="${boardId == 'free'}">자유 게시판</option>
+                <option value="guide" th:selected="${boardId == 'guide'}">공략 게시판</option>
+                <option value="qna" th:selected="${boardId == 'qna'}">Q&A 게시판</option>
+                <option value="suggestion" th:selected="${boardId == 'suggestion'}">건의사항 게시판</option>
+                <option value="report" th:selected="${boardId == 'report'}">신고 게시판</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="files" class="form-label">이미지 첨부</label>
+            <div class="file-upload-area">
+                <input type="file" id="files" name="files" class="file-input" multiple accept="image/*" />
+                <div class="file-upload-text">
+                    <p>파일을 선택하거나 여기로 드래그하세요</p>
+                    <p class="file-upload-hint">이미지 파일만 업로드 가능합니다</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="submit-button">작성 완료</button>
+            <button type="button" class="cancel-button" onclick="history.back()">취소</button>
+        </div>
+    </form>
+</div>
+
+<script th:src="@{/board-skin/common-skin/post-skin/js/post-form.js}"></script>
+</body>
+</html>

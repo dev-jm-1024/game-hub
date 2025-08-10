@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h2>This is Admin Mode</h2>
+<button type="button" name="view-game-status" id="view-game-status">
+    게임 상태 보기
+</button>
+
+<!--
+게임 상태 보여주는 거 만들어야함
+1. 미승인
+2. 검토
+3. 승인대기
+4. 승인
+
+1~4 공통 요소
+: 다음 단계로 넘어가는 버튼 있어야함
+: "다운로드" 버튼 누르면 파일 다운 받아져야함
+: GameInfo DTO 참고해서 뭘 보여져야하는 지 봐야함
+
+1.1 미승인 요소
+필요한 데이터 view + "검토" 버튼 존재 -> API 요청해서 검토 단계로 변환
+파일 클릭 시 다운로드 되어야함 -> Google Cloud URL 걸어놓으면 가능함
+거부 버튼도 존재해야함
+
+2.1 검토 요소
+: 필요한 데이터 view + "승인대기" 버튼 존재 -> API 요청해서 승인대기로 변환
+: 파일 클릭 시 다운로드 -> 마찬가지로 URL
+: 거부 버튼 존재
+
+3.1 승인대기
+: 필요한 데이터 view + "승인" 버튼 존재
+-> API 요청에서 승인으로 변환 + activate-game 폴더로 옮겨진 뒤, 압축 자동 해제 후, index.html 링크 반환 + 게임 act 값 1로 변환
+: 파일 클릭 시 다운로드 -> 마찬가지로 URL
+: 거부 버튼 존재
+
+4.1 승인
+모든 승인된 게임 리스트 보여져야함
+파일 클릭 시 다운로드 가능
+플레이해보기 버튼 누르면 새 창에서 플레이 가능하게끔.
+정지 버튼 존재 -> act 값 0으로 해서 사용자에게 안보여져야함 + deactivate-game 폴더로 이동
+
+
+추가 : 복구? 지원종료 게임? 암튼 그러한 메뉴로
+deactivate-game 폴더에 있는 게임들 복구할 수 있게끔.
+"복구"버튼 누르면 activate-game 폴더로 옮겨지기
+그리고 활성화 버튼 누르면 act 값 1로 넘겨지면서 사용자에게 보여주기
+
+-->
+
+</body>
+<script>
+    document.getElementById("view-game-status").addEventListener("click", function () {
+        window.location.href = "/admin/game-status";
+    })
+
+</script>
+</html>

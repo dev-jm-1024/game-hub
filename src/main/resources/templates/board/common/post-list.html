@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${board.boardName} + ' - 게시글 목록'">게시판 이름 - 게시글 목록</title>
+    <link rel="stylesheet" th:href="@{/board-skin/common-skin/post-skin/css/post-list.css}">
+</head>
+<body class="post-list-body">
+<main class="post-list-container">
+    <!-- 게시판 이름 -->
+    <h1 class="post-list-title" th:text="${board.boardName}">
+        게시판 이름
+    </h1>
+
+    <!-- 게시글 목록 -->
+    <div class="post-table-wrapper">
+        <table class="post-table">
+            <thead>
+            <tr>
+                <th>번호</th>
+                <th>제목</th>
+                <th>작성자</th>
+                <th>작성일</th>
+                <th>조회수</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- 게시글이 없을 때 -->
+            <tr th:if="${#lists.isEmpty(summaryPosts)}" class="empty-row">
+                <td colspan="5" class="empty-message">게시글이 없습니다.</td>
+            </tr>
+
+            <!-- 게시글이 있을 때 -->
+            <tr th:each="post, stat : ${summaryPosts}" class="post-row">
+                <!-- 순번 (1-based) -->
+                <td class="post-number" th:text="${stat.count}">1</td>
+
+                <!-- 제목 + 링크 -->
+                <td class="post-title-cell">
+                    <a class="post-title-link"
+                       th:text="${post.title}"
+                       th:href="@{/board/{boardId}/{postId}/view
+                                    (boardId=${post.boardId},
+                                     postId=${post.postId})}">
+                        글 제목
+                    </a>
+                </td>
+
+                <!-- 작성자 -->
+                <td class="post-author" th:text="${post.author}">작성자</td>
+
+                <!-- 작성일 -->
+                <td class="post-date"
+                    th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">
+                    2025-01-01
+                </td>
+
+                <!-- 조회수(필드가 아직 없으면 0 표시) -->
+                <!-- 조회수: 아직 구현 전이라 0 고정 -->
+                <td class="post-views" th:text="0">0</td>
+
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 글쓰기 버튼 -->
+    <div class="write-button-container">
+        <form action="/board/new" method="get">
+            <input type="hidden" name="boardId" th:value="${board.boardId}" />
+            <button type="submit" class="write-button">글쓰기</button>
+        </form>
+    </div>
+</main>
+
+<script th:src="@{/board-skin/common-skin/post-skin/js/post-list.js}"></script>
+</body>
+</html>

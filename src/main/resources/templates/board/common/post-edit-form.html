@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <title>글 수정</title>
+  <link rel="stylesheet" th:href="@{/board-skin/common-skin/post-skin/css/post-edit-form.css}">
+</head>
+<body class="post-edit-form-body">
+<div class="post-edit-form-container">
+  <h1 class="post-edit-form-title">게시글 수정</h1>
+
+  <form id="postForm" class="post-edit-form">
+    <div class="form-group">
+      <label for="title" class="form-label">제목</label>
+      <input type="text" id="title" name="postTitle" class="form-input" th:value="${postData.postTitle}" required>
+    </div>
+    
+    <div class="form-group">
+      <label for="content" class="form-label">내용</label>
+      <textarea id="content" name="postContent" rows="10" class="form-textarea" th:text="${postData.postContent}" required></textarea>
+    </div>
+    
+    <div class="form-group">
+      <input type="hidden" name="postId" th:value="${postData.postId}">
+      <label class="form-label">게시판</label>
+      <input type="text" name="boardId" class="form-input readonly" th:value="${postData.board.boardId}" readonly>
+    </div>
+    
+    <div class="form-actions">
+      <button type="submit" class="submit-button">수정 완료</button>
+      <button type="button" class="cancel-button" onclick="history.back()">취소</button>
+    </div>
+  </form>
+</div>
+
+<script th:src="@{/board-skin/common-skin/post-skin/js/post-edit-form.js}"></script>
+
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h2>PROD PAGE</h2>
+<button type="button" id="game-upload" name="game-upload">게임 업로드 하기</button>
+
+<!--
+내가 업로드한 게임 볼 수 있게끔 -> 현재 진행상태 파악
+-->
+</body>
+<script>
+document.getElementById("game-upload").addEventListener("click", function () {
+    window.location.href = "/game-hub/prod/upload";
+})
+</script>
+</html>

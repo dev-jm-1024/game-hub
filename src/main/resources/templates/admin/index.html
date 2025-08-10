@@ -1,62 +1,736 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게임 상태 관리</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* 탭 네비게이션 스타일 */
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-radius: 15px 15px 0 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-bottom: 0;
+            overflow: hidden;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border-right: 1px solid #e9ecef;
+            color: #666;
+        }
+
+        .nav-tab:last-child {
+            border-right: none;
+        }
+
+        .nav-tab:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .nav-tab.active {
+            background: white;
+            color: #333;
+            position: relative;
+        }
+
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .tab-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .nav-tab.active .tab-badge {
+            background: #28a745;
+        }
+
+        /* 탭 컨텐츠 */
+        .tab-content {
+            background: white;
+            border-radius: 0 0 15px 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            min-height: 400px;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 25px;
+        }
+
+        .game-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .game-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .game-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .game-team {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        .status-indicator {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #ffe3e3;
+            color: #d63031;
+        }
+
+        .status-review {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-approval-pending {
+            background: #cce5ff;
+            color: #0056b3;
+        }
+
+        .status-active {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .game-info {
+            margin-bottom: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 80px;
+        }
+
+        .info-value {
+            color: #333;
+            text-align: right;
+        }
+
+        .game-description {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #555;
+            border-left: 3px solid #667eea;
+        }
+
+        .file-info {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .file-header {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffd43b 0%, #fab005 100%);
+            color: #333;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #339af0 0%, #228be6 100%);
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-direction: column;
+            }
+
+            .nav-tab {
+                border-right: none;
+                border-bottom: 1px solid #e9ecef;
+            }
+
+            .nav-tab:last-child {
+                border-bottom: none;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
-<h2>This is Admin Mode</h2>
-<button type="button" name="view-game-status" id="view-game-status">
-    게임 상태 보기
-</button>
+<div class="container">
+    <div class="header">
+        <h1>🎮 게임 상태 관리</h1>
+        <p>등록된 게임들의 승인 상태를 관리하고 검토할 수 있습니다.</p>
+    </div>
 
-<!--
-게임 상태 보여주는 거 만들어야함
-1. 미승인
-2. 검토
-3. 승인대기
-4. 승인
+    <!-- 탭 네비게이션 -->
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showTab('pending')" id="tab-pending">
+            🔍 미승인
+            <span class="tab-badge" th:text="${notApprovedGame != null && notApprovedGame.gamesList != null ? notApprovedGame.gamesList.size() : 0}">0</span>
+        </button>
+        <button class="nav-tab" onclick="showTab('review')" id="tab-review">
+            📋 검토중
+            <span class="tab-badge">0</span>
+        </button>
+        <button class="nav-tab" onclick="showTab('approval-pending')" id="tab-approval-pending">
+            ⏳ 승인대기
+            <span class="tab-badge">0</span>
+        </button>
+        <button class="nav-tab" onclick="showTab('approved')" id="tab-approved">
+            ✅ 승인완료
+            <span class="tab-badge" th:text="${approvedGame != null && approvedGame.gamesList != null ? approvedGame.gamesList.size() : 0}">0</span>
+        </button>
+        <button class="nav-tab" onclick="showTab('rejected')" id="tab-rejected">
+            ❌ 거부됨
+            <span class="tab-badge">0</span>
+        </button>
+        <button class="nav-tab" onclick="showTab('suspended')" id="tab-suspended">
+            ⏸️ 정지됨
+            <span class="tab-badge">0</span>
+        </button>
+    </div>
 
-1~4 공통 요소
-: 다음 단계로 넘어가는 버튼 있어야함
-: "다운로드" 버튼 누르면 파일 다운 받아져야함
-: GameInfo DTO 참고해서 뭘 보여져야하는 지 봐야함
+    <!-- 탭 컨텐츠 -->
+    <div class="tab-content">
+        <!-- 미승인 탭 -->
+        <div class="tab-pane active" id="pending-pane">
+            <div class="games-grid" th:if="${notApprovedGame != null && notApprovedGame.gamesList != null && !notApprovedGame.gamesList.isEmpty()}">
+                <div class="game-card" th:each="game, iterStat : ${notApprovedGame.gamesList}" th:if="${game.status.name() == 'PENDING_REVIEW'}">
+                    <div class="game-header">
+                        <div>
+                            <div class="game-title" th:text="${game.gameName}">게임 이름</div>
+                            <div class="game-team" th:text="${game.teamName}">제작팀</div>
+                        </div>
+                        <div class="status-indicator status-pending">PENDING</div>
+                    </div>
 
-1.1 미승인 요소
-필요한 데이터 view + "검토" 버튼 존재 -> API 요청해서 검토 단계로 변환
-파일 클릭 시 다운로드 되어야함 -> Google Cloud URL 걸어놓으면 가능함
-거부 버튼도 존재해야함
+                    <div class="game-info">
+                        <div class="info-row">
+                            <span class="info-label">장르:</span>
+                            <span class="info-value" th:text="${game.genre}">액션</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">플랫폼:</span>
+                            <span class="info-value" th:text="${game.platform}">PC</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">버전:</span>
+                            <span class="info-value" th:text="${game.gameVersion}">1.0.0</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">등록일:</span>
+                            <span class="info-value" th:text="${#temporals.format(game.createdAt, 'yyyy-MM-dd HH:mm')}">2024-01-01 10:00</span>
+                        </div>
+                    </div>
 
-2.1 검토 요소
-: 필요한 데이터 view + "승인대기" 버튼 존재 -> API 요청해서 승인대기로 변환
-: 파일 클릭 시 다운로드 -> 마찬가지로 URL
-: 거부 버튼 존재
+                    <div class="game-description" th:if="${game.gameDescription != null && !game.gameDescription.isEmpty()}">
+                        <div th:text="${game.gameDescription}">게임 설명이 여기에 표시됩니다.</div>
+                    </div>
 
-3.1 승인대기
-: 필요한 데이터 view + "승인" 버튼 존재
--> API 요청에서 승인으로 변환 + activate-game 폴더로 옮겨진 뒤, 압축 자동 해제 후, index.html 링크 반환 + 게임 act 값 1로 변환
-: 파일 클릭 시 다운로드 -> 마찬가지로 URL
-: 거부 버튼 존재
+                    <!-- 파일 정보 -->
+                    <div class="file-info" th:if="${notApprovedGame.gamesFiles != null && iterStat.index < notApprovedGame.gamesFiles.size()}">
+                        <div class="file-header">📁 파일 정보</div>
+                        <div class="info-row" th:with="gameFile=${notApprovedGame.gamesFiles[iterStat.index]}">
+                            <span class="info-label">파일명:</span>
+                            <span class="info-value" th:text="${gameFile.originalFilename}">game.zip</span>
+                        </div>
+                        <div class="info-row" th:with="gameFile=${notApprovedGame.gamesFiles[iterStat.index]}">
+                            <span class="info-label">크기:</span>
+                            <span class="info-value" th:text="${#numbers.formatDecimal(gameFile.fileSize / 1024 / 1024, 1, 2)} + ' MB'">10.5 MB</span>
+                        </div>
+                    </div>
 
-4.1 승인
-모든 승인된 게임 리스트 보여져야함
-파일 클릭 시 다운로드 가능
-플레이해보기 버튼 누르면 새 창에서 플레이 가능하게끔.
-정지 버튼 존재 -> act 값 0으로 해서 사용자에게 안보여져야함 + deactivate-game 폴더로 이동
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="moveToReview(this)" th:data-game-id="${game.gameId}">
+                            🔍 검토 시작
+                        </button>
+                        <button class="btn btn-info" onclick="downloadFile(this)"
+                                th:data-file-url="${notApprovedGame.gamesFiles != null && iterStat.index < notApprovedGame.gamesFiles.size() ? notApprovedGame.gamesFiles[iterStat.index].gameUrl : ''}">
+                            📥 다운로드
+                        </button>
+                        <button class="btn btn-danger" onclick="rejectGame(this)" th:data-game-id="${game.gameId}">
+                            ❌ 거부
+                        </button>
+                    </div>
+                </div>
+            </div>
 
+            <div class="empty-state" th:if="${notApprovedGame == null || notApprovedGame.gamesList == null || notApprovedGame.gamesList.isEmpty()}">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <h3>검토 대기 중인 게임이 없습니다</h3>
+                <p>새로운 게임이 등록되면 여기에 표시됩니다.</p>
+            </div>
+        </div>
 
-추가 : 복구? 지원종료 게임? 암튼 그러한 메뉴로
-deactivate-game 폴더에 있는 게임들 복구할 수 있게끔.
-"복구"버튼 누르면 activate-game 폴더로 옮겨지기
-그리고 활성화 버튼 누르면 act 값 1로 넘겨지면서 사용자에게 보여주기
+        <!-- 검토중 탭 -->
+        <div class="tab-pane" id="review-pane">
+            <div class="empty-state">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                </svg>
+                <h3>검토 중인 게임이 없습니다</h3>
+                <p>검토가 시작된 게임들이 여기에 표시됩니다.</p>
+            </div>
+        </div>
 
--->
+        <!-- 승인대기 탭 -->
+        <div class="tab-pane" id="approval-pending-pane">
+            <div class="empty-state">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12,1L21,5V11C21,16.55 17.16,21.74 12,23C6.84,21.74 3,16.55 3,11V5L12,1M12,7C10.89,7 10,7.89 10,9A2,2 0 0,0 12,11A2,2 0 0,0 14,9C14,7.89 13.1,7 12,7M12,13C9.79,13 8,14.79 8,17H16C16,14.79 14.21,13 12,13Z"/>
+                </svg>
+                <h3>승인 대기 중인 게임이 없습니다</h3>
+                <p>최종 승인을 기다리는 게임들이 여기에 표시됩니다.</p>
+            </div>
+        </div>
 
-</body>
+        <!-- 승인완료 탭 -->
+        <div class="tab-pane" id="approved-pane">
+            <div class="games-grid" th:if="${approvedGame != null && approvedGame.gamesList != null && !approvedGame.gamesList.isEmpty()}">
+                <div class="game-card" th:each="game, iterStat : ${approvedGame.gamesList}" th:if="${game.status.name() == 'ACTIVE'}">
+                    <div class="game-header">
+                        <div>
+                            <div class="game-title" th:text="${game.gameName}">게임 이름</div>
+                            <div class="game-team" th:text="${game.teamName}">제작팀</div>
+                        </div>
+                        <div class="status-indicator status-active">ACTIVE</div>
+                    </div>
+
+                    <div class="game-info">
+                        <div class="info-row">
+                            <span class="info-label">장르:</span>
+                            <span class="info-value" th:text="${game.genre}">액션</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">플랫폼:</span>
+                            <span class="info-value" th:text="${game.platform}">PC</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">승인일:</span>
+                            <span class="info-value" th:text="${game.approvedAt != null ? #temporals.format(game.approvedAt, 'yyyy-MM-dd HH:mm') : 'N/A'}">2024-01-01 10:00</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">노출 상태:</span>
+                            <span class="info-value" th:text="${game.isVisible() ? '👁️ 노출 중' : '🙈 숨김'}">👁️ 노출 중</span>
+                        </div>
+                    </div>
+
+                    <div class="game-description" th:if="${game.gameDescription != null && !game.gameDescription.isEmpty()}">
+                        <div th:text="${game.gameDescription}">게임 설명이 여기에 표시됩니다.</div>
+                    </div>
+
+                    <div class="actions">
+                        <button class="btn btn-success" onclick="playGame(this)" th:data-game-id="${game.gameId}">
+                            🎮 플레이하기
+                        </button>
+                        <button class="btn btn-info" onclick="downloadFile(this)"
+                                th:data-file-url="${approvedGame.gamesFiles != null && iterStat.index < approvedGame.gamesFiles.size() ? approvedGame.gamesFiles[iterStat.index].gameUrl : ''}">
+                            📥 다운로드
+                        </button>
+                        <button class="btn btn-warning" onclick="toggleVisibility(this)"
+                                th:data-game-id="${game.gameId}"
+                                th:data-visible="${game.isVisible()}"
+                                th:text="${game.isVisible() ? '🙈 숨기기' : '👁️ 노출하기'}">
+                            🙈 숨기기
+                        </button>
+                        <button class="btn btn-danger" onclick="suspendGame(this)" th:data-game-id="${game.gameId}">
+                            ⏸️ 정지
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="empty-state" th:if="${approvedGame == null || approvedGame.gamesList == null || approvedGame.gamesList.isEmpty()}">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                <h3>승인된 게임이 없습니다</h3>
+                <p>승인된 게임들이 여기에 표시됩니다.</p>
+            </div>
+        </div>
+
+        <!-- 거부됨 탭 -->
+        <div class="tab-pane" id="rejected-pane">
+            <div class="empty-state">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+                </svg>
+                <h3>거부된 게임이 없습니다</h3>
+                <p>거부된 게임들이 여기에 표시됩니다.</p>
+            </div>
+        </div>
+
+        <!-- 정지됨 탭 -->
+        <div class="tab-pane" id="suspended-pane">
+            <div class="empty-state">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14,19.14L15.41,20.55L20,16L15.41,11.45L14,12.86L16.17,15H4V17H16.17L14,19.14M10,4H22V6H10V4M10,7H22V9H10V7M10,10H22V12H10V10Z"/>
+                </svg>
+                <h3>정지된 게임이 없습니다</h3>
+                <p>정지된 게임들이 여기에 표시됩니다.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    document.getElementById("view-game-status").addEventListener("click", function () {
-        window.location.href = "/admin/game-status";
-    })
+    // 탭 전환 함수
+    function showTab(tabName) {
+        // 모든 탭 비활성화
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
 
+        // 모든 탭 pane 숨기기
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('active');
+        });
+
+        // 선택된 탭 활성화
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+        document.getElementById(`${tabName}-pane`).classList.add('active');
+    }
+
+    // 검토 시작
+    function moveToReview(button) {
+        const gameId = button.dataset.gameId;
+        if (confirm('이 게임을 검토 단계로 이동하시겠습니까?')) {
+            fetch(`/admin/games/${gameId}/move-to-review`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('검토 단계로 이동했습니다.');
+                        location.reload();
+                    } else {
+                        alert('오류가 발생했습니다: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('서버 오류가 발생했습니다.');
+                });
+        }
+    }
+
+    // 게임 거부
+    function rejectGame(button) {
+        const gameId = button.dataset.gameId;
+        const reason = prompt('거부 사유를 입력해주세요:');
+        if (reason && confirm('이 게임을 거부하시겠습니까?')) {
+            fetch(`/admin/games/${gameId}/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ reason: reason })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('게임이 거부되었습니다.');
+                        location.reload();
+                    } else {
+                        alert('오류가 발생했습니다: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('서버 오류가 발생했습니다.');
+                });
+        }
+    }
+
+    // 파일 다운로드
+    function downloadFile(button) {
+        const fileUrl = button.dataset.fileUrl;
+        if (fileUrl && fileUrl !== '') {
+            window.open(fileUrl, '_blank');
+        } else {
+            alert('다운로드할 파일이 없습니다.');
+        }
+    }
+
+    // 게임 플레이
+    function playGame(button) {
+        const gameId = button.dataset.gameId;
+        fetch(`/admin/games/${gameId}/play-url`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.playUrl) {
+                    window.open(data.playUrl, '_blank');
+                } else {
+                    alert('게임 플레이 URL을 찾을 수 없습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('서버 오류가 발생했습니다.');
+            });
+    }
+
+    // 노출/숨김 토글
+    function toggleVisibility(button) {
+        const gameId = button.dataset.gameId;
+        const isVisible = button.dataset.visible === 'true';
+        const action = isVisible ? '숨기기' : '노출하기';
+
+        if (confirm(`이 게임을 ${action} 하시겠습니까?`)) {
+            fetch(`/admin/games/${gameId}/toggle-visibility`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`게임이 ${action} 되었습니다.`);
+                        location.reload();
+                    } else {
+                        alert('오류가 발생했습니다: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('서버 오류가 발생했습니다.');
+                });
+        }
+    }
+
+    // 게임 정지
+    function suspendGame(button) {
+        const gameId = button.dataset.gameId;
+        if (confirm('이 게임을 정지하시겠습니까? 사용자에게 더 이상 노출되지 않습니다.')) {
+            fetch(`/admin/games/${gameId}/suspend`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('게임이 정지되었습니다.');
+                        location.reload();
+                    } else {
+                        alert('오류가 발생했습니다: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('서버 오류가 발생했습니다.');
+                });
+        }
+    }
 </script>
+</body>
 </html>

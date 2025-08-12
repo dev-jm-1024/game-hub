@@ -93,40 +93,80 @@ public class GameMetadataServiceImpl implements GameMetadataService {
 
     @Override
     public Optional<GamesInfoDto> notApprovedGames() {
-        // 🔄 개선: JOIN FETCH로 한 번에 조회 (N+1 문제 해결)
-        List<Games> gamesWithFiles = gamesRepo.findPendingReviewGamesWithFiles();
+        try {
+            log.info("PENDING_REVIEW 게임 조회 시작");
 
-        if (gamesWithFiles.isEmpty()) {
+            List<Games> allGames = gamesRepo.findAll();
+            log.info("전체 게임 수: {}", allGames.size());
+
+            List<Games> pendingGames = allGames.stream()
+                    .filter(g -> g.getStatus() == Games.GameStatus.PENDING_REVIEW)
+                    .collect(Collectors.toList());
+
+            log.info("PENDING_REVIEW 상태 게임 수: {}", pendingGames.size());
+
+            if (pendingGames.isEmpty()) {
+                return Optional.empty();
+            }
+
+            GamesInfoDto dto = new GamesInfoDto(pendingGames, List.of());
+            return Optional.of(dto);
+
+        } catch (Exception e) {
+            log.error("notApprovedGames 조회 실패", e);
             return Optional.empty();
         }
-
-        // Games에서 GamesFile 추출
-        List<Games> gamesList = gamesWithFiles;
-        List<GamesFile> gamesFileList = gamesWithFiles.stream()
-                .map(Games::getGamesFile)
-                .filter(Objects::nonNull) // null 체크
-                .collect(Collectors.toList());
-
-        GamesInfoDto dto = new GamesInfoDto(gamesList, gamesFileList);
-        return Optional.of(dto);
     }
+
 
     @Override
     public Optional<GamesInfoDto> approvedGames() {
-        // 🔄 개선: JOIN FETCH로 한 번에 조회
-        List<Games> gamesWithFiles = gamesRepo.findActiveGamesWithFiles();
+        try {
+            log.info("ACTIVE 게임 조회 시작");
 
-        if (gamesWithFiles.isEmpty()) {
+            List<Games> allGames = gamesRepo.findAll();
+            List<Games> activeGames = allGames.stream()
+                    .filter(g -> g.getStatus() == Games.GameStatus.ACTIVE)
+                    .collect(Collectors.toList());
+
+            log.info("ACTIVE 상태 게임 수: {}", activeGames.size());
+
+            if (activeGames.isEmpty()) {
+                return Optional.empty();
+            }
+
+            GamesInfoDto dto = new GamesInfoDto(activeGames, List.of());
+            return Optional.of(dto);
+
+        } catch (Exception e) {
+            log.error("approvedGames 조회 실패", e);
             return Optional.empty();
         }
+    }
 
-        List<Games> gamesList = gamesWithFiles;
-        List<GamesFile> gamesFileList = gamesWithFiles.stream()
-                .map(Games::getGamesFile)
-                .filter(Objects::nonNull) // null 체크
-                .collect(Collectors.toList());
 
-        GamesInfoDto dto = new GamesInfoDto(gamesList, gamesFileList);
-        return Optional.of(dto);
+    @Override
+    public Optional<GamesInfoDto> otherGames(Games.GameStatus status) {
+        try {
+            log.info("{} 상태 게임 조회 시작", status);
+
+            List<Games> allGames = gamesRepo.findAll();
+            List<Games> filteredGames = allGames.stream()
+                    .filter(g -> g.getStatus() == status)
+                    .collect(Collectors.toList());
+
+            log.info("{} 상태 게임 수: {}", status, filteredGames.size());
+
+            if (filteredGames.isEmpty()) {
+                return Optional.empty();
+            }
+
+            GamesInfoDto dto = new GamesInfoDto(filteredGames, List.of());
+            return Optional.of(dto);
+
+        } catch (Exception e) {
+            log.error("otherGames({}) 조회 실패", status, e);
+            return Optional.empty();
+        }
     }
 }

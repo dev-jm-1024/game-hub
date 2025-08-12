@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class PostsReactionCountVO {
+public final class PostsReactionCountVO {
 
     private final int dislikeCount = 0;
     private final int likeCount = 0;

@@ -5,7 +5,7 @@ import lombok.Getter;
 import java.time.LocalDate;
 
 @Getter
-public class CreatePostsVO {
+public final class CreatePostsVO {
 
     private final int viewCount;
     private final LocalDate updatedAt;

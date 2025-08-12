@@ -9,12 +9,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import com.google.cloud.storage.*;
 
+// 압축해제를 위한 추가 import
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.UUID;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Service
 @Slf4j
@@ -60,7 +66,7 @@ public class CloudUploadServiceImpl implements CloudUploadService {
             String cleanTempPath = tempGamePath.startsWith("/") ? tempGamePath.substring(1) : tempGamePath;
             String objectName = cleanTempPath + "/" + uniqueFileName;
 
-            // 4. 업로드된 파일의 공개 URL 미리 생성 ✅
+            // 4. 업로드된 파일의 공개 URL 미리 생성
             String gameUrl = String.format("https://storage.googleapis.com/%s/%s",
                     bucketName, objectName);
 
@@ -70,7 +76,6 @@ public class CloudUploadServiceImpl implements CloudUploadService {
             BlobId blobId = BlobId.of(bucketName, objectName);
             BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
                     .setContentType(file.getContentType())
-                    // ACL 설정은 버킷 레벨에서 처리하므로 제거
                     .build();
 
             // 실제 업로드 수행
@@ -109,15 +114,174 @@ public class CloudUploadServiceImpl implements CloudUploadService {
 
     @Override
     public String moveFileToActivateFolder(String gameId, String currentUrl) {
-        // 파일 이동 로직 구현
-        // temp-game/파일명 → activate-game/gameId/압축해제된파일들
-        return null; // 구현 필요
+        try {
+            // 1. 현재 파일 다운로드
+            String currentObjectName = extractObjectNameFromUrl(currentUrl);
+            BlobId sourceBlobId = BlobId.of(bucketName, currentObjectName);
+
+            // GCS에서 압축 파일 다운로드
+            Blob sourceBlob = storage.get(sourceBlobId);
+            if (sourceBlob == null) {
+                throw new GameUploadException("원본 파일을 찾을 수 없습니다: " + currentUrl);
+            }
+
+            byte[] compressedData = sourceBlob.getContent();
+            log.info("압축 파일 다운로드 완료: {} bytes", compressedData.length);
+
+            // 2. 압축 해제
+            String activeFolderPath = activateGamePath + "/" + gameId + "/";
+            List<String> uploadedFiles = extractAndUploadFiles(compressedData, activeFolderPath);
+
+            if (uploadedFiles.isEmpty()) {
+                throw new GameUploadException("압축 해제된 파일이 없습니다.");
+            }
+
+            // 3. 원본 압축 파일 삭제
+            storage.delete(sourceBlobId);
+
+            // 4. 메인 HTML 파일 URL 반환 (index.html 우선)
+            String mainFileUrl = findMainGameFile(uploadedFiles);
+
+            log.info("파일 압축해제 및 이동 완료: {}개 파일 → {}", uploadedFiles.size(), mainFileUrl);
+            return mainFileUrl;
+
+        } catch (Exception e) {
+            log.error("파일 압축해제 및 이동 실패: {}", e.getMessage(), e);
+            throw new GameUploadException("파일 압축해제 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public String moveFileToDeactivateFolder(String gameId, String currentUrl) {
-        // 파일 이동 로직 구현
-        return null; // 구현 필요
+        try {
+            String currentObjectName = extractObjectNameFromUrl(currentUrl);
+            String fileName = currentObjectName.substring(currentObjectName.lastIndexOf("/") + 1);
+            String newObjectName = deactivateGamePath + "/" + gameId + "/" + fileName;
+
+            // 동일한 이동 로직
+            BlobId sourceBlobId = BlobId.of(bucketName, currentObjectName);
+            BlobId targetBlobId = BlobId.of(bucketName, newObjectName);
+
+            storage.copy(Storage.CopyRequest.of(sourceBlobId, targetBlobId));
+            storage.delete(sourceBlobId);
+
+            String newUrl = String.format("https://storage.googleapis.com/%s/%s", bucketName, newObjectName);
+
+            log.info("파일 비활성화 이동 완료: {} -> {}", currentUrl, newUrl);
+            return newUrl;
+
+        } catch (Exception e) {
+            log.error("파일 비활성화 이동 실패: {}", e.getMessage(), e);
+            throw new GameUploadException("파일 비활성화 이동 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
+    }
+
+    private List<String> extractAndUploadFiles(byte[] compressedData, String targetPath) throws IOException {
+        List<String> uploadedFiles = new ArrayList<>();
+
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(compressedData);
+             ZipInputStream zis = new ZipInputStream(bis)) {
+
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+
+
+                // 디렉토리는 건너뛰기
+                if (entry.isDirectory()) {
+                    continue;
+                }
+
+                String fileName = entry.getName();
+
+                // 불필요한 파일 필터링 (__MACOSX, .DS_Store 등)
+                if (fileName.contains("__MACOSX") || fileName.contains(".DS_Store") ||
+                        fileName.startsWith(".") || fileName.contains("..")) {
+                    log.warn("불필요한 파일 건너뛰기: {}", fileName);
+                    continue;
+                }
+
+                // 파일 내용 읽기
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = zis.read(buffer)) > 0) {
+                    baos.write(buffer, 0, len);
+                }
+                byte[] fileData = baos.toByteArray();
+
+                // GCS에 업로드할 경로 생성
+                String objectName = targetPath + fileName;
+
+                // MIME 타입 결정
+                String mimeType = determineMimeType(fileName);
+
+                // GCS에 업로드
+                BlobId blobId = BlobId.of(bucketName, objectName);
+                BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
+                        .setContentType(mimeType)
+                        .build();
+
+                storage.create(blobInfo, fileData);
+
+                // 업로드된 파일 URL 생성
+                String fileUrl = String.format("https://storage.googleapis.com/%s/%s", bucketName, objectName);
+                uploadedFiles.add(fileUrl);
+
+                log.info("파일 업로드 완료: {} ({} bytes)", fileName, fileData.length);
+            }
+        }
+
+        return uploadedFiles;
+    }
+
+    private String determineMimeType(String fileName) {
+        String lowerName = fileName.toLowerCase();
+
+        if (lowerName.endsWith(".html") || lowerName.endsWith(".htm")) {
+            return "text/html";
+        } else if (lowerName.endsWith(".js")) {
+            return "application/javascript";
+        } else if (lowerName.endsWith(".css")) {
+            return "text/css";
+        } else if (lowerName.endsWith(".png")) {
+            return "image/png";
+        } else if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")) {
+            return "image/jpeg";
+        } else if (lowerName.endsWith(".gif")) {
+            return "image/gif";
+        } else if (lowerName.endsWith(".json")) {
+            return "application/json";
+        } else if (lowerName.endsWith(".wasm")) {
+            return "application/wasm";
+        } else {
+            return "application/octet-stream";
+        }
+    }
+
+    private String findMainGameFile(List<String> uploadedFiles) {
+        // 1. index.html 우선 검색
+        for (String url : uploadedFiles) {
+            if (url.toLowerCase().contains("index.html")) {
+                return url;
+            }
+        }
+
+        // 2. main.html 검색
+        for (String url : uploadedFiles) {
+            if (url.toLowerCase().contains("main.html")) {
+                return url;
+            }
+        }
+
+        // 3. 게임명이 포함된 html 파일 검색
+        for (String url : uploadedFiles) {
+            if (url.toLowerCase().endsWith(".html")) {
+                return url;
+            }
+        }
+
+        // 4. 첫 번째 파일 반환
+        return uploadedFiles.get(0);
     }
 
     /**
@@ -147,5 +311,11 @@ public class CloudUploadServiceImpl implements CloudUploadService {
             String fallback = (file.getOriginalFilename() + System.currentTimeMillis()).hashCode() + "";
             return fallback.substring(0, Math.min(20, fallback.length()));
         }
+    }
+
+    private String extractObjectNameFromUrl(String url) {
+        // https://storage.googleapis.com/bucket-name/object-name에서 object-name 추출
+        String prefix = "https://storage.googleapis.com/" + bucketName + "/";
+        return url.replace(prefix, "");
     }
 }

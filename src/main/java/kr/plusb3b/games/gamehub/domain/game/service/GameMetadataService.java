@@ -28,4 +28,7 @@ public interface GameMetadataService {
     //3.2 승인이 된 게임 항목들 가져오기
     Optional<GamesInfoDto> approvedGames();
 
+    //3.3 나머지 단계 항목들 가져오기
+    Optional<GamesInfoDto> otherGames(Games.GameStatus status);
+
 }

@@ -13,17 +13,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserProviderImpl implements UserProvider {
 
-    private final UserRepository userRepo;
-    private final UserAuthRepository userAuthRepo;
-    private final UserPrivateRepository userPrivateRepo;
-
-    public UserProviderImpl(UserRepository userRepo, UserAuthRepository userAuthRepo,
-                            UserPrivateRepository userPrivateRepo) {
-        this.userRepo = userRepo;
-        this.userAuthRepo = userAuthRepo;
-        this.userPrivateRepo = userPrivateRepo;
-    }
-
     @Override
     public UserAuth hasUserAuth(User user) {
 
@@ -48,5 +37,10 @@ public class UserProviderImpl implements UserProvider {
                hasUserAuth(user),
                hasUserPrivate(user)
        );
+    }
+
+    @Override
+    public User.Role hasRole(User user) {
+        return user.getMbRole();
     }
 }

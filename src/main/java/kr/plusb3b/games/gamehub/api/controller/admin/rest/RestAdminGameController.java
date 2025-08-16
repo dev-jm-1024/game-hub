@@ -1,4 +1,4 @@
-package kr.plusb3b.games.gamehub.api.controller.admin;
+package kr.plusb3b.games.gamehub.api.controller.admin.rest;
 
 import kr.plusb3b.games.gamehub.domain.game.entity.Games;
 import kr.plusb3b.games.gamehub.domain.game.entity.GamesFile;

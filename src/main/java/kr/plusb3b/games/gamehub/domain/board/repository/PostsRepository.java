@@ -36,10 +36,12 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
     @Query("UPDATE Posts SET postAct = 0 WHERE postId = :postId")
     int deletePostsByPostId(@Param("postId") Long postId);
 
+    @Modifying
+    @Query("UPDATE Posts p SET p.importantAct = 1 WHERE p.postId = :postId")
+    int updateImportantActByPostId(@Param("postId") Long postId);
 
-    @Query("SELECT p FROM Posts p WHERE p.user.userAuth.authUserId = :authUserId AND p.board.boardId = :boardId")
-    Optional<Posts> findPostsByUserAuth(@Param("authUserId") String authUserId,
-                                        @Param("boardId") String boardId);
-
+    @Modifying
+    @Query("UPDATE Posts p SET p.importantAct = 0 WHERE p.postId = :postId")
+    int unsetImportantActByPostId(@Param("postId") Long postId);
 
 }

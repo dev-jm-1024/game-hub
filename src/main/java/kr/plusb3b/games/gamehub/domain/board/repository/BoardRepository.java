@@ -2,13 +2,18 @@ package kr.plusb3b.games.gamehub.domain.board.repository;
 
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface BoardRepository extends JpaRepository<Board, String> {
 
-//    //아이디를 통해 게시물 이름 반환
-//    @Query("SELECT board_name FROM Board WHERE board_id = :boardId")
-//    public List<String> findBoardNameById(@Param("boardId") Long boardId);
 
+    @Modifying
+    @Query("UPDATE Board b SET b.boardName = :boardName WHERE b.boardId = :boardId")
+    int updateBoardNameByBoardId(@Param("boardName") String boardName, @Param("boardId") String boardId);
 
-
+    @Modifying
+    @Query("UPDATE Board b SET b.boardAct = :boardAct WHERE b.boardId = :boardId")
+    int updateBoardActByBoardId(@Param("boardAct") int boardAct, @Param("boardId") String boardId);
 }

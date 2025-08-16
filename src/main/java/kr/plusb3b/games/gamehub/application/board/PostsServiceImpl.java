@@ -12,6 +12,7 @@ import kr.plusb3b.games.gamehub.domain.board.repository.PostsRepository;
 import kr.plusb3b.games.gamehub.domain.board.vo.CreatePostsVO;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.LocalDate;
@@ -107,8 +108,6 @@ public class PostsServiceImpl implements PostsService {
     public boolean deactivatePost(Long postId) {
 
         int deactivatePosts = postsRepo.deletePostsByPostId(postId);
-
-
         return deactivatePosts > 0;
     }
 
@@ -160,4 +159,46 @@ public class PostsServiceImpl implements PostsService {
 
         return result;
     }
+
+    @Override
+    @Transactional
+    public boolean markPostAsImportant(Long postId) {
+        // 입력값 검증
+        if (postId == null || postId <= 0) {
+            throw new IllegalArgumentException("유효하지 않은 게시물 ID입니다.");
+        }
+
+        int result = postsRepo.updateImportantActByPostId(postId);
+
+        // 업데이트 결과 확인
+        if (result == 0) {
+            throw new RuntimeException("게시물을 찾을 수 없습니다. ID: " + postId);
+        }
+
+        return result > 0;
+    }
+
+    @Override
+    @Transactional
+    public boolean unsetPostImportant(Long postId) {
+        // 입력값 검증
+        if (postId == null || postId <= 0) {
+            throw new IllegalArgumentException("유효하지 않은 게시물 ID입니다.");
+        }
+
+        int result = postsRepo.unsetImportantActByPostId(postId);
+
+        // 업데이트 결과 확인
+        if (result == 0) {
+            throw new RuntimeException("게시물을 찾을 수 없습니다. ID: " + postId);
+        }
+
+        return result > 0;
+    }
+
+    @Override
+    public List<Posts> getAllPosts() {
+        return postsRepo.findAll(); // 빈 리스트도 그대로 반환
+    }
+
 }

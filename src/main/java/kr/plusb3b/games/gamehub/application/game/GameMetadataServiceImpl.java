@@ -1,8 +1,10 @@
 package kr.plusb3b.games.gamehub.application.game;
 
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
+import kr.plusb3b.games.gamehub.domain.game.dto.GameDetailDto;
 import kr.plusb3b.games.gamehub.domain.game.dto.GameUploadDto;
 import kr.plusb3b.games.gamehub.domain.game.dto.GamesInfoDto;
+import kr.plusb3b.games.gamehub.domain.game.dto.SummaryGamesDto;
 import kr.plusb3b.games.gamehub.domain.game.entity.Games;
 import kr.plusb3b.games.gamehub.domain.game.entity.GamesFile;
 import kr.plusb3b.games.gamehub.domain.game.exception.GameUploadException;
@@ -168,5 +170,54 @@ public class GameMetadataServiceImpl implements GameMetadataService {
             log.error("otherGames({}) 조회 실패", status, e);
             return Optional.empty();
         }
+    }
+
+    @Override
+    public List<SummaryGamesDto> getSummaryGame(String boardId) {
+
+        List<SummaryGamesDto> result = gamesRepo.findGamesByBoard_BoardId(boardId).stream()
+                .filter(g -> g.isVisible() && g.isStatusActive())
+                .map(
+                        game -> new SummaryGamesDto(
+                                game.getBoard().getBoardId(),
+                                game.getGameId(),
+                                game.getTeamName(),
+                                game.getGameName(),
+                                game.getApprovedAt()
+                        )
+                ).collect(Collectors.toList());
+
+
+        return result;
+    }
+
+    @Override
+    public GameDetailDto getGameDetail(String boardId, Long gameId) {
+        return gamesRepo.findGamesByBoard_BoardId(boardId).stream()
+                .filter(g -> g.isVisible() && g.isStatusActive())
+                .filter(g -> g.getGameId().equals(gameId))
+                .map(game -> {
+                    GamesFile gamesFile = game.getGamesFile();
+
+                    return new GameDetailDto(
+                            boardId,
+                            game.getGameId(),
+                            game.getGameName(),
+                            game.getGameDescription(),
+                            game.getTeamName(),
+                            game.getSpecs(),
+                            game.getGameVersion(),
+                            game.getGenre(),
+                            game.getPlatform(),
+                            game.getApprovedAt(),
+                            game.getCreatedAt(),
+                            // 파일 정보
+                            gamesFile != null ? gamesFile.getGameUrl() : null,
+                            gamesFile != null ? gamesFile.getOriginalFilename() : null,
+                            gamesFile != null ? gamesFile.getFileSize() : null
+                    );
+                })
+                .findFirst()
+                .orElse(null);
     }
 }

@@ -1,21 +1,14 @@
 package kr.plusb3b.games.gamehub.api.controller.board;
 
-import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
 import kr.plusb3b.games.gamehub.domain.board.repository.BoardRepository;
 import kr.plusb3b.games.gamehub.domain.board.service.BoardService;
-import kr.plusb3b.games.gamehub.domain.board.service.CommentService;
 import kr.plusb3b.games.gamehub.domain.board.service.PostsService;
-import kr.plusb3b.games.gamehub.domain.user.entity.User;
-import kr.plusb3b.games.gamehub.application.board.BoardServiceImpl;
-import kr.plusb3b.games.gamehub.application.board.PostsServiceImpl;
-import kr.plusb3b.games.gamehub.domain.board.entity.PostFiles;
 import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
-import kr.plusb3b.games.gamehub.domain.board.dto.PostsNotFoundException;
 import kr.plusb3b.games.gamehub.domain.board.dto.SummaryPostDto;
-import kr.plusb3b.games.gamehub.domain.board.repository.PostFilesRepository;
-import kr.plusb3b.games.gamehub.security.AccessControlService;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import kr.plusb3b.games.gamehub.domain.game.dto.SummaryGamesDto;
+import kr.plusb3b.games.gamehub.domain.game.entity.Games;
+import kr.plusb3b.games.gamehub.domain.game.service.GameMetadataService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -26,12 +19,10 @@ import java.util.*;
 @RequestMapping("/board")
 public class BoardController {
 
-    private final PostFilesRepository postFilesRepo;
     private final BoardService boardService;
     private final PostsService postsService;
-    private final AccessControlService access;
     private final BoardRepository boardRepo;
-    private final CommentService commentService;
+    private final GameMetadataService gameMetadataService;
     //private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(BoardController.class);4
 
 //    @Value("${app.max.boardSize}")
@@ -39,15 +30,12 @@ public class BoardController {
 //    int maxBoardSize = Integer.parseInt(maxBoardSizeString);
 
 
-    public BoardController(PostFilesRepository postFilesRepo,  BoardService boardService,
-                           PostsService postsService, AccessControlService access,
-                           BoardRepository boardRepo, CommentService commentService) {
-        this.postFilesRepo = postFilesRepo;
+    public BoardController(BoardService boardService, PostsService postsService, BoardRepository boardRepo,
+                           GameMetadataService gameMetadataService) {
         this.boardService = boardService;
         this.postsService = postsService;
-        this.access = access;
         this.boardRepo = boardRepo;
-        this.commentService = commentService;
+        this.gameMetadataService = gameMetadataService;
     }
 
     @GetMapping
@@ -63,6 +51,10 @@ public class BoardController {
         model.addAttribute("totalPosts", result.get(0));
         model.addAttribute("totalBoards", result.get(1));
         model.addAttribute("todayPosts", result.get(2));
+
+        //게임게시판 데이터 Model 담기
+        Map<Board, List<Games>> gamesByBoard = boardService.loadTop5LatestGamesByBoard();
+        model.addAttribute("gamesByBoard", gamesByBoard);
 
 
         return "board/main-board";
@@ -83,6 +75,20 @@ public class BoardController {
         model.addAttribute("board", board); // ← 요거 추가!
 
         return "board/common/post-list";
+    }
+
+    @GetMapping("/game-board/{boardId}/view")
+    public String gameBoardMainPage(@PathVariable("boardId") String boardId ,Model model) {
+
+        Board board = boardRepo.findById(boardId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
+
+        List<SummaryGamesDto> summaryGames = gameMetadataService.getSummaryGame(boardId);
+
+        model.addAttribute("summaryGames", summaryGames);
+        model.addAttribute("board", board);
+
+        return "board/common/post-games-list";
     }
 
 }

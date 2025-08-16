@@ -3,7 +3,6 @@ package kr.plusb3b.games.gamehub.api.controller.board;
 import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.domain.board.dto.PostsNotFoundException;
 import kr.plusb3b.games.gamehub.domain.board.entity.*;
-import kr.plusb3b.games.gamehub.domain.board.repository.BoardRepository;
 import kr.plusb3b.games.gamehub.domain.board.repository.PostFilesRepository;
 import kr.plusb3b.games.gamehub.domain.board.service.*;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;

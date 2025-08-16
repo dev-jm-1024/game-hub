@@ -9,7 +9,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
 import jakarta.servlet.http.HttpServletRequest;
 
 
@@ -62,7 +61,7 @@ public class GameHubController {
 
         if (isLoggedIn) {
             model.addAttribute("nickname", user.getMbNickname());
-            model.addAttribute("profileImage", testImageUrl);
+            model.addAttribute("profileImage", user.getMbProfileUrl() != null ? user.getMbProfileUrl() : testImageUrl);
         }
 
         return "main-contents/index";

@@ -15,4 +15,7 @@ public interface UserProvider {
 
     //User를 통해 UserDetailsDto 반환
     UserDetailsDto getUserDetails(User user);
+
+    //User를 통해 권한 체크
+    User.Role hasRole(User user);
 }

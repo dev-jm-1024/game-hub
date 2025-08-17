@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface BoardRepository extends JpaRepository<Board, String> {
 
 
@@ -16,4 +18,6 @@ public interface BoardRepository extends JpaRepository<Board, String> {
     @Modifying
     @Query("UPDATE Board b SET b.boardAct = :boardAct WHERE b.boardId = :boardId")
     int updateBoardActByBoardId(@Param("boardAct") int boardAct, @Param("boardId") String boardId);
+
+    List<Board> findBoardsByBoardName(String boardName);
 }

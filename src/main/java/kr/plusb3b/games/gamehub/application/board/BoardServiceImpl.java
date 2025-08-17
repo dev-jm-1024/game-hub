@@ -1,5 +1,6 @@
 package kr.plusb3b.games.gamehub.application.board;
 
+import kr.plusb3b.games.gamehub.domain.board.dto.CreateBoardDto;
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
 import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
 import kr.plusb3b.games.gamehub.domain.board.repository.BoardRepository;
@@ -132,6 +133,33 @@ public class BoardServiceImpl implements BoardService {
         }
 
         return updatedRows > 0;
+    }
+
+    @Override
+    //게시판 작성
+    public int createBoard(CreateBoardDto createBoardDto){
+
+        String boardId = UUID.randomUUID().toString().substring(0, 10);
+
+        Board board = new Board(
+                boardId,
+                createBoardDto.getBoardName(),
+                1
+        );
+
+        Board result = boardRepo.save(board);
+        if(result == null)
+            return 0;
+
+        return 1;
+    }
+
+    //게시판 이름 중복 확인
+    @Override
+    public boolean isDuplicateBoardName(String boardName){
+
+        List<Board> result = boardRepo.findBoardsByBoardName(boardName);
+        return result.isEmpty();
     }
 
     // 편의 메서드 추가

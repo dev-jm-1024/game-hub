@@ -1,5 +1,6 @@
 package kr.plusb3b.games.gamehub.domain.board.service;
 
+import kr.plusb3b.games.gamehub.domain.board.dto.CreateBoardDto;
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
 import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
 import kr.plusb3b.games.gamehub.domain.game.entity.Games;
@@ -25,6 +26,12 @@ public interface BoardService {
 
     //게시판 제거하기 - 관리자 용도
     boolean changeBoardStatus(String boardId, int status);
+
+    //게시판 생성하기 - 관리자 용도
+    int createBoard(CreateBoardDto createBoardDto);
+
+    //게시판 이름 중복 확인 - 관리자 용도
+    boolean isDuplicateBoardName(String boardName);
 
     // 편의 메서드
     boolean deactivateBoard(String boardId);

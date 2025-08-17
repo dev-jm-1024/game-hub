@@ -23,11 +23,18 @@ public class AdminServiceImpl implements AdminService {
     public String checkAdminOrRedirect(HttpServletRequest request, String redirectPath) {
         User user = access.getAuthenticatedUser(request);
 
-        if(user == null) return redirectPath;
-        else if(user.getMbRole() != User.Role.ROLE_ADMIN) return redirectPath;
+        if (user == null) {
+            // 로그인 안 한 경우 → 로그인 페이지로 리다이렉트
+            return "redirect:/game-hub/login";
+        } else if (user.getMbRole() != User.Role.ROLE_ADMIN) {
+            // 로그인은 했지만 권한 없음 → 지정된 redirectPath로 이동
+            return redirectPath;
+        }
 
-        return redirectPath; // 관리자가 아니면 리다이렉트 경로 반환
+        // 관리자라면 null 반환 (리다이렉트 필요 없음)
+        return null;
     }
+
 
     @Override
     public HttpStatus checkAdminOrReturnStatus(HttpServletRequest request) {
@@ -38,4 +45,5 @@ public class AdminServiceImpl implements AdminService {
 
         return HttpStatus.OK;
     }
+
 }

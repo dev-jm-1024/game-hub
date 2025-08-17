@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
@@ -24,7 +25,15 @@ public class AdminBoardController {
 
 
     private final String REDIRECT_PATH = "redirect:/game-hub";
-    private final String NOTICE_PATH = "notice";
+    private final String NOTICE = "notice";
+
+    // API 경로
+    private String ADMIN_PATH = "/admin/api/v1";
+    private String ACTIVATE_PATH = ADMIN_PATH + "/board/{boardId}/activate";
+    private String DEACTIVATE_PATH = ADMIN_PATH + "/board/{boardId}/deactivate";
+    private String RENAME_PATH = ADMIN_PATH + "/board/{boardId}/rename";
+    private String MAKE_PATH = ADMIN_PATH + "/board/make";
+
 
     public AdminBoardController(BoardService boardService, AdminService adminService,
                                 AccessControlService access) {
@@ -47,12 +56,32 @@ public class AdminBoardController {
         //게시판 데이터 넘기기
         List<Board> boardList = boardService.getAllBoards().stream()
                         .filter(
-                                b -> !b.getBoardId().equals(NOTICE_PATH)
+                                b -> !b.getBoardId().equals(NOTICE)
                         ).collect(Collectors.toList());
 
         model.addAttribute("boardList", boardList);
 
+        //API 경로 Model에 넣어주기
+        model.addAttribute("boardApiPaths", boardApiPaths());
+
         return "admin/board-status/index";
+    }
+
+    @GetMapping("/board/create")
+    public String viewCreateBoardPage(Model model){
+
+        model.addAttribute("boardApiPaths", boardApiPaths());
+        return "admin/board-status/make-board";
+    }
+
+
+    private Map<String ,String> boardApiPaths(){
+        return Map.ofEntries(
+                Map.entry("activate", ACTIVATE_PATH),
+                Map.entry("deactivate", DEACTIVATE_PATH),
+                Map.entry("rename", RENAME_PATH),
+                Map.entry("makeBoard", MAKE_PATH)
+        );
     }
 
 

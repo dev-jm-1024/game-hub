@@ -23,41 +23,32 @@ public class AdminController {
     }
 
     @GetMapping
-    public String showAdminPage(Model model, HttpServletRequest request){
+    public String viewAdminPage(Model model, HttpServletRequest request){
 
         User user = access.getAuthenticatedUser(request);
+        if(user == null) return "redirect: /game-hub/login";
+
+        if(user.getMbRole() != User.Role.ROLE_ADMIN) {
+            return "redirect:/game-hub";
+        }
 
         model.addAttribute("admin", user);
 
         return "admin/index";
     }
 
+    @GetMapping("/create")
+    public String viewCreateAdminPage(Model model, HttpServletRequest request){
+
+        User user = access.getAuthenticatedUser(request);
+        if(user == null) return "redirect: /game-hub/login";
+
+        if(user.getMbRole() != User.Role.ROLE_ADMIN) {
+            return "redirect: /game-hub";
+        }
 
 
-//
-//    //사용자 관리 : /user-status
-//    @GetMapping("/user-status")
-//    public String viewUserStatusPage(){
-//        return "admin/user-status/index";
-//    }
-//
-//
-//    //게시판 관리 - 공지사항 관리, 게시물 관리
-//    //: /board-status, /board/notice-status, /board/posts-status
-//
-//    @GetMapping("/board-status")
-//    public String  viewBoardStatusPage(Model model){
-//        return "admin/board-status/index";
-//    }
-//
-//    @GetMapping("/board/notice-status")
-//    public String viewNoticeStatusPage(Model model){
-//        return "admin/notice-status/index";
-//    }
-//
-//    @GetMapping("/board/posts-status")
-//    public String viewPostsStatusPage(Model model){
-//        return "admin/post-status/index";
-//    }
+        return "/admin/create-admin";
+    }
 
 }

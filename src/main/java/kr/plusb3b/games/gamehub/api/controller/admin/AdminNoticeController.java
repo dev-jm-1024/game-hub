@@ -20,6 +20,7 @@ public class AdminNoticeController {
     private final AdminService adminService;
 
     private final String REDIRECT_PATH = "redirect:/game-hub";
+    private final String CORRECT_PATH = "";
     private final String NOTICE_PATH = "notice";
 
     public AdminNoticeController(PostsService postsService, AdminService adminService) {

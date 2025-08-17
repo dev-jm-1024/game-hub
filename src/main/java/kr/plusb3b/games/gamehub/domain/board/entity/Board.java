@@ -44,6 +44,12 @@ public class Board {
     // 기본 생성자 (JPA에서 필수로 요구됨)
     public Board() {}
 
+    public Board(String boardId, String boardName, int boardAct) {
+        this.boardId = boardId;
+        this.boardName = boardName;
+        this.boardAct = boardAct;
+    }
+
     @Override
     public String toString() {
         return "Board{" +

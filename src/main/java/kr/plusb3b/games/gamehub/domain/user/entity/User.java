@@ -29,7 +29,7 @@ public class User {
     private LocalDateTime mbJoinDate;
     private int mbAct;
 
-    //Spring Security에서 ROLE_ 접두사 붙여야 인식 가능
+    //Spring Security 에서 ROLE_ 접두사 붙여야 인식 가능
     public enum Role {
         ROLE_USER, ROLE_ADMIN, ROLE_PRODUCER
     }//회원, 관리자, 제작자

@@ -13,6 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin/games")
+//경로 수정해야함: /admin/api/v1
 @Slf4j
 public class RestAdminGameController {
 

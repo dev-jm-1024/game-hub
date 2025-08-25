@@ -44,4 +44,15 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
     @Query("UPDATE Posts p SET p.importantAct = 0 WHERE p.postId = :postId")
     int unsetImportantActByPostId(@Param("postId") Long postId);
 
+    //공지사항 업데이트
+    @Modifying
+    @Query("UPDATE Posts p SET p.postTitle = :postTitle, p.postContent = :postContent, p.importantAct = :importantAct WHERE p.postId = :postId")
+    int updateNoticeByPostId(
+            @Param("postTitle") String postTitle,
+            @Param("postContent") String postContent,
+            @Param("importantAct") int importantAct,
+            @Param("postId") Long postId
+    );
+
+
 }

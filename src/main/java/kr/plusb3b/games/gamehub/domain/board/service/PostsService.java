@@ -1,10 +1,14 @@
 package kr.plusb3b.games.gamehub.domain.board.service;
 
 import jakarta.servlet.http.HttpServletRequest;
+import kr.plusb3b.games.gamehub.domain.board.dto.CreateNoticeDto;
+import kr.plusb3b.games.gamehub.domain.board.dto.UpdateNoticeDto;
+import kr.plusb3b.games.gamehub.domain.board.vo.CreateNoticeVO;
 import kr.plusb3b.games.gamehub.domain.board.vo.CreatePostsVO;
 import kr.plusb3b.games.gamehub.domain.board.dto.PostRequestDto;
 import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
 import kr.plusb3b.games.gamehub.domain.board.dto.SummaryPostDto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -36,6 +40,11 @@ public interface PostsService {
     List<Integer> statsBoard();
 
     /*******************************************관리자*******************************************/
+    Posts createNotice(CreateNoticeDto createNoticeDto, CreateNoticeVO createNoticeVO,
+                       String boardId, HttpServletRequest request);
+
+    Posts updateNotice(UpdateNoticeDto updateNoticeDto);
+
     // 삭제 - 사용자, 관리자
     boolean deactivatePost(Long postId);
 
@@ -47,6 +56,9 @@ public interface PostsService {
 
     //게시물 전체 데이터 가져오기 - 관리자
     List<Posts> getAllPosts();
+
+    //특정 게시판의 게시물 가져오기
+    List<Posts> getPostsByBoardId(String boardId);
 
 }
 

@@ -9,4 +9,8 @@ public interface PostFilesService {
 
     List<PostFiles> uploadPostFile(Posts savedPost, Map<String, String> fileUrlAndType);
 
+    List<PostFiles> getPostFiles(Long postId);
+
+    void deleteRemovedFiles(Long postId, List<String> oldFileUrls);
+
 }

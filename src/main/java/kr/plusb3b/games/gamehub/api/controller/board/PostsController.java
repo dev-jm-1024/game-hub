@@ -49,8 +49,8 @@ public class PostsController {
     }
 
     //글 작성 페이지 경로 처리
-    @GetMapping("/new")
-    public String showPostPage(@RequestParam("boardId") String boardId, Model model) {
+    @GetMapping("/{boardId}/new")
+    public String showPostPage(@PathVariable("boardId") String boardId, Model model) {
         model.addAttribute("boardId", boardId);
         return "board/common/post-form";
     }
@@ -145,6 +145,7 @@ public class PostsController {
 
         return "board/common/post-detail";
     }
+
     @GetMapping("/posts/edit")
     public String showPostsEditPage(@RequestParam("postId") Long postId,
                                     @RequestParam("boardId") String boardId,

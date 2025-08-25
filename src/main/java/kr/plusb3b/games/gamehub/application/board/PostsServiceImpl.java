@@ -2,7 +2,10 @@ package kr.plusb3b.games.gamehub.application.board;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import kr.plusb3b.games.gamehub.domain.board.repository.PostFilesRepository;
+import kr.plusb3b.games.gamehub.domain.board.service.PostFilesService;
 import kr.plusb3b.games.gamehub.domain.board.service.PostsService;
+import kr.plusb3b.games.gamehub.domain.board.vo.CreateNoticeVO;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.board.dto.*;
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
@@ -11,14 +14,14 @@ import kr.plusb3b.games.gamehub.domain.board.repository.BoardRepository;
 import kr.plusb3b.games.gamehub.domain.board.repository.PostsRepository;
 import kr.plusb3b.games.gamehub.domain.board.vo.CreatePostsVO;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
+import kr.plusb3b.games.gamehub.upload.FileUpload;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,11 +30,19 @@ public class PostsServiceImpl implements PostsService {
     private final BoardRepository boardRepo;
     private final PostsRepository postsRepo;
     private final AccessControlService access;
+    private final FileUpload fileUpload;
+    private final PostFilesRepository postFilesRepo;
+    private final PostFilesService postFilesService;
 
-    public PostsServiceImpl(BoardRepository boardRepo, PostsRepository postsRepo, AccessControlService access) {
+    public PostsServiceImpl(BoardRepository boardRepo, PostsRepository postsRepo, AccessControlService access,
+                            FileUpload fileUpload, PostFilesRepository postFilesRepo,
+                            PostFilesService postFilesService) {
         this.boardRepo = boardRepo;
         this.postsRepo = postsRepo;
         this.access = access;
+        this.fileUpload = fileUpload;
+        this.postFilesRepo = postFilesRepo;
+        this.postFilesService = postFilesService;
     }
 
     @Override
@@ -59,6 +70,30 @@ public class PostsServiceImpl implements PostsService {
     }
 
     @Override
+    public Posts createNotice(CreateNoticeDto createNoticeDto, CreateNoticeVO createNoticeVO,
+                              String boardId, HttpServletRequest request) {
+
+        Board board = boardRepo.findById(boardId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
+
+        User user = access.getAuthenticatedUser(request);
+
+        Posts posts = new Posts(
+                board,
+                user,
+                createNoticeDto.getPostTitle(),
+                createNoticeDto.getPostContent(),
+                createNoticeVO.getViewCount(),
+                LocalDate.now(),
+                createNoticeVO.getUpdatedAt(),
+                createNoticeVO.getPostAct(),
+                createNoticeDto.getImportantAct()
+        );
+
+        return postsRepo.save(posts);
+    }
+
+    @Override
     public boolean updatePost(PostRequestDto postRequestDto, String boardId, Long postId){
 
         int result =  postsRepo.updatePostsByPostIdAndBoardId(
@@ -70,6 +105,60 @@ public class PostsServiceImpl implements PostsService {
         );
 
         return result > 0;
+    }
+
+    @Override
+    @Transactional
+    public Posts updateNotice(UpdateNoticeDto dto) {
+
+        // 1. 기본 정보 업데이트
+        int updateCount = postsRepo.updateNoticeByPostId(  // int로 받음
+                dto.getPostTitle(),
+                dto.getPostContent(),
+                dto.getImportantAct(),
+                dto.getPostId()
+        );
+
+        if (updateCount > 0) {
+            // 업데이트 성공 시 게시물 조회
+            Posts savedPosts = postsRepo.findById(dto.getPostId())
+                    .orElseThrow(() -> new EntityNotFoundException("게시물을 찾을 수 없습니다."));
+
+            // 2. 파일 처리 로직
+            handleFileUpdates(savedPosts, dto);
+
+            return savedPosts;
+        }
+
+        return null;
+    }
+
+    private void handleFileUpdates(Posts savedPosts, UpdateNoticeDto dto) {
+        boolean hasOldFiles = dto.getOldFileUrl() != null && !dto.getOldFileUrl().isEmpty();
+        boolean hasNewFiles = dto.getFiles() != null && !dto.getFiles().isEmpty();
+
+        if (!hasOldFiles && hasNewFiles) {
+            // 시나리오 1: 기존 파일 모두 삭제 + 새 파일 업로드
+            postFilesRepo.deletePostFilesByPostId(savedPosts.getPostId());
+            Map<String, String> fileUrlMap = fileUpload.getFileUrlAndType(dto.getFiles());
+            postFilesService.uploadPostFile(savedPosts, fileUrlMap);
+
+        } else if (hasOldFiles && !hasNewFiles) {
+            // 시나리오 2: 기존 파일 유지 (아무것도 안함)
+            // 기존 파일은 그대로 유지
+
+        } else if (hasOldFiles && hasNewFiles) {
+            // 시나리오 3: 기존 파일 일부 유지 + 새 파일 추가
+            // 제거된 파일들 삭제
+            postFilesService.deleteRemovedFiles(savedPosts.getPostId(), dto.getOldFileUrl());
+            // 새 파일 업로드
+            Map<String, String> fileUrlMap = fileUpload.getFileUrlAndType(dto.getFiles());
+            postFilesService.uploadPostFile(savedPosts, fileUrlMap);
+
+        } else if (!hasOldFiles && !hasNewFiles) {
+            // 시나리오 4: 모든 파일 삭제
+            postFilesRepo.deletePostFilesByPostId(savedPosts.getPostId());
+        }
     }
 
     @Override
@@ -99,8 +188,6 @@ public class PostsServiceImpl implements PostsService {
                 .orElseThrow(()-> new PostsNotFoundException("찾을 수 없음"));
 
         return result;
-
-
     }
 
 
@@ -183,7 +270,7 @@ public class PostsServiceImpl implements PostsService {
     public boolean unsetPostImportant(Long postId) {
         // 입력값 검증
         if (postId == null || postId <= 0) {
-            throw new IllegalArgumentException("유효하지 않은 게시물 ID입니다.");
+            throw new IllegalArgumentException("유효하지 않은 게시물 ID 입니다.");
         }
 
         int result = postsRepo.unsetImportantActByPostId(postId);
@@ -199,6 +286,14 @@ public class PostsServiceImpl implements PostsService {
     @Override
     public List<Posts> getAllPosts() {
         return postsRepo.findAll(); // 빈 리스트도 그대로 반환
+    }
+
+    @Override
+    public List<Posts> getPostsByBoardId(String boardId) {
+        return  getAllPosts().stream()
+                .filter(p -> p.getBoard().getBoardId().equals(boardId))
+                .filter(Posts::isActivatePosts)
+                .collect(Collectors.toList());
     }
 
 }

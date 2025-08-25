@@ -19,7 +19,7 @@ public class PostFiles {
 
     //파일이 속한 게시글 아이디 : 외래키
     @ManyToOne
-    @JoinColumn(name="postId")
+    @JoinColumn(name="post_id")
     private Posts post;
 
     //파일경로 또는 이름

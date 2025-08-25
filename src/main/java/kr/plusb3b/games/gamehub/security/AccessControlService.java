@@ -1,18 +1,14 @@
 package kr.plusb3b.games.gamehub.security;
 
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import kr.plusb3b.games.gamehub.domain.board.entity.Board;
-import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
+import jakarta.servlet.http.*;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserAuth;
 import kr.plusb3b.games.gamehub.security.jwt.JwtProvider;
-import kr.plusb3b.games.gamehub.domain.board.repository.BoardRepository;
-import kr.plusb3b.games.gamehub.domain.board.repository.PostsRepository;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserAuthRepository;
-import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.Optional;
 
 @Component
@@ -66,5 +62,22 @@ public class AccessControlService {
 
         return user;
     }
+
+    // AccessControlService.java
+    public void validateAdminAccess(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        User user = getAuthenticatedUser(request);
+
+        if(user == null) {
+            response.sendRedirect("/login");
+            return;
+        }
+
+        if(user.getMbRole() != User.Role.ROLE_ADMIN) {
+            response.sendRedirect("/access-denied");
+            return;
+        }
+    }
+
 
 }

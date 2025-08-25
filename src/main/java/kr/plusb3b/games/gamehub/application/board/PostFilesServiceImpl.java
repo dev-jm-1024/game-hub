@@ -5,6 +5,7 @@ import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
 import kr.plusb3b.games.gamehub.domain.board.repository.PostFilesRepository;
 import kr.plusb3b.games.gamehub.domain.board.service.PostFilesService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -36,4 +37,18 @@ public class PostFilesServiceImpl implements PostFilesService {
         return uploadedFiles;
     }
 
+    @Override
+    public List<PostFiles> getPostFiles(Long postId) {
+        List<PostFiles> result = postFilesRepo.findPostFilesByPostId(postId);
+
+        return result == null ? Collections.emptyList() : result;
+    }
+
+    @Override
+    @Transactional
+    public void deleteRemovedFiles(Long postId, List<String> oldFileUrls) {
+        if (oldFileUrls != null && !oldFileUrls.isEmpty()) {
+            postFilesRepo.deleteRemovedPostFiles(postId, oldFileUrls);
+        }
+    }
 }

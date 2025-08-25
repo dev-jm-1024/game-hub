@@ -49,6 +49,8 @@ public class Posts {
 
     public Posts() {}
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostFiles> postFiles = new ArrayList<>();
 
     @OneToMany(mappedBy = "posts", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comments> comments = new ArrayList<>();
@@ -126,6 +128,11 @@ public class Posts {
     //importantAct 비활성화
     public void changeDeactivateImportant(){
         this.importantAct = 0;
+    }
+
+    //중요사항인가?
+    public boolean isImportant(){
+        return this.importantAct == 1;
     }
 }
 

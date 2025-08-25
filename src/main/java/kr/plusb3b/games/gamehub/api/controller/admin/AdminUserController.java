@@ -1,10 +1,11 @@
 package kr.plusb3b.games.gamehub.api.controller.admin;
 
-import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.*;
 import kr.plusb3b.games.gamehub.application.admin.AdminUserConfig;
 import kr.plusb3b.games.gamehub.domain.admin.service.AdminUserService;
 import kr.plusb3b.games.gamehub.domain.user.dto.UserDetailsDto;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
+import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,20 +20,24 @@ public class AdminUserController {
 
     private final AdminUserService adminUserService;
     private final AdminUserConfig adminUserConfig;
+    private final AccessControlService access;
 
-    public AdminUserController(AdminUserService adminUserService, AdminUserConfig adminUserConfig) {
+    public AdminUserController(AdminUserService adminUserService, AdminUserConfig adminUserConfig, AccessControlService access) {
         this.adminUserService = adminUserService;
         this.adminUserConfig = adminUserConfig;
+        this.access = access;
     }
 
     /**
      * 모든 요청에서 공통으로 사용하는 데이터
      */
-    @ModelAttribute
-    public void addCommonData(Model model, HttpServletRequest request) {
-        User admin = adminUserService.validateAdminAccess(request);
-        adminUserService.addAdminInfo(model, admin, adminUserConfig);
-    }
+//    @ModelAttribute
+//    public void addCommonData(Model model, HttpServletRequest request, HttpServletResponse response) throws Exception {
+//
+//        //access.validateAdminAccess(request, response);
+//        User admin = adminUserService.validateAdminAccess(request);
+//        adminUserService.addAdminInfo(model, admin, adminUserConfig);
+//    }
 
     @GetMapping
     public String viewUserStatusPage(

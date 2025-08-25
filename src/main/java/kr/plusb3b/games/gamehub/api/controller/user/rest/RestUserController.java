@@ -6,6 +6,7 @@ import kr.plusb3b.games.gamehub.domain.user.dto.RequestUserUpdateDto;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserAuth;
 import kr.plusb3b.games.gamehub.domain.user.service.UserDeleteService;
+import kr.plusb3b.games.gamehub.domain.user.service.UserProvider;
 import kr.plusb3b.games.gamehub.domain.user.service.UserUpdateService;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserAuthRepository;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
@@ -30,6 +31,7 @@ public class RestUserController {
     private final UserDeleteService userDeleteService;
     private final FileUpload fileUpload;
 
+
     public RestUserController(AccessControlService access, UserUpdateService userUpdateService,
                               UserAuthRepository userAuthRepo, UserDeleteService userDeleteService,
                               FileUpload fileUpload) {
@@ -38,9 +40,14 @@ public class RestUserController {
         this.userAuthRepo = userAuthRepo;
         this.userDeleteService = userDeleteService;
         this.fileUpload = fileUpload;
+
     }
 
-    // RestUserController.java에 추가할 메서드
+    //WebGL 에서 사용자 정보를 요청할 때 응답하는  : /user
+
+    //사용자의 쿠키에서 mbId 추출
+    //직렬화 통해서 JSON 으로 반환
+
 
     @PostMapping("/user/{mbId}/profile-image")
     public ResponseEntity<?> uploadProfileImage(@PathVariable("mbId") Long mbId,

@@ -28,6 +28,7 @@ public class RestAdminBoardController {
         this.access = access;
     }
 
+    //게시판 생성
     @PostMapping("/board/create")
     public ResponseEntity<?> createBoard(@ModelAttribute CreateBoardDto createBoardDto, HttpServletRequest request){
 
@@ -41,6 +42,46 @@ public class RestAdminBoardController {
         if(result == 0) return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("DB Error");
 
         System.out.println("boardName: " + createBoardDto.getBoardName());
+
+        return ResponseEntity.status(HttpStatus.OK).body("성공적으로 반영되었습니다");
+    }
+
+    //게시판 활성화
+    @PostMapping("/board/{boardId}/activate")
+    public ResponseEntity<?> activateBoard(@PathVariable String boardId, HttpServletRequest request){
+
+        if(boardId == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("게시판 아이디가 누락되었습니다");
+        System.out.println("boardId: " + boardId);
+
+        User user = access.getAuthenticatedUser(request);
+
+        if(user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다");
+        else if(user.getMbRole() != User.Role.ROLE_ADMIN) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("관리자 권한이 존재하지 않습니다");
+
+        boolean result = boardService.changeBoardStatus(boardId, 1);
+
+        if(!result) return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("DB Error");
+
+
+        return ResponseEntity.status(HttpStatus.OK).body("성공적으로 반영되었습니다");
+    }
+
+    //게시판 활성화
+    @PostMapping("/board/{boardId}/deactivate")
+    public ResponseEntity<?> deactivateBoard(@PathVariable String boardId, HttpServletRequest request){
+
+        if(boardId == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("게시판 아이디가 누락되었습니다");
+        System.out.println("boardId: " + boardId);
+
+        User user = access.getAuthenticatedUser(request);
+
+        if(user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다");
+        else if(user.getMbRole() != User.Role.ROLE_ADMIN) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("관리자 권한이 존재하지 않습니다");
+
+        boolean result = boardService.changeBoardStatus(boardId, 0);
+
+        if(!result) return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("DB Error");
+
 
         return ResponseEntity.status(HttpStatus.OK).body("성공적으로 반영되었습니다");
     }
@@ -76,9 +117,9 @@ public class RestAdminBoardController {
 
 
 
-    @PatchMapping("/board/{boardId}/name")
+    @PostMapping("/board/{boardId}/name")
     public ResponseEntity<?> updateBoardName(@PathVariable String boardId,
-                                             @RequestBody String newName,
+                                             @RequestParam String newName,
                                              HttpServletRequest request) {
 
         // 권한 체크

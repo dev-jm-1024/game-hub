@@ -18,6 +18,8 @@ public interface BoardService {
 
     boolean validateBoard(String boardId);
 
+    Board getBoardByBoardId(String boardId);
+
     //게시판 데이터 가져오기 - 관리자 용도
     List<Board> getAllBoards();
 

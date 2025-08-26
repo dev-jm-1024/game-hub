@@ -84,6 +84,14 @@ public class BoardServiceImpl implements BoardService {
         return boardRepo.existsById(boardId);
     }
 
+    @Override
+    public Board getBoardByBoardId(String boardId) {
+        Board board = boardRepo.findById(boardId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
+
+        return board;
+    }
+
     /***************************************************Admin Method***************************************************/
 
     @Override

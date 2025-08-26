@@ -2,55 +2,30 @@ package kr.plusb3b.games.gamehub.api.controller.board;
 
 import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.domain.board.dto.PostsNotFoundException;
-import kr.plusb3b.games.gamehub.domain.board.entity.*;
-import kr.plusb3b.games.gamehub.domain.board.repository.PostFilesRepository;
-import kr.plusb3b.games.gamehub.domain.board.service.*;
-import kr.plusb3b.games.gamehub.domain.user.entity.User;
-import kr.plusb3b.games.gamehub.domain.user.entity.UserCommentsReaction;
-import kr.plusb3b.games.gamehub.domain.user.entity.UserPostsReaction;
-import kr.plusb3b.games.gamehub.domain.user.service.UserInteractionProvider;
-import kr.plusb3b.games.gamehub.security.AccessControlService;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import kr.plusb3b.games.gamehub.domain.board.service.viewmodel.PostDetailVmService;
+import kr.plusb3b.games.gamehub.domain.board.service.viewmodel.PostEditFormVmService;
+import kr.plusb3b.games.gamehub.view.board.PostDetailVM;
+import kr.plusb3b.games.gamehub.view.board.PostEditFormVM;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @Controller
 @RequestMapping("/board")
 public class PostsController {
 
-    private final PostFilesRepository postFilesRepo;
-    private final PostsService postsService;
-    private final AccessControlService access;
-    private final CommentService commentService;
-    private final UserInteractionProvider userInteractionProvider;
-    private final PostsInteractionService postsInteractionService;
-    private final CommentsInteractionService commentsInteractionService;
+    /**리팩토링 후 의존성**/
+    private final PostDetailVmService postDetailVmService;
+    private final PostEditFormVmService postEditFormVmService;
 
-
-    public PostsController(PostFilesRepository postFilesRepo, PostsService postsService,
-                           AccessControlService access, CommentService commentService,
-                           UserInteractionProvider userInteractionProvider,
-                           PostsInteractionService postsInteractionService,
-                           CommentsInteractionService commentsInteractionService) {
-
-        this.postFilesRepo = postFilesRepo;
-        this.postsService = postsService;
-        this.access = access;
-        this.commentService = commentService;
-        this.userInteractionProvider = userInteractionProvider;
-        this.postsInteractionService = postsInteractionService;
-        this.commentsInteractionService = commentsInteractionService;
+    public PostsController(PostDetailVmService postDetailVmService, PostEditFormVmService postEditFormVmService) {
+        this.postDetailVmService = postDetailVmService;
+        this.postEditFormVmService = postEditFormVmService;
     }
 
     //글 작성 페이지 경로 처리
     @GetMapping("/{boardId}/new")
-    public String showPostPage(@PathVariable("boardId") String boardId, Model model) {
+    public String viewPostForm(@PathVariable("boardId") String boardId, Model model) {
         model.addAttribute("boardId", boardId);
         return "board/common/post-form";
     }
@@ -59,100 +34,27 @@ public class PostsController {
 
     // /boards/{boardId}/{postsId}/view
     @GetMapping("/{boardId}/{postId}/view")
-    public String showPostsViewPage(@PathVariable("boardId") String boardId,
-                                    @PathVariable("postId") Long postId, Model model,
-                                    HttpServletRequest request){
+    public String viewPostDetail(@PathVariable("boardId") String boardId,
+                                 @PathVariable("postId") Long postId,
+                                 HttpServletRequest request, Model model) {
 
-
-        Posts posts = postsService.detailPosts(boardId, postId);
-
-        if(posts==null){
+        try {
+            PostDetailVM viewModel = postDetailVmService.getPostDetailVm(boardId, postId, request);
+            model.addAttribute("postDetail", viewModel);
+            return "board/common/post-detail";
+        } catch (IllegalArgumentException e) {
             return "redirect:/board";
         }
-
-        Optional<PostFiles> postFilesOpt = postFilesRepo.findPostFilesByPost_PostId(postId);
-        postFilesOpt.ifPresent(postFiles -> model.addAttribute("postFiles", postFiles));
-        model.addAttribute("hasPostFile", postFilesOpt.isPresent());
-
-        //해당 게시물의 댓글 가져오기
-        List<Comments> commentsList = commentService.getComments(boardId, postId);
-
-        try{
-
-            User user = access.getAuthenticatedUser(request);
-            if(user == null) throw new IllegalArgumentException("사용자를 찾을 수 없습니다");
-
-            boolean isAuthor = postsService.isAuthor(request, postId);
-            System.out.println("isAuthor Result: "+isAuthor); //25.07.17 17:04 기준 true 나옴
-
-            /********************로그인한 회원이 게시물 쓴건지 확인************************/
-            if(isAuthor) model.addAttribute("isAuthUser", true);
-            else model.addAttribute("isAuthUser", false);
-
-
-            /**********************View 에다가 데이터 전송**********************/
-
-            //1. 게시물 데이터
-            model.addAttribute("postsData", posts);
-
-            //2. 사용자의 좋아요나 싫어요 같은 거 눌렀는 지 여부
-            UserPostsReaction.ReactionType reactType =
-                    userInteractionProvider.getUserPostsReactionType(posts, user);
-
-            model.addAttribute("reactType", reactType);
-
-            //3. 게시물의 interaction count 데이터
-            PostsReactionCount postsReactionCount =
-                    postsInteractionService.getPostsReactionCount(postId);
-
-            model.addAttribute("postsReactionCount", postsReactionCount);
-
-            //4. 사용자가 해당 게시물을 신고했는지 여부 확인
-            boolean isUserReported = userInteractionProvider.getUserPostsReportReactionType(posts, user);
-            model.addAttribute("isUserReported", isUserReported);
-
-            // 5. 댓글 목록
-            model.addAttribute("commentsList", commentsList);
-
-            // 5.1 댓글별 리액션 카운트
-            Map<Long, CommentsReactionCount> commentReactionMap = new HashMap<>();
-            for (Comments comment : commentsList) {
-                CommentsReactionCount crc = commentsInteractionService.getCommentsReactionCount(comment.getCommentId());
-                commentReactionMap.put(comment.getCommentId(), crc);
-            }
-            model.addAttribute("commentReactionMap", commentReactionMap);
-
-            // 5.2 로그인 유저가 남긴 댓글별 반응 정보
-            Map<Long, UserCommentsReaction.ReactionType> userCommentReactionMap = new HashMap<>();
-            for (Comments comment : commentsList) {
-                UserCommentsReaction.ReactionType reactionType =
-                        userInteractionProvider.getUserCommentsReactionType(comment, user);
-                userCommentReactionMap.put(comment.getCommentId(), reactionType);
-            }
-            model.addAttribute("userCommentReactionMap", userCommentReactionMap);
-
-            // 5.3 로그인 유저가 신고한 댓글별 신고 여부 정보 (추가)
-            Map<Long, Boolean> userCommentReportMap = new HashMap<>();
-            for (Comments comment : commentsList) {
-                boolean isCommentReported = userInteractionProvider.getUserCommentsReportReactionType(comment, user);
-                userCommentReportMap.put(comment.getCommentId(), isCommentReported);
-            }
-            model.addAttribute("userCommentReportMap", userCommentReportMap);
-
-        }catch (AuthenticationCredentialsNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        return "board/common/post-detail";
     }
 
     @GetMapping("/posts/edit")
-    public String showPostsEditPage(@RequestParam("postId") Long postId,
+    public String viewPostEditForm(@RequestParam("postId") Long postId,
                                     @RequestParam("boardId") String boardId,
+                                    HttpServletRequest request,
                                     Model model) {
 
-        Posts postData = postsService.detailPosts(boardId, postId); // 수정: 단일 Posts 리턴
-        model.addAttribute("postData", postData);
+        PostEditFormVM vm = postEditFormVmService.getPostEditFormVm(boardId, postId, request);
+        model.addAttribute("vm", vm);
 
         return "/board/common/post-edit-form";
     }

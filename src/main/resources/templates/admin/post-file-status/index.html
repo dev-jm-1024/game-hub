@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시글 파일 관리</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .board-section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .board-header {
+            background: #3498db;
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+
+        .files-container {
+            padding: 20px;
+        }
+
+        .no-files {
+            text-align: center;
+            color: #7f8c8d;
+            padding: 30px;
+            font-style: italic;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            transition: background-color 0.2s;
+        }
+
+        .file-item:hover {
+            background: #e9ecef;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .file-details {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .file-type {
+            background: #27ae60;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .file-type.image { background: #e74c3c; }
+        .file-type.document { background: #f39c12; }
+        .file-type.video { background: #9b59b6; }
+        .file-type.application { background: #34495e; }
+
+        .board-name-link {
+            color: white;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        .board-name-link:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+
+        .file-preview {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #7f8c8d;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .file-display {
+            display: flex;
+            align-items: center;
+        }
+
+        .post-title {
+            font-size: 14px;
+            color: #34495e;
+            margin-bottom: 2px;
+        }
+
+        .file-count {
+            background: #95a5a6;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>게시글 파일 관리</h1>
+    </div>
+
+    <!-- 게시판별 파일 Top 5 섹션 -->
+    <div th:each="entry : ${vm}">
+        <div class="board-section">
+            <div class="board-header">
+                <span th:text="${entry.key.boardName}">게시판명</span>
+                <a th:href="@{'/admin/board/' + ${entry.key.boardId} + '/post-file-status'}">
+                    <button>해당 게시판으로 이동하기</button>
+                </a>
+                <span class="file-count" th:text="${entry.value.size()} + '개'">0개</span>
+            </div>
+
+            <div class="files-container">
+                <!-- 파일이 없는 경우 -->
+                <div th:if="${#lists.isEmpty(entry.value)}" class="no-files">
+                    등록된 파일이 없습니다.
+                </div>
+
+                <!-- 파일이 있는 경우 -->
+                <div th:each="file : ${entry.value}" class="file-item">
+                    <div class="file-info">
+                        <div class="post-title" th:text="${file.post.postTitle}">게시글 제목</div>
+                        <img class="file-name" th:href="@{file.fileUrl}">파일명.jpg</img>
+                        <div class="file-details">
+                            업로드: <span th:text="${#temporals.format(file.uploadDate, 'yyyy-MM-dd')}">2024-01-01</span>
+                        </div>
+                    </div>
+
+                    <div class="file-type"
+                         th:class="'file-type ' + ${#strings.toLowerCase(#strings.substringBefore(file.fileType, '/'))}"
+                         th:text="${file.fileType}">
+                        image/jpeg
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

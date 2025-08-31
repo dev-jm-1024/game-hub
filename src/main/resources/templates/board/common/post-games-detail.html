@@ -2,7 +2,7 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title th:text="${result.gameName} + ' - 게임 상세'">게임 상세</title>
+    <title th:text="${vm.gameDetailDto.gameName} + ' - 게임 상세'">게임 상세</title>
 
     <!-- 전역 스타일 -->
     <link rel="stylesheet" th:href="@{/main-contents-skin/global.css}">
@@ -31,7 +31,7 @@
 <body class="game-detail-page">
 <!-- 헤더 영역 -->
 <header th:replace="main-contents/header-frag/header :: header"
-        th:with="isLoggedIn=${isLoggedIn}, nickname=${nickname}, profileImage=${profileImage}, deactivatePath=${deactivatePath}">
+        th:with="isLoggedIn=${vm.user != null}, nickname=${vm.mbNickName}, profileImage=${vm.mbProfileUrl}, deactivatePath=${deactivatePath}">
 </header>
 
 <!-- 네비게이션 영역 -->
@@ -40,14 +40,14 @@
 <!-- 게임 상세 내용 -->
 <main class="game-detail-container">
     <!-- 뒤로가기 버튼 -->
-    <a th:href="@{/board/game-board/{boardId}/view (boardId=${result.boardId})}" class="back-button">
+    <a th:href="@{/board/game-board/{boardId}/view (boardId=${vm.gameDetailDto.boardId})}" class="back-button">
         ← 게임 목록으로 돌아가기
     </a>
 
     <!-- 게임 헤더 -->
     <div class="game-header">
-        <h1 class="game-title" th:text="${result.gameName}">게임 이름</h1>
-        <p class="game-team" th:text="'개발팀: ' + ${result.teamName}">개발팀: 팀명</p>
+        <h1 class="game-title" th:text="${vm.gameDetailDto.gameName}">게임 이름</h1>
+        <p class="game-team" th:text="'개발팀: ' + ${vm.gameDetailDto.teamName}">개발팀: 팀명</p>
     </div>
 
     <!-- 게임 내용 -->
@@ -56,29 +56,29 @@
         <div class="game-info-card">
             <h3 style="margin-bottom: 1.5rem; color: #374151; font-size: 1.25rem;">게임 정보</h3>
 
-            <div class="info-row" th:if="${result.gameDescription}">
+            <div class="info-row" th:if="${vm.gameDetailDto.gameDescription}">
                 <span class="info-label">설명:</span>
-                <span class="info-value" th:text="${result.gameDescription}">게임 설명</span>
+                <span class="info-value" th:text="${vm.gameDetailDto.gameDescription}">게임 설명</span>
             </div>
 
-            <div class="info-row" th:if="${result.specs}">
+            <div class="info-row" th:if="${vm.gameDetailDto.specs}">
                 <span class="info-label">권장사양:</span>
-                <span class="info-value" th:text="${result.specs}">권장사양</span>
+                <span class="info-value" th:text="${vm.gameDetailDto.specs}">권장사양</span>
             </div>
 
-            <div class="info-row" th:if="${result.platform}">
+            <div class="info-row" th:if="${vm.gameDetailDto.platform}">
                 <span class="info-label">플랫폼:</span>
-                <span class="info-value" th:text="${result.platform}">플랫폼</span>
+                <span class="info-value" th:text="${vm.gameDetailDto.platform}">플랫폼</span>
             </div>
 
-            <div class="info-row" th:if="${result.genre}">
+            <div class="info-row" th:if="${vm.gameDetailDto.genre}">
                 <span class="info-label">장르:</span>
-                <span class="info-value" th:text="${result.genre}">장르</span>
+                <span class="info-value" th:text="${vm.gameDetailDto.genre}">장르</span>
             </div>
 
-            <div class="info-row" th:if="${result.gameVersion}">
+            <div class="info-row" th:if="${vm.gameDetailDto.gameVersion}">
                 <span class="info-label">버전:</span>
-                <span class="info-value" th:text="${result.gameVersion}">버전</span>
+                <span class="info-value" th:text="${vm.gameDetailDto.gameVersion}">버전</span>
             </div>
         </div>
 
@@ -86,24 +86,24 @@
         <div class="game-info-card">
             <h3 style="margin-bottom: 1.5rem; color: #374151; font-size: 1.25rem;">배포 정보</h3>
 
-            <div class="info-row" th:if="${result.approvedAt}">
+            <div class="info-row" th:if="${vm.gameDetailDto.approvedAt}">
                 <span class="info-label">승인일:</span>
-                <span class="info-value" th:text="${#temporals.format(result.approvedAt, 'yyyy-MM-dd HH:mm')}">승인일</span>
+                <span class="info-value" th:text="${#temporals.format(vm.gameDetailDto.approvedAt, 'yyyy-MM-dd HH:mm')}">승인일</span>
             </div>
 
-            <div class="info-row" th:if="${result.createdAt}">
+            <div class="info-row" th:if="${vm.gameDetailDto.createdAt}">
                 <span class="info-label">등록일:</span>
-                <span class="info-value" th:text="${#temporals.format(result.createdAt, 'yyyy-MM-dd HH:mm')}">등록일</span>
+                <span class="info-value" th:text="${#temporals.format(vm.gameDetailDto.createdAt, 'yyyy-MM-dd HH:mm')}">등록일</span>
             </div>
 
-            <div class="info-row" th:if="${result.originalFilename}">
+            <div class="info-row" th:if="${vm.gameDetailDto.originalFilename}">
                 <span class="info-label">파일명:</span>
-                <span class="info-value" th:text="${result.originalFilename}">파일명</span>
+                <span class="info-value" th:text="${vm.gameDetailDto.originalFilename}">파일명</span>
             </div>
 
-            <div class="info-row" th:if="${result.fileSize}">
+            <div class="info-row" th:if="${vm.gameDetailDto.fileSize}">
                 <span class="info-label">파일크기:</span>
-                <span class="info-value" th:text="${#numbers.formatDecimal(result.fileSize / 1024 / 1024, 1, 2)} + ' MB'">파일크기</span>
+                <span class="info-value" th:text="${#numbers.formatDecimal(vm.gameDetailDto.fileSize / 1024 / 1024, 1, 2)} + ' MB'">파일크기</span>
             </div>
         </div>
     </div>
@@ -112,7 +112,7 @@
     <div class="game-play-area">
         <h3 style="margin-bottom: 1.5rem; color: #374151; font-size: 1.25rem;">🎮 게임 플레이</h3>
 
-        <div th:if="${result.gameUrl != null and result.gameUrl != ''}">
+        <div th:if="${vm.gameDetailDto.gameUrl != null and vm.gameDetailDto.gameUrl != ''}">
             <!-- 오디오 활성화 안내 -->
             <div id="audioPrompt" class="audio-prompt" style="display: none;">
                 <div class="audio-prompt-content">
@@ -158,7 +158,7 @@
             <!-- 게임 컨테이너 -->
             <div class="game-container">
                 <iframe class="game-iframe"
-                        th:src="@{/board/game-proxy/{gamePath} (gamePath=${#strings.substringAfter(result.gameUrl, 'game-webgl-bucket-capstone/')})}"
+                        th:src="@{/board/game-proxy/{gamePath} (gamePath=${#strings.substringAfter(vm.gameDetailDto.gameUrl, 'game-webgl-bucket-capstone/')})}"
                         title="게임 플레이 영역"
                         scrolling="no"
                         frameborder="0"

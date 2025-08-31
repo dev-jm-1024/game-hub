@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>게시판 파일 상세</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      color: #2c3e50;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .back-button {
+      display: inline-block;
+      background: #95a5a6;
+      color: white;
+      padding: 8px 16px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-bottom: 20px;
+      transition: background-color 0.2s;
+    }
+
+    .back-button:hover {
+      background: #7f8c8d;
+    }
+
+    .posts-section {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .post-header {
+      background: #3498db;
+      color: white;
+      padding: 15px 20px;
+    }
+
+    .post-title {
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+
+    .post-info {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .files-container {
+      padding: 20px;
+    }
+
+    .no-files {
+      text-align: center;
+      color: #7f8c8d;
+      padding: 30px;
+      font-style: italic;
+    }
+
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      background: #f8f9fa;
+      transition: background-color 0.2s;
+    }
+
+    .file-item:hover {
+      background: #e9ecef;
+    }
+
+    .file-info {
+      flex: 1;
+    }
+
+    .file-name {
+      font-weight: 500;
+      color: #2c3e50;
+      margin-bottom: 4px;
+    }
+
+    .file-details {
+      font-size: 12px;
+      color: #7f8c8d;
+    }
+
+    .file-type {
+      background: #27ae60;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .file-type.image { background: #e74c3c; }
+    .file-type.document { background: #f39c12; }
+    .file-type.video { background: #9b59b6; }
+    .file-type.application { background: #34495e; }
+
+    .file-count {
+      background: #95a5a6;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-left: 10px;
+    }
+
+    .summary {
+      background: #ecf0f1;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .summary-item {
+      display: inline-block;
+      margin-right: 20px;
+      font-size: 14px;
+    }
+
+    .summary-number {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <a href="/admin/board/post-file-status" class="back-button">← 돌아가기</a>
+    <h1>게시판별 파일 상세</h1>
+  </div>
+
+  <!-- 요약 정보 -->
+  <div class="summary">
+    <div class="summary-item">
+      <span>총 게시글: </span>
+      <span class="summary-number" th:text="${vm.size()}">0</span>개
+    </div>
+<!--    <div class="summary-item">-->
+<!--      <span>총 파일: </span>-->
+<!--      <span class="summary-number"-->
+<!--            th:text="${#lists.size(vm.postFiles)}">0</span>-->
+
+<!--    </div>-->
+
+  </div>
+
+  <!-- 게시글별 파일 목록 -->
+  <div th:if="${#lists.isEmpty(vm)}" class="posts-section">
+    <div class="no-files">
+      이 게시판에는 파일이 있는 게시글이 없습니다.
+    </div>
+  </div>
+
+  <div th:each="postVm : ${vm}" class="posts-section">
+    <div class="post-header">
+      <div class="post-title" th:text="${postVm.posts.postTitle}">게시글 제목</div>
+      <div class="post-info">
+        작성자: <span th:text="${postVm.posts.user.mbNickname}">작성자</span> |
+        작성일: <span th:text="${#temporals.format(postVm.posts.createdAt, 'yyyy-MM-dd')}">2024-01-01</span> |
+        조회수: <span th:text="${postVm.posts.viewCount}">0</span>
+        <span class="file-count" th:text="${postVm.postFiles.size()} + '개 파일'">0개 파일</span>
+      </div>
+    </div>
+
+    <div class="files-container">
+      <!-- 파일이 없는 경우 -->
+      <div th:if="${#lists.isEmpty(postVm.postFiles)}" class="no-files">
+        이 게시글에는 파일이 없습니다.
+      </div>
+
+      <!-- 파일이 있는 경우 -->
+      <div th:each="file : ${postVm.postFiles}" class="file-item">
+        <div class="file-info">
+          <img class="file-name" th:src="@{file.fileUrl}">파일명.jpg</img>
+          <a th:href="@{file.fileUrl}"><button>해당 사진 보기</button></a>
+          <div class="file-details">
+            업로드: <span th:text="${#temporals.format(file.uploadDate, 'yyyy-MM-dd')}">2024-01-01</span>
+          </div>
+        </div>
+
+        <div class="file-type"
+             th:class="'file-type ' + ${#strings.toLowerCase(#strings.substringBefore(file.fileType, '/'))}"
+             th:text="${file.fileType}">
+          image/jpeg
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

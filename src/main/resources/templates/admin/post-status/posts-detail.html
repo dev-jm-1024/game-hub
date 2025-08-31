@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<button onclick="history.back()">이전 페이지</button>
+<button onclick="location.href='/admin'">홈으로</button>
+
+<hr>
+<h2>상세보기 페이지</h2>
+<p th:text="${vm.posts.getUser.mbNickname}">작성자</p>
+<p th:text="${vm.posts.postTitle}">제목</p>
+<p th:text="${vm.posts.postTitle}">내용</p>
+<hr>
+<p>신고횟수</p>
+<p th:text="${vm.react.reportCount}">신고횟수</p>
+
+
+<p>좋아요</p>
+<p th:text="${vm.react.likeCount}">좋아요 횟수</p>
+
+
+<p>싫어요</p>
+<p th:text="${vm.react.dislikeCount}">싫어요 횟수</p>
+
+<div th:each="file : ${vm.postFiles}">
+    <img th:src="@{${file.fileUrl}}" th:alt="'첨부파일 ' + ${file.fileId}">
+</div>
+<hr>
+<form th:action="@{'/admin/api/v1/posts/' + ${vm.posts.postId} + '/deactivate'}"
+      method="post"
+      th:if="${vm.posts.postAct == 1}">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+    <input type="hidden" th:value="${vm.posts.postId}">
+    <button type="submit">게시물 삭제</button>
+</form>
+</body>
+</html>

@@ -1,11 +1,13 @@
 package kr.plusb3b.games.gamehub.api.controller.board;
 
+import kr.plusb3b.games.gamehub.domain.board.service.viewmodel.PostGamesDetailVmService;
 import kr.plusb3b.games.gamehub.domain.game.dto.GameDetailDto;
 import kr.plusb3b.games.gamehub.domain.game.service.GameMetadataService;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import kr.plusb3b.games.gamehub.view.board.PostGamesDetailVM;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.ui.Model;
 import org.springframework.stereotype.Controller;
@@ -24,45 +26,23 @@ import java.net.URLConnection;
 @CrossOrigin(origins = "*") // CORS 허용
 public class PostGamesController {
 
-    private final GameMetadataService gameMetadataService;
-    private final AccessControlService access;
 
-    @Value("${app.deactivate.path}")
-    private String deactivatePath;
+    /** 리팩토링 후 의존성 주입 **/
+    private final PostGamesDetailVmService postGamesDetailVmService;
 
-    private final static String testImageUrl = "https://search.pstatic.net/sunny/?src=https%3A%2F%2Fi.pinimg.com" +
-            "%2Foriginals%2F9f%2F85%2Ffc%2F9f85fc037501419f146f81e5a2ab7a98.jpg" +
-            "&type=sc960_832";
 
-    public PostGamesController(GameMetadataService gameMetadataService,
-                               AccessControlService access) {
-        this.gameMetadataService = gameMetadataService;
-        this.access = access;
+    public PostGamesController(PostGamesDetailVmService postGamesDetailVmService) {
+        this.postGamesDetailVmService = postGamesDetailVmService;
     }
 
     @GetMapping("/{boardId}/game/{gameId}/view")
     public String showGameViewPage(@PathVariable("boardId") String boardId, @PathVariable("gameId") Long gameId,
                                    HttpServletRequest request, Model model){
 
-        User user = access.getAuthenticatedUser(request);
-        boolean isLoggedIn = (user != null);
+        /********************** 리팩토링 후  *****************************/
 
-        model.addAttribute("isLoggedIn", isLoggedIn);
-        model.addAttribute("isAdmin", true);
-        model.addAttribute("deactivatePath", deactivatePath);
-
-        if (isLoggedIn) {
-            model.addAttribute("nickname", user.getMbNickname());
-            model.addAttribute("profileImage", user.getMbProfileUrl() != null ? user.getMbProfileUrl() : testImageUrl);
-        }
-
-        GameDetailDto result = gameMetadataService.getGameDetail(boardId, gameId);
-
-        if (result == null) {
-            return "redirect:/board/game-board/" + boardId + "/view";
-        }
-
-        model.addAttribute("result", result);
+        PostGamesDetailVM vm = postGamesDetailVmService.getPostGamesDetailVm(request, boardId, gameId);
+        model.addAttribute("vm", vm);
 
         return "board/common/post-games-detail";
     }

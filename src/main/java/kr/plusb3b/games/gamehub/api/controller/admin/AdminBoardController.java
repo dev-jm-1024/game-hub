@@ -5,7 +5,6 @@ import kr.plusb3b.games.gamehub.application.admin.AdminBoardConfig;
 import kr.plusb3b.games.gamehub.domain.admin.service.AdminService;
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
 import kr.plusb3b.games.gamehub.domain.board.service.BoardService;
-import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

@@ -1,87 +1,96 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>로그인</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - GameHub</title>
+    <link rel="stylesheet" th:href="@{/login-skin/login.css}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 
     <!-- CSRF 토큰 정보 -->
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-
-    <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        form { max-width: 400px; margin: auto; display: flex; flex-direction: column; gap: 12px; }
-        input { padding: 10px; font-size: 16px; }
-        button { padding: 10px; font-size: 16px; cursor: pointer; }
-    </style>
 </head>
 <body>
+<div class="background-overlay"></div>
 
-<h2>안녕하세요!</h2>
-<h2>로그인 화면입니다.</h2>
+<div class="login-container">
+    <div class="glass-card">
+        <div class="login-header">
+            <img src="https://plusb3b.kr/gamehub-img/logo.png" alt="GameHub Logo" class="logo">
+            <p>게임의 중심에서 만나요</p>
+        </div>
 
-<form id="loginForm">
-    <input type="text" id="authUserId" name="authUserId" placeholder="아이디" required>
-    <input type="password" id="authPassword" name="authPassword" placeholder="비밀번호" required>
-    <button type="submit">로그인</button>
-</form>
+        <form class="login-form" id="loginForm">
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" placeholder="아이디를 입력하세요" name="authUserId" required>
+                </div>
+            </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const loginForm = document.getElementById('loginForm');
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" name="authPassword" placeholder="비밀번호를 입력하세요" required>
+                    <button type="button" class="password-toggle" id="passwordToggle">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
 
-        // CSRF 토큰 가져오기
-        const csrfToken = document.querySelector("meta[name='_csrf']").getAttribute("content");
-        const csrfHeader = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i>
+                    로그인
+                </button>
 
-        // 폼 제출 이벤트 처리
-        loginForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
+                <button type="button" class="btn btn-secondary" id="signupBtn" onclick="location.href='/game-hub/join'">
+                    <i class="fas fa-user-plus"></i>
+                    회원가입
+                </button>
 
-            const authUserId = document.getElementById('authUserId').value.trim();
-            const authPassword = document.getElementById('authPassword').value.trim();
+                <button type="button" class="btn btn-guest" id="guestBtn" onclick="location.href='/'">
+                    <i class="fas fa-user-secret"></i>
+                    게스트 로그인
+                </button>
+            </div>
 
-            if (!authUserId || !authPassword) {
-                alert('아이디와 비밀번호를 모두 입력해주세요.');
-                return;
-            }
+            <div class="forgot-account">
+                <a href="#" id="forgotAccount">
+                    <i class="fas fa-question-circle"></i>
+                    계정을 잊어버리셨나요?
+                </a>
+            </div>
+        </form>
+    </div>
 
-            try {
-                const formData = new FormData();
-                formData.append('authUserId', authUserId);
-                formData.append('authPassword', authPassword);
+    <div class="floating-elements">
+        <div class="floating-element" style="top: 10%; left: 10%;"></div>
+        <div class="floating-element" style="top: 20%; right: 15%;"></div>
+        <div class="floating-element" style="bottom: 30%; left: 20%;"></div>
+        <div class="floating-element" style="bottom: 15%; right: 10%;"></div>
+    </div>
+</div>
 
-                const response = await fetch('/api/v1/login', {
-                    method: 'POST',
-                    headers: {
-                        [csrfHeader]: csrfToken
-                    },
-                    body: formData
-                });
-
-                if (response.ok) {
-                    const responseData = await response.json();
-
-                    alert('로그인 성공! ' + responseData.nickname + '님 환영합니다.');
-
-                    // 사용자 역할에 따라 다른 페이지로 리다이렉트
-                    if (responseData.role === 'ROLE_PRODUCER') {
-                        window.location.href = '/game-hub/prod';
-                    } else {
-                        window.location.href = '/';
-                    }
-                } else {
-                    const responseText = await response.text();
-                    alert(responseText || '로그인에 실패했습니다.');
-                }
-
-            } catch (error) {
-                console.error('로그인 오류:', error);
-                alert('네트워크 오류가 발생했습니다.');
-            }
-        });
-    });
-</script>
-
+<!-- 알림 모달 -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content glass-card">
+        <div class="modal-header">
+            <h3 id="modalTitle">알림</h3>
+            <button class="modal-close" id="modalClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p id="modalMessage"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" id="modalConfirm">확인</button>
+        </div>
+    </div>
+</div>
+<script th:src="@{/login-skin/login.js}" defer></script>
 </body>
 </html>

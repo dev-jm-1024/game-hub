@@ -1,0 +1,703 @@
+/* 기본 리셋 및 글꼴 설정 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    background: url('https://plusb3b.kr/gamehub-img/bg.png') center/cover no-repeat fixed;
+}
+
+/* 모바일 환경에서 배경 이미지 변경 */
+@media (max-width: 768px) {
+    body {
+        background: url('https://plusb3b.kr/gamehub-img/bg-mobile.png') center/cover no-repeat fixed;
+    }
+}
+
+/* 배경 오버레이 */
+.background-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 0, 0.3) 0%, 
+        rgba(30, 30, 60, 0.4) 50%, 
+        rgba(0, 0, 0, 0.3) 100%);
+    backdrop-filter: blur(2px);
+    z-index: 1;
+}
+
+/* 메인 컨테이너 */
+.login-container {
+    position: relative;
+    z-index: 2;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* 글래스모피즘 카드 */
+.glass-card {
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.05) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 26px;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    padding: 42px;
+    width: 100%;
+    max-width: 460px;
+    min-height: 580px;
+    position: relative;
+    overflow: hidden;
+    animation: slideInUp 0.8s ease-out;
+}
+
+.glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.3), 
+        transparent);
+}
+
+/* 헤더 */
+.login-header {
+    text-align: center;
+    margin-bottom: 40px;
+    color: white;
+}
+
+.login-header .logo {
+    max-width: 160px;
+    height: auto;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+    transition: all 0.3s ease;
+}
+
+.login-header .logo:hover {
+    transform: scale(1.05);
+    filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.4));
+}
+
+.login-header p {
+    font-size: 16px;
+    opacity: 0.85;
+    font-weight: 400;
+    margin-top: 8px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* 폼 스타일 */
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.input-group {
+    position: relative;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 0 20px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.input-wrapper:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.input-wrapper:focus-within {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(100, 181, 246, 0.5);
+    box-shadow: 
+        0 0 0 3px rgba(100, 181, 246, 0.1),
+        0 8px 25px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.input-wrapper i {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 18px;
+    margin-right: 16px;
+    transition: color 0.3s ease;
+}
+
+.input-wrapper:focus-within i {
+    color: #64b5f6;
+}
+
+.input-wrapper input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: white;
+    font-size: 16px;
+    padding: 18px 0;
+    font-family: inherit;
+}
+
+.input-wrapper input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+    transition: color 0.3s ease;
+}
+
+.input-wrapper:focus-within input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.password-toggle {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    margin-left: 8px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.password-toggle:hover {
+    color: #64b5f6;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* 버튼 그룹 */
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    min-height: 52px;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent);
+    transition: left 0.5s ease;
+}
+
+.btn:hover::before {
+    left: 100%;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #64b5f6, #42a5f5);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 20px rgba(100, 181, 246, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #42a5f5, #2196f3);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(100, 181, 246, 0.4);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.btn-guest {
+    background: rgba(156, 39, 176, 0.2);
+    color: white;
+    border: 1px solid rgba(156, 39, 176, 0.3);
+}
+
+.btn-guest:hover {
+    background: rgba(156, 39, 176, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(156, 39, 176, 0.2);
+}
+
+/* 계정 찾기 링크 */
+.forgot-account {
+    text-align: center;
+    margin-top: 24px;
+}
+
+.forgot-account a {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.forgot-account a:hover {
+    color: #64b5f6;
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-1px);
+}
+
+/* 플로팅 요소들 */
+.floating-elements {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.floating-element {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, 
+        rgba(100, 181, 246, 0.1), 
+        rgba(66, 165, 245, 0.1));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    animation: float 6s ease-in-out infinite;
+}
+
+.floating-element:nth-child(2) {
+    animation-delay: -2s;
+    width: 80px;
+    height: 80px;
+}
+
+.floating-element:nth-child(3) {
+    animation-delay: -4s;
+    width: 40px;
+    height: 40px;
+}
+
+.floating-element:nth-child(4) {
+    animation-delay: -1s;
+    width: 70px;
+    height: 70px;
+}
+
+/* 모달 스타일 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    max-width: 400px;
+    width: 90%;
+    transform: scale(0.8);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+    color: white;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.modal-body {
+    margin-bottom: 24px;
+}
+
+.modal-body p {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* 애니메이션 */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    33% {
+        transform: translateY(-20px) rotate(120deg);
+    }
+    66% {
+        transform: translateY(10px) rotate(240deg);
+    }
+}
+
+/* 반응형 디자인 - 더 세분화된 브레이크포인트 */
+
+/* 대형 태블릿 (768px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .glass-card {
+        max-width: 480px;
+        padding: 44px;
+    }
+    
+    .login-header .logo {
+        max-width: 160px;
+    }
+}
+
+/* 태블릿 (481px - 768px) */
+@media (max-width: 768px) and (min-width: 481px) {
+    .glass-card {
+        max-width: 440px;
+        padding: 36px;
+        min-height: 580px;
+    }
+    
+    .login-header {
+        margin-bottom: 40px;
+    }
+    
+    .login-header .logo {
+        max-width: 150px;
+    }
+    
+    .login-header p {
+        font-size: 17px;
+    }
+    
+    .input-wrapper input {
+        font-size: 16px;
+        padding: 18px 0;
+    }
+    
+    .btn {
+        padding: 16px 24px;
+        font-size: 16px;
+        min-height: 52px;
+    }
+}
+
+/* 모바일 (361px - 480px) */
+@media (max-width: 480px) and (min-width: 361px) {
+    .login-container {
+        padding: 16px;
+    }
+    
+    .glass-card {
+        padding: 32px 28px;
+        margin: 0;
+        border-radius: 24px;
+        max-width: 100%;
+        min-height: 520px;
+    }
+    
+    .login-header {
+        margin-bottom: 36px;
+    }
+    
+    .login-header .logo {
+        max-width: 140px;
+        margin-bottom: 20px;
+    }
+    
+    .login-header p {
+        font-size: 16px;
+    }
+    
+    .login-form {
+        gap: 24px;
+    }
+    
+    .input-wrapper {
+        padding: 0 18px;
+    }
+    
+    .input-wrapper input {
+        padding: 17px 0;
+        font-size: 16px;
+    }
+    
+    .btn {
+        padding: 15px 22px;
+        font-size: 16px;
+        min-height: 50px;
+    }
+    
+    .button-group {
+        gap: 16px;
+    }
+}
+
+/* 소형 모바일 (320px - 360px) */
+@media (max-width: 360px) {
+    .login-container {
+        padding: 12px;
+    }
+    
+    .glass-card {
+        padding: 28px 24px;
+        border-radius: 20px;
+        min-height: 480px;
+    }
+    
+    .login-header {
+        margin-bottom: 32px;
+    }
+    
+    .login-header .logo {
+        max-width: 120px;
+        margin-bottom: 16px;
+    }
+    
+    .login-header p {
+        font-size: 15px;
+    }
+    
+    .login-form {
+        gap: 20px;
+    }
+    
+    .input-wrapper {
+        padding: 0 16px;
+        border-radius: 14px;
+    }
+    
+    .input-wrapper input {
+        padding: 16px 0;
+        font-size: 15px;
+    }
+    
+    .btn {
+        padding: 14px 20px;
+        font-size: 15px;
+        border-radius: 14px;
+        min-height: 48px;
+    }
+    
+    .button-group {
+        gap: 14px;
+    }
+    
+    .forgot-account a {
+        font-size: 13px;
+    }
+}
+
+/* 매우 작은 모바일 (최대 320px) */
+@media (max-width: 320px) {
+    .login-container {
+        padding: 8px;
+    }
+    
+    .glass-card {
+        padding: 24px 20px;
+        border-radius: 18px;
+        min-height: 440px;
+    }
+    
+    .login-header {
+        margin-bottom: 28px;
+    }
+    
+    .login-header .logo {
+        max-width: 100px;
+        margin-bottom: 12px;
+    }
+    
+    .login-header p {
+        font-size: 14px;
+    }
+    
+    .login-form {
+        gap: 18px;
+    }
+    
+    .input-wrapper {
+        padding: 0 14px;
+        border-radius: 12px;
+    }
+    
+    .input-wrapper input {
+        padding: 15px 0;
+        font-size: 14px;
+    }
+    
+    .btn {
+        padding: 12px 18px;
+        font-size: 14px;
+        border-radius: 12px;
+        min-height: 44px;
+        gap: 8px;
+    }
+    
+    .button-group {
+        gap: 12px;
+    }
+    
+    .forgot-account a {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+    
+    .modal-content {
+        margin: 20px;
+        padding: 24px;
+    }
+}
+
+/* 가로 모드 (높이가 작을 때) */
+@media (max-height: 600px) and (orientation: landscape) {
+    .login-container {
+        padding: 12px;
+    }
+    
+    .glass-card {
+        min-height: auto;
+        padding: 24px;
+        max-width: 90%;
+    }
+    
+    .login-header {
+        margin-bottom: 24px;
+    }
+    
+    .login-header .logo {
+        max-width: 100px;
+        margin-bottom: 12px;
+    }
+    
+    .login-form {
+        gap: 16px;
+    }
+    
+    .button-group {
+        gap: 12px;
+    }
+}
+
+/* 고해상도 디스플레이 지원 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .login-header .logo {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}

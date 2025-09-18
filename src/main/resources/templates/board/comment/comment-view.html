@@ -7,7 +7,9 @@
 
             <!-- 작성자 -->
             <div class="comment-header">
-                <strong class="comment-writer" th:text="${comment.user.mbNickname}">작성자</strong>
+                <!-- User 엔티티의 mbNickName VO 접근 방식 수정 -->
+                <strong class="comment-writer"
+                        th:text="${comment.user != null ? comment.user.mbNickName.mbNickName : '알 수 없음'}">작성자</strong>
             </div>
 
             <!-- 댓글 내용 -->
@@ -19,20 +21,20 @@
             <div class="comment-reaction-buttons" style="margin: 8px 0;">
                 <button type="button"
                         class="comment-like-button"
-                        th:classappend="${postDetail.userCommentReactionMap[comment.commentId]?.name() == 'LIKE'} ? 'liked' : ''"
+                        th:classappend="${postDetail.userCommentReactionMap[comment.commentId] != null and postDetail.userCommentReactionMap[comment.commentId].name() == 'LIKE'} ? 'liked' : ''"
                         th:data-comment-id="${comment.commentId}">
                     👍 좋아요
                     <span class="like-count"
-                          th:text="${postDetail.commentReactionMap[comment.commentId]?.likeCount}">0</span>
+                          th:text="${postDetail.commentReactionMap[comment.commentId] != null ? postDetail.commentReactionMap[comment.commentId].likeCount : 0}">0</span>
                 </button>
 
                 <button type="button"
                         class="comment-dislike-button"
-                        th:classappend="${postDetail.userCommentReactionMap[comment.commentId]?.name() == 'DISLIKE'} ? 'disliked' : ''"
+                        th:classappend="${postDetail.userCommentReactionMap[comment.commentId] != null and postDetail.userCommentReactionMap[comment.commentId].name() == 'DISLIKE'} ? 'disliked' : ''"
                         th:data-comment-id="${comment.commentId}">
                     👎 싫어요
                     <span class="dislike-count"
-                          th:text="${postDetail.commentReactionMap[comment.commentId]?.dislikeCount}">0</span>
+                          th:text="${postDetail.commentReactionMap[comment.commentId] != null ? postDetail.commentReactionMap[comment.commentId].dislikeCount : 0}">0</span>
                 </button>
             </div>
 

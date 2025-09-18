@@ -25,7 +25,7 @@
 
     <!-- 게시판 정보 -->
     <div class="board-content">
-        <div th:if="${boardList != null and !boardList.isEmpty()}">
+        <div th:if="${vm.boardList != null and !vm.boardList.isEmpty()}">
             <table class="board-table">
                 <thead>
                 <tr>
@@ -36,7 +36,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="board : ${boardList}">
+                <tr th:each="board : ${vm.boardList}">
                     <td th:text="${board.boardId}">board-001</td>
                     <td th:text="${board.boardName}">자유 게시판</td>
                     <td>
@@ -63,7 +63,7 @@
             </table>
         </div>
 
-        <div th:if="${boardList == null or boardList.isEmpty()}" class="no-boards">
+        <div th:if="${vm.boardList == null or vm.boardList.isEmpty()}" class="no-boards">
             <p>등록된 게시판이 없습니다.</p>
         </div>
     </div>

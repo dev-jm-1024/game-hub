@@ -1,855 +1,647 @@
-// Apple macOS/iOS 스타일 게시글 상세 JavaScript
-
-// 네임스페이스 정의
-window.BoardSkin = window.BoardSkin || {};
-window.BoardSkin.PostSkin = window.BoardSkin.PostSkin || {};
-
-BoardSkin.PostSkin.Detail = {
-    // 설정
-    config: {
-        animationDuration: 300,
-        confirmDeleteDelay: 3000,
-        autoSaveInterval: 30000,
-        maxImageSize: 5 * 1024 * 1024 // 5MB
-    },
-
-    // 상태
-    state: {
-        isLoading: false,
-        isEditing: false,
-        postData: {},
-        unsavedChanges: false,
-        deleteConfirmTimer: null,
-        // 좋아요/싫어요 상태 추가
-        liked: false,
-        disliked: false,
-        currentLikeCount: 0,
-        currentDislikeCount: 0,
-        currentReactType: 'NONE'
-    },
-
-    // DOM 요소
-    elements: {},
-
-    // 초기화
-    init() {
-        this.cacheElements();
-        this.bindEvents();
-        this.setupCSRF();
-        this.setupImageViewer();
-        this.setupKeyboardShortcuts();
-        this.setupReactionSystem();
-        this.initCommentSystem();
-
-        console.log('BoardSkin.PostSkin.Detail initialized');
-    },
-
-    // DOM 요소 캐싱
-    cacheElements() {
-        this.elements = {
-            container: document.querySelector('.post-detail-container'),
-            title: document.querySelector('#post-title'),
-            content: document.querySelector('#post-content'),
-            editForm: document.querySelector('#updatePosts'),
-            deleteForm: document.querySelector('#deletePosts'),
-            editButton: document.querySelector('button[type="submit"]', document.querySelector('#updatePosts')),
-            deleteButton: document.querySelector('button[type="submit"]', document.querySelector('#deletePosts')),
-            backLink: document.querySelector('.back-to-list'),
-            commentSection: document.querySelector('#comment-section'),
-            postImage: document.querySelector('.post-image'),
-            postMeta: document.querySelectorAll('.post-meta-value'),
-            actionButtons: document.querySelector('.post-actions'),
-            // 좋아요/싫어요 요소들 추가
-            likeButton: document.getElementById('like-button'),
-            likeIcon: document.getElementById('like-icon'),
-            likeText: document.getElementById('like-text'),
-            likeCountSpan: document.getElementById('like-count'),
-            dislikeButton: document.getElementById('dislike-button'),
-            dislikeIcon: document.getElementById('dislike-icon'),
-            dislikeText: document.getElementById('dislike-text'),
-            dislikeCountSpan: document.getElementById('dislike-count')
-        };
-    },
-
-    // 이벤트 바인딩
-    bindEvents() {
-        // 수정 버튼 클릭
-        if (this.elements.editForm) {
-            this.elements.editForm.addEventListener('submit', this.handleEdit.bind(this));
-        }
-
-        // 삭제 버튼 클릭
-        if (this.elements.deleteForm) {
-            this.elements.deleteForm.addEventListener('submit', this.handleDelete.bind(this));
-        }
-
-        // 뒤로가기 링크
-        if (this.elements.backLink) {
-            this.elements.backLink.addEventListener('click', this.handleBackClick.bind(this));
-        }
-
-        // 이미지 클릭 (확대보기)
-        if (this.elements.postImage) {
-            this.elements.postImage.addEventListener('click', this.handleImageClick.bind(this));
-        }
-
-        // 페이지 이탈 경고
-        window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this));
-
-        // 키보드 이벤트
-        document.addEventListener('keydown', this.handleKeyDown.bind(this));
-
-        // 스크롤 이벤트 (읽기 진행률)
-        window.addEventListener('scroll', this.throttle(this.handleScroll.bind(this), 100));
-    },
-
-    // CSRF 토큰 설정
-    setupCSRF() {
-        this.csrfToken = document.querySelector('meta[name="_csrf"]')?.content || '';
-        this.csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || '';
-    },
-
-    // 이미지 뷰어 설정
-    setupImageViewer() {
-        if (!this.elements.postImage) return;
-
-        // 이미지 로딩 처리
-        this.elements.postImage.addEventListener('load', () => {
-            this.elements.postImage.style.opacity = '1';
-        });
-
-        this.elements.postImage.addEventListener('error', () => {
-            this.showImageError();
-        });
-    },
-
-    // 키보드 단축키 설정
-    setupKeyboardShortcuts() {
-        this.keyboardShortcuts = {
-            'e': () => this.elements.editButton?.click(),
-            'd': () => this.showDeleteConfirmation(),
-            'Escape': () => this.hideDeleteConfirmation(),
-            'b': () => this.elements.backLink?.click()
-        };
-    },
-
-    // 좋아요/싫어요 시스템 설정
-    setupReactionSystem() {
-        // window.postDetailData에서 데이터 가져오기
-        if (!window.postDetailData) {
-            console.log('postDetailData가 없습니다 - 좋아요/싫어요 기능 비활성화');
-            return;
-        }
-
-        const { isLoggedIn, postId, reactType, likeCount, dislikeCount } = window.postDetailData;
-
-        if (!isLoggedIn) {
-            console.log('로그인하지 않은 사용자 - 좋아요/싫어요 기능 비활성화');
-            return;
-        }
-
-        // 초기 데이터 설정
-        this.state.currentReactType = reactType || 'NONE';
-        this.state.currentLikeCount = likeCount || 0;
-        this.state.currentDislikeCount = dislikeCount || 0;
-
-        // reactType 기반으로 초기 상태 설정
-        this.state.liked = this.state.currentReactType === 'LIKE';
-        this.state.disliked = this.state.currentReactType === 'DISLIKE';
-
-        console.log('초기 상태 - reactType:', this.state.currentReactType, 'liked:', this.state.liked, 'disliked:', this.state.disliked);
-        console.log('초기 카운트 - like:', this.state.currentLikeCount, 'dislike:', this.state.currentDislikeCount);
-
-        // 초기 UI 업데이트
-        this.updateReactionUI();
-
-        // 이벤트 리스너 추가
-        this.bindReactionEvents(postId);
-    },
-
-    // 좋아요/싫어요 이벤트 바인딩
-    bindReactionEvents(postId) {
-        // 좋아요 버튼 클릭
-        if (this.elements.likeButton) {
-            this.elements.likeButton.addEventListener('click', async () => {
-                await this.handleLikeClick(postId);
-            });
-        }
-
-        // 싫어요 버튼 클릭
-        if (this.elements.dislikeButton) {
-            this.elements.dislikeButton.addEventListener('click', async () => {
-                await this.handleDislikeClick(postId);
-            });
-        }
-    },
-
-    // 좋아요 클릭 핸들러
-    async handleLikeClick(postId) {
-        if (!this.elements.likeButton) return;
-
-        this.elements.likeButton.disabled = true;
-
-        const method = this.state.liked ? 'DELETE' : 'POST';
-        const url = `/api/v1/board/posts/${postId}/reactions/likes`;
-
-        try {
-            const res = await fetch(url, {
-                method: method,
-                credentials: 'include',
-                headers: {
-                    [this.csrfHeader]: this.csrfToken
-                }
-            });
-
-            const resultText = await res.text();
-
-            if (!res.ok) {
-                throw new Error(resultText || `HTTP ${res.status}`);
-            }
-
-            // 상태 업데이트
-            if (this.state.liked) {
-                // 좋아요 취소
-                this.state.liked = false;
-                this.state.currentLikeCount--;
-            } else {
-                // 좋아요 등록 (기존 싫어요가 있다면 처리)
-                if (this.state.disliked) {
-                    this.state.disliked = false;
-                    this.state.currentDislikeCount--;
-                }
-                this.state.liked = true;
-                this.state.currentLikeCount++;
-            }
-
-            // UI 업데이트
-            this.updateReactionUI();
-
-            console.log('좋아요 처리 성공:', resultText);
-
-        } catch (err) {
-            console.error('좋아요 처리 실패:', err);
-            this.showError('좋아요 처리 실패: ' + err.message);
-        } finally {
-            this.elements.likeButton.disabled = false;
-        }
-    },
-
-    // 싫어요 클릭 핸들러
-    async handleDislikeClick(postId) {
-        if (!this.elements.dislikeButton) return;
-
-        this.elements.dislikeButton.disabled = true;
-
-        const method = this.state.disliked ? 'DELETE' : 'POST';
-        const url = `/api/v1/board/posts/${postId}/reactions/dislikes`;
-
-        try {
-            const res = await fetch(url, {
-                method: method,
-                credentials: 'include',
-                headers: {
-                    [this.csrfHeader]: this.csrfToken
-                }
-            });
-
-            const resultText = await res.text();
-
-            if (!res.ok) {
-                throw new Error(resultText || `HTTP ${res.status}`);
-            }
-
-            // 상태 업데이트
-            if (this.state.disliked) {
-                // 싫어요 취소
-                this.state.disliked = false;
-                this.state.currentDislikeCount--;
-            } else {
-                // 싫어요 등록 (기존 좋아요가 있다면 처리)
-                if (this.state.liked) {
-                    this.state.liked = false;
-                    this.state.currentLikeCount--;
-                }
-                this.state.disliked = true;
-                this.state.currentDislikeCount++;
-            }
-
-            // UI 업데이트
-            this.updateReactionUI();
-
-            console.log('싫어요 처리 성공:', resultText);
-
-        } catch (err) {
-            console.error('싫어요 처리 실패:', err);
-            this.showError('싫어요 처리 실패: ' + err.message);
-        } finally {
-            this.elements.dislikeButton.disabled = false;
-        }
-    },
-
-    // 좋아요/싫어요 UI 업데이트
-    updateReactionUI() {
-        // 좋아요 버튼 업데이트
-        if (this.elements.likeButton && this.elements.likeIcon && this.elements.likeText && this.elements.likeCountSpan) {
-            if (this.state.liked) {
-                this.elements.likeButton.classList.add('liked');
-                this.elements.likeIcon.textContent = '💔';
-                this.elements.likeText.textContent = '좋아요 취소';
-            } else {
-                this.elements.likeButton.classList.remove('liked');
-                this.elements.likeIcon.textContent = '❤️';
-                this.elements.likeText.textContent = '좋아요';
-            }
-            this.elements.likeCountSpan.textContent = this.state.currentLikeCount;
-        }
-
-        // 싫어요 버튼 업데이트
-        if (this.elements.dislikeButton && this.elements.dislikeIcon && this.elements.dislikeText && this.elements.dislikeCountSpan) {
-            if (this.state.disliked) {
-                this.elements.dislikeButton.classList.add('disliked');
-                this.elements.dislikeIcon.textContent = '👍';
-                this.elements.dislikeText.textContent = '싫어요 취소';
-            } else {
-                this.elements.dislikeButton.classList.remove('disliked');
-                this.elements.dislikeIcon.textContent = '👎';
-                this.elements.dislikeText.textContent = '싫어요';
-            }
-            this.elements.dislikeCountSpan.textContent = this.state.currentDislikeCount;
-        }
-    },
-
-    // 이벤트 핸들러들
-    handleEdit(event) {
-        event.preventDefault();
-
-        // 버튼 애니메이션
-        this.animateButton(this.elements.editButton);
-
-        // 수정 페이지로 이동
-        const form = event.target;
-        const formData = new FormData(form);
-        const postId = formData.get('postId');
-        const boardId = formData.get('boardId');
-
-        if (postId && boardId) {
-            window.location.href = `/board/posts/edit?postId=${postId}&boardId=${boardId}`;
-        }
-    },
-
-    handleDelete(event) {
-        event.preventDefault();
-
-        // 삭제 확인 모달 표시
-        this.showDeleteConfirmation(event.target);
-    },
-
-    confirmDelete(form) {
-        this.showLoading(true);
-
-        const formData = new FormData(form);
-        const boardId = formData.get('boardId');
-        const postId = formData.get('postId');
-
-        // 삭제 API 호출
-        fetch(`/api/v1/board/${boardId}/posts/${postId}/deactivate`, {
-            method: 'PATCH',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                [this.csrfHeader]: this.csrfToken
-            },
-            body: new URLSearchParams(formData)
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.text();
-            })
-            .then(data => {
-                this.showSuccess('게시글이 삭제되었습니다.');
-
-                // 2초 후 목록으로 이동
-                setTimeout(() => {
-                    window.location.href = `/board/${boardId}/view`;
-                }, 2000);
-            })
-            .catch(error => {
-                console.error('삭제 실패:', error);
-                this.showError('삭제 중 오류가 발생했습니다: ' + error.message);
-            })
-            .finally(() => {
-                this.showLoading(false);
-                this.hideDeleteConfirmation();
-            });
-    },
-
-    handleBackClick(event) {
-        event.preventDefault();
-
-        // 애니메이션과 함께 뒤로가기
-        this.animatePageTransition(() => {
-            window.history.back();
-        });
-    },
-
-    handleImageClick(event) {
-        event.preventDefault();
-        this.openImageModal(event.target);
-    },
-
-    handleBeforeUnload(event) {
-        if (this.state.unsavedChanges) {
-            event.preventDefault();
-            event.returnValue = '저장하지 않은 변경사항이 있습니다. 정말 떠나시겠습니까?';
-            return event.returnValue;
-        }
-    },
-
-    handleKeyDown(event) {
-        // 모달이 열려있으면 무시
-        if (document.querySelector('.modal.show')) return;
-
-        const key = event.key;
-        const shortcut = this.keyboardShortcuts[key];
-
-        if (shortcut && (event.ctrlKey || event.metaKey)) {
-            event.preventDefault();
-            shortcut();
-        }
-    },
-
-    handleScroll() {
-        this.updateReadingProgress();
-    },
-
-    // 삭제 확인 모달
-    showDeleteConfirmation(form) {
-        const modal = this.createDeleteModal();
-        document.body.appendChild(modal);
-
-        setTimeout(() => {
-            modal.classList.add('show');
-        }, 10);
-
-        // 확인 버튼 이벤트
-        const confirmBtn = modal.querySelector('.confirm-delete');
-        const cancelBtn = modal.querySelector('.cancel-delete');
-
-        confirmBtn.addEventListener('click', () => {
-            this.confirmDelete(form);
-        });
-
-        cancelBtn.addEventListener('click', () => {
-            this.hideDeleteConfirmation();
-        });
-
-        // ESC 키로 닫기
-        const handleEscape = (e) => {
-            if (e.key === 'Escape') {
-                this.hideDeleteConfirmation();
-                document.removeEventListener('keydown', handleEscape);
-            }
-        };
-        document.addEventListener('keydown', handleEscape);
-    },
-
-    hideDeleteConfirmation() {
-        const modal = document.querySelector('.delete-confirmation-modal');
-        if (modal) {
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.remove();
-            }, 300);
-        }
-    },
-
-    createDeleteModal() {
-        const modal = document.createElement('div');
-        modal.className = 'delete-confirmation-modal modal';
-        modal.innerHTML = `
-            <div class="modal-backdrop"></div>
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>게시글 삭제</h3>
-                </div>
-                <div class="modal-body">
-                    <p>이 게시글을 정말 삭제하시겠습니까?</p>
-                    <p class="warning-text">삭제된 게시글은 복구할 수 없습니다.</p>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="cancel-delete">취소</button>
-                    <button type="button" class="confirm-delete">삭제</button>
-                </div>
-            </div>
-        `;
-
-        // 모달 스타일 추가
-        const style = document.createElement('style');
-        style.textContent = `
-            .delete-confirmation-modal {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 1000;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                opacity: 0;
-                transition: opacity 0.3s ease;
-            }
-            
-            .delete-confirmation-modal.show {
-                opacity: 1;
-            }
-            
-            .modal-backdrop {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                backdrop-filter: blur(4px);
-            }
-            
-            .modal-content {
-                position: relative;
-                background: var(--background-primary);
-                border-radius: var(--border-radius-large);
-                padding: var(--spacing-xl);
-                max-width: 400px;
-                width: 90%;
-                box-shadow: var(--shadow-card);
-                transform: scale(0.9);
-                transition: transform 0.3s ease;
-            }
-            
-            .delete-confirmation-modal.show .modal-content {
-                transform: scale(1);
-            }
-            
-            .modal-header h3 {
-                margin: 0 0 var(--spacing-md) 0;
-                color: var(--label-primary);
-                text-align: center;
-            }
-            
-            .modal-body p {
-                margin: 0 0 var(--spacing-sm) 0;
-                color: var(--label-secondary);
-                text-align: center;
-            }
-            
-            .warning-text {
-                color: var(--system-red) !important;
-                font-size: 14px;
-            }
-            
-            .modal-actions {
-                display: flex;
-                gap: var(--spacing-md);
-                margin-top: var(--spacing-lg);
-                justify-content: center;
-            }
-            
-            .modal-actions button {
-                padding: 10px 20px;
-                border-radius: var(--border-radius-medium);
-                font-weight: 600;
-                border: none;
-                cursor: pointer;
-                transition: all 0.2s ease;
-            }
-            
-            .cancel-delete {
-                background: var(--system-gray5);
-                color: var(--label-primary);
-            }
-            
-            .confirm-delete {
-                background: var(--system-red);
-                color: white;
-            }
-            
-            .cancel-delete:hover {
-                background: var(--system-gray4);
-            }
-            
-            .confirm-delete:hover {
-                background: #D70015;
-            }
-        `;
-
-        if (!document.querySelector('#delete-modal-styles')) {
-            style.id = 'delete-modal-styles';
-            document.head.appendChild(style);
-        }
-
-        return modal;
-    },
-
-    // 이미지 모달
-    openImageModal(img) {
-        const modal = document.createElement('div');
-        modal.className = 'image-modal modal';
-        modal.innerHTML = `
-            <div class="modal-backdrop"></div>
-            <div class="image-modal-content">
-                <img src="${img.src}" alt="${img.alt}" />
-                <button class="close-modal">&times;</button>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        setTimeout(() => {
-            modal.classList.add('show');
-        }, 10);
-
-        // 닫기 이벤트
-        const closeBtn = modal.querySelector('.close-modal');
-        const backdrop = modal.querySelector('.modal-backdrop');
-
-        [closeBtn, backdrop].forEach(element => {
-            element.addEventListener('click', () => {
-                modal.classList.remove('show');
-                setTimeout(() => modal.remove(), 300);
-            });
-        });
-    },
-
-    // 읽기 진행률 업데이트
-    updateReadingProgress() {
-        const contentElement = this.elements.content;
-        if (!contentElement) return;
-
-        const scrollTop = window.pageYOffset;
-        const contentTop = contentElement.offsetTop;
-        const contentHeight = contentElement.offsetHeight;
-        const windowHeight = window.innerHeight;
-
-        const progress = Math.min(100, Math.max(0,
-            ((scrollTop - contentTop + windowHeight) / contentHeight) * 100
-        ));
-
-        // 진행률 표시 (필요한 경우)
-        this.showReadingProgress(progress);
-    },
-
-    showReadingProgress(progress) {
-        let progressBar = document.querySelector('.reading-progress');
-        if (!progressBar) {
-            progressBar = document.createElement('div');
-            progressBar.className = 'reading-progress';
-            progressBar.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                height: 3px;
-                background: var(--primary-blue);
-                z-index: 999;
-                transition: width 0.1s ease;
-            `;
-            document.body.appendChild(progressBar);
-        }
-
-        progressBar.style.width = `${progress}%`;
-    },
-
-    // 유틸리티 함수들
-    throttle(func, limit) {
-        let inThrottle;
-        return function() {
-            const args = arguments;
-            const context = this;
-            if (!inThrottle) {
-                func.apply(context, args);
-                inThrottle = true;
-                setTimeout(() => inThrottle = false, limit);
-            }
-        };
-    },
-
-    animateButton(button) {
-        if (!button) return;
-
-        button.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            button.style.transform = '';
-        }, 150);
-    },
-
-    animatePageTransition(callback) {
-        if (this.elements.container) {
-            this.elements.container.style.opacity = '0.8';
-            this.elements.container.style.transform = 'translateX(-20px)';
-        }
-
-        setTimeout(callback, 200);
-    },
-
-    showImageError() {
-        if (this.elements.postImage) {
-            this.elements.postImage.style.display = 'none';
-
-            const errorMsg = document.createElement('div');
-            errorMsg.className = 'image-error';
-            errorMsg.textContent = '이미지를 불러올 수 없습니다.';
-            errorMsg.style.cssText = `
-                padding: var(--spacing-lg);
-                text-align: center;
-                color: var(--label-tertiary);
-                background: var(--background-secondary);
-                border-radius: var(--border-radius-medium);
-            `;
-
-            this.elements.postImage.parentNode.appendChild(errorMsg);
-        }
-    },
-
-    // 상태 관리
-    showLoading(show) {
-        this.state.isLoading = show;
-
-        if (this.elements.container) {
-            this.elements.container.classList.toggle('loading', show);
-        }
-
-        // 버튼 비활성화
-        if (this.elements.actionButtons) {
-            const buttons = this.elements.actionButtons.querySelectorAll('button');
-            buttons.forEach(btn => {
-                btn.disabled = show;
-            });
-        }
-    },
-
-    showError(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        errorDiv.textContent = message;
-
-        this.elements.container?.prepend(errorDiv);
-
-        setTimeout(() => {
-            errorDiv.remove();
-        }, 5000);
-    },
-
-    showSuccess(message) {
-        const successDiv = document.createElement('div');
-        successDiv.className = 'success-message';
-        successDiv.textContent = message;
-
-        this.elements.container?.prepend(successDiv);
-
-        setTimeout(() => {
-            successDiv.remove();
-        }, 3000);
-    },
-
-    // 댓글 관련 (향후 확장)
-    initCommentSystem() {
-        if (this.elements.commentSection) {
-            // 댓글 좋아요/싫어요 이벤트 바인딩
-            this.elements.commentSection.addEventListener('click', async (e) => {
-                const likeBtn = e.target.closest('.comment-like-button');
-                const dislikeBtn = e.target.closest('.comment-dislike-button');
-
-                if (likeBtn) {
-                    const commentId = likeBtn.getAttribute('data-comment-id');
-                    await this.toggleCommentReaction(commentId, 'likes');
-                }
-
-                if (dislikeBtn) {
-                    const commentId = dislikeBtn.getAttribute('data-comment-id');
-                    await this.toggleCommentReaction(commentId, 'dislikes');
-                }
-            });
-
-            console.log('Comment system initialized');
-        }
-    },
-
-    // 댓글 좋아요/싫어요 토글 (수정된 버전)
-    async toggleCommentReaction(commentId, type) {
-        const isLike = type === 'likes';
-
-        const button = document.querySelector(`.comment-${isLike ? 'like' : 'dislike'}-button[data-comment-id="${commentId}"]`);
-        const countSpan = button.querySelector(`.${isLike ? 'like' : 'dislike'}-count`);
-        const isActive = button.classList.contains(isLike ? 'liked' : 'disliked');
-
-        // 반대 버튼 요소들
-        const oppositeBtn = document.querySelector(`.comment-${isLike ? 'dislike' : 'like'}-button[data-comment-id="${commentId}"]`);
-        const oppCountSpan = oppositeBtn ? oppositeBtn.querySelector(`.${isLike ? 'dislike' : 'like'}-count`) : null;
-        const oppositeActive = oppositeBtn ? oppositeBtn.classList.contains(isLike ? 'disliked' : 'liked') : false;
-
-        const method = isActive ? 'DELETE' : 'POST';
-        const url = `/api/v1/board/posts/comments/${commentId}/reactions/${type}`;
-
-        try {
-            const res = await fetch(url, {
-                method,
-                credentials: 'include',
-                headers: {
-                    [this.csrfHeader]: this.csrfToken
-                }
-            });
-
-            const resultText = await res.text();
-
-            if (!res.ok) {
-                // 서버 에러 상세 분석
-                console.error('서버 응답:', res.status, resultText);
-
-                if (res.status === 409) {
-                    throw new Error('이미 반응이 등록되어 있습니다');
-                } else if (res.status === 404) {
-                    throw new Error('취소할 반응이 없습니다');
-                } else {
-                    throw new Error(resultText || `HTTP ${res.status}`);
-                }
-            }
-
-            // ✅ 서버 로직과 일치하는 클라이언트 상태 업데이트
-            if (isActive) {
-                // 현재 반응 취소
-                const currentCount = parseInt(countSpan.textContent, 10) || 0;
-                countSpan.textContent = Math.max(0, currentCount - 1);
-                button.classList.remove(isLike ? 'liked' : 'disliked');
-            } else {
-                // 새로운 반응 등록
-
-                // 반대 반응이 활성화되어 있으면 먼저 비활성화 (서버에서 처리됨)
-                if (oppositeActive && oppCountSpan) {
-                    const oppCount = parseInt(oppCountSpan.textContent, 10) || 0;
-                    oppCountSpan.textContent = Math.max(0, oppCount - 1);
-                    oppositeBtn.classList.remove(isLike ? 'disliked' : 'liked');
-                }
-
-                // 현재 반응 활성화
-                const currentCount = parseInt(countSpan.textContent, 10) || 0;
-                countSpan.textContent = currentCount + 1;
-                button.classList.add(isLike ? 'liked' : 'disliked');
-            }
-
-            console.log(`댓글 ${type} 처리 성공:`, resultText);
-
-        } catch (err) {
-            console.error(`댓글 ${type} 처리 실패:`, err);
-            this.showError(`댓글 ${isLike ? '좋아요' : '싫어요'} 처리 실패: ` + err.message);
-        }
-    }
-};
-
-// DOM 로드 완료 시 초기화
-document.addEventListener('DOMContentLoaded', () => {
-    BoardSkin.PostSkin.Detail.init();
+// ===== 게시글 상세 페이지 JavaScript - 글래스모피즘 디자인 =====
+
+// 전역 변수
+let isReacting = false;
+let isDeleting = false;
+
+// DOM 요소들
+const likeButton = document.getElementById('like-button');
+const dislikeButton = document.getElementById('dislike-button');
+const likeCount = document.getElementById('like-count');
+const dislikeCount = document.getElementById('dislike-count');
+const likeIcon = document.getElementById('like-icon');
+const dislikeIcon = document.getElementById('dislike-icon');
+const likeText = document.getElementById('like-text');
+const dislikeText = document.getElementById('dislike-text');
+const deleteForm = document.getElementById('deletePosts');
+
+// 초기화 함수
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEventListeners();
+    initializeReactionButtons();
+    setupAccessibility();
+    addInteractiveEffects();
+
+    console.log('📖 게시글 상세 시스템이 초기화되었습니다.');
+    console.log('📊 서버 데이터:', window.postDetailData);
+
+    // 개발자 도구 안내
+    console.log('%c개발자 도구 명령어:', 'color: #3f51b5; font-weight: bold; font-size: 14px;');
+    console.log('%c• simulateReaction(type) - 반응 시뮬레이션', 'color: #7986cb;');
+    console.log('%c• getCurrentReactionState() - 현재 반응 상태', 'color: #7986cb;');
+    console.log('%c• resetReactions() - 반응 초기화', 'color: #7986cb;');
 });
 
-// 전역 함수로 노출
-window.PostDetail = BoardSkin.PostSkin.Detail;
+// 이벤트 리스너 초기화
+function initializeEventListeners() {
+    // 좋아요/싫어요 버튼 이벤트
+    if (likeButton) {
+        likeButton.addEventListener('click', () => handleReaction('LIKE'));
+    }
+
+    if (dislikeButton) {
+        dislikeButton.addEventListener('click', () => handleReaction('DISLIKE'));
+    }
+
+    // 삭제 폼 이벤트
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', handleDeletePost);
+    }
+
+    // 이미지 클릭 이벤트 (확대)
+    const postImages = document.querySelectorAll('.post-image');
+    postImages.forEach(img => {
+        img.addEventListener('click', () => showImageModal(img.src, img.alt));
+        img.style.cursor = 'pointer';
+    });
+
+    // 키보드 단축키
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+}
+
+// 반응 버튼 초기화
+function initializeReactionButtons() {
+    if (!window.postDetailData) {
+        console.warn('⚠️ 서버 데이터가 없습니다.');
+        return;
+    }
+
+    const { reactType, likeCount: likes, dislikeCount: dislikes, isLoggedIn } = window.postDetailData;
+
+    // 로그인하지 않은 경우 버튼 비활성화
+    if (!isLoggedIn) {
+        if (likeButton) likeButton.disabled = true;
+        if (dislikeButton) dislikeButton.disabled = true;
+        return;
+    }
+
+    // 현재 반응 상태 적용
+    updateReactionUI(reactType, likes, dislikes);
+
+    console.log(`👍 현재 반응 상태: ${reactType}, 좋아요: ${likes}, 싫어요: ${dislikes}`);
+}
+
+// 반응 처리
+async function handleReaction(type) {
+    if (isReacting) return;
+
+    // 로그인 체크
+    if (!window.postDetailData || !window.postDetailData.isLoggedIn) {
+        showToast('로그인이 필요합니다.', 'warning');
+        return;
+    }
+
+    const currentReaction = window.postDetailData.reactType;
+    const postId = window.postDetailData.postId;
+
+    console.log(`🎯 반응 처리: ${type}, 현재 상태: ${currentReaction}`);
+
+    try {
+        isReacting = true;
+        setReactionLoadingState(true);
+
+        // 반응 로직 결정
+        let newReaction;
+        if (currentReaction === type) {
+            // 같은 반응 클릭 시 취소
+            newReaction = 'NONE';
+        } else {
+            // 다른 반응 또는 처음 반응
+            newReaction = type;
+        }
+
+        // API 호출 시뮬레이션
+        const result = await simulateReactionAPI(postId, newReaction);
+
+        // UI 업데이트
+        window.postDetailData.reactType = newReaction;
+        window.postDetailData.likeCount = result.likeCount;
+        window.postDetailData.dislikeCount = result.dislikeCount;
+
+        updateReactionUI(newReaction, result.likeCount, result.dislikeCount);
+
+        // 성공 메시지
+        const messages = {
+            'LIKE': '👍 좋아요를 눌렀습니다!',
+            'DISLIKE': '👎 싫어요를 눌렀습니다!',
+            'NONE': '반응이 취소되었습니다.'
+        };
+
+        showToast(messages[newReaction], 'success');
+
+        // 버튼 애니메이션
+        animateReactionButton(type);
+
+    } catch (error) {
+        console.error('❌ 반응 처리 오류:', error);
+        showToast('반응 처리 중 오류가 발생했습니다.', 'error');
+    } finally {
+        isReacting = false;
+        setReactionLoadingState(false);
+    }
+}
+
+// 반응 UI 업데이트
+function updateReactionUI(reactType, likes, dislikes) {
+    if (!likeButton || !dislikeButton) return;
+
+    // 좋아요 버튼 상태
+    if (reactType === 'LIKE') {
+        likeButton.classList.add('liked');
+        if (likeIcon) likeIcon.textContent = '💔';
+        if (likeText) likeText.textContent = '좋아요 취소';
+    } else {
+        likeButton.classList.remove('liked');
+        if (likeIcon) likeIcon.textContent = '❤️';
+        if (likeText) likeText.textContent = '좋아요';
+    }
+
+    // 싫어요 버튼 상태
+    if (reactType === 'DISLIKE') {
+        dislikeButton.classList.add('disliked');
+        if (dislikeIcon) dislikeIcon.textContent = '👍';
+        if (dislikeText) dislikeText.textContent = '싫어요 취소';
+    } else {
+        dislikeButton.classList.remove('disliked');
+        if (dislikeIcon) dislikeIcon.textContent = '👎';
+        if (dislikeText) dislikeText.textContent = '싫어요';
+    }
+
+    // 카운트 업데이트
+    if (likeCount) likeCount.textContent = likes;
+    if (dislikeCount) dislikeCount.textContent = dislikes;
+
+    // 통계 업데이트
+    updateReactionStats(likes, dislikes);
+}
+
+// 반응 통계 업데이트
+function updateReactionStats(likes, dislikes) {
+    const statsElement = document.querySelector('.reaction-stats');
+    if (statsElement) {
+        const total = likes + dislikes;
+        statsElement.innerHTML = `
+            총 반응: <span>${total}</span>개
+            (좋아요 <span>${likes}</span>개,
+            싫어요 <span>${dislikes}</span>개)
+        `;
+    }
+}
+
+// 반응 로딩 상태 설정
+function setReactionLoadingState(loading) {
+    if (likeButton) {
+        likeButton.disabled = loading;
+        if (loading) {
+            likeButton.style.opacity = '0.7';
+        } else {
+            likeButton.style.opacity = '1';
+        }
+    }
+
+    if (dislikeButton) {
+        dislikeButton.disabled = loading;
+        if (loading) {
+            dislikeButton.style.opacity = '0.7';
+        } else {
+            dislikeButton.style.opacity = '1';
+        }
+    }
+}
+
+// 반응 버튼 애니메이션
+function animateReactionButton(type) {
+    const button = type === 'LIKE' ? likeButton : dislikeButton;
+    if (!button) return;
+
+    // 펄스 애니메이션
+    button.style.animation = 'pulse 0.6s ease-in-out';
+
+    setTimeout(() => {
+        button.style.animation = '';
+    }, 600);
+}
+
+// 게시글 삭제 처리
+async function handleDeletePost(e) {
+    e.preventDefault();
+
+    if (isDeleting) return;
+
+    // 확인 대화상자
+    if (!confirm('정말로 이 게시글을 삭제하시겠습니까?\n삭제된 게시글은 복구할 수 없습니다.')) {
+        return;
+    }
+
+    const formData = new FormData(deleteForm);
+    const postId = formData.get('postId');
+    const boardId = formData.get('boardId');
+
+    console.log(`🗑️ 게시글 삭제 시작: postId=${postId}, boardId=${boardId}`);
+
+    try {
+        isDeleting = true;
+        setDeleteLoadingState(true);
+
+        // API 호출 시뮬레이션
+        await simulateDeleteAPI(postId);
+
+        showToast('게시글이 성공적으로 삭제되었습니다.', 'success');
+
+        // 목록으로 리디렉션
+        setTimeout(() => {
+            window.location.href = `/board/${boardId}/view`;
+        }, 1500);
+
+    } catch (error) {
+        console.error('❌ 삭제 오류:', error);
+        showToast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+    } finally {
+        isDeleting = false;
+        setDeleteLoadingState(false);
+    }
+}
+
+// 삭제 로딩 상태 설정
+function setDeleteLoadingState(loading) {
+    const deleteButton = deleteForm?.querySelector('.delete-button');
+    if (!deleteButton) return;
+
+    if (loading) {
+        deleteButton.disabled = true;
+        deleteButton.textContent = '삭제 중...';
+        deleteButton.style.opacity = '0.7';
+    } else {
+        deleteButton.disabled = false;
+        deleteButton.textContent = '삭제하기';
+        deleteButton.style.opacity = '1';
+    }
+}
+
+// 이미지 모달 표시
+function showImageModal(src, alt) {
+    // 기존 모달 제거
+    const existingModal = document.querySelector('.image-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'image-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(20px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    `;
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = alt;
+    img.style.cssText = `
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 16px;
+        box-shadow: 0 16px 64px rgba(0, 0, 0, 0.5);
+        transform: scale(0.8);
+        transition: transform 0.3s ease;
+    `;
+
+    modal.appendChild(img);
+    document.body.appendChild(modal);
+
+    // 애니메이션
+    setTimeout(() => {
+        modal.style.opacity = '1';
+        img.style.transform = 'scale(1)';
+    }, 10);
+
+    // 클릭으로 닫기
+    modal.addEventListener('click', () => {
+        modal.style.opacity = '0';
+        img.style.transform = 'scale(0.8)';
+        setTimeout(() => modal.remove(), 300);
+    });
+
+    // ESC로 닫기
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            modal.click();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+}
+
+// 키보드 단축키 처리
+function handleKeyboardShortcuts(e) {
+    // 모달이 열려있으면 단축키 비활성화
+    if (document.querySelector('.image-modal')) return;
+
+    // L: 좋아요
+    if (e.key === 'l' || e.key === 'L') {
+        e.preventDefault();
+        if (likeButton && !likeButton.disabled) {
+            likeButton.click();
+        }
+    }
+
+    // D: 싫어요
+    if (e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        if (dislikeButton && !dislikeButton.disabled) {
+            dislikeButton.click();
+        }
+    }
+
+    // B: 뒤로가기
+    if (e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        const backButton = document.querySelector('.back-button');
+        if (backButton) {
+            backButton.click();
+        }
+    }
+}
+
+// API 시뮬레이션 함수들
+async function simulateReactionAPI(postId, reactionType) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            // 95% 확률로 성공
+            if (Math.random() > 0.05) {
+                // 현재 카운트 기반으로 새 카운트 계산
+                const currentLikes = window.postDetailData.likeCount;
+                const currentDislikes = window.postDetailData.dislikeCount;
+                const currentReaction = window.postDetailData.reactType;
+
+                let newLikes = currentLikes;
+                let newDislikes = currentDislikes;
+
+                // 현재 반응 제거
+                if (currentReaction === 'LIKE') newLikes--;
+                if (currentReaction === 'DISLIKE') newDislikes--;
+
+                // 새 반응 추가
+                if (reactionType === 'LIKE') newLikes++;
+                if (reactionType === 'DISLIKE') newDislikes++;
+
+                console.log('✅ API 응답: 반응 성공');
+                resolve({
+                    success: true,
+                    likeCount: Math.max(0, newLikes),
+                    dislikeCount: Math.max(0, newDislikes),
+                    userReaction: reactionType
+                });
+            } else {
+                console.log('❌ API 응답: 반응 실패');
+                reject(new Error('서버 오류가 발생했습니다.'));
+            }
+        }, 800);
+    });
+}
+
+async function simulateDeleteAPI(postId) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            // 90% 확률로 성공
+            if (Math.random() > 0.1) {
+                console.log('✅ API 응답: 삭제 성공');
+                resolve({ success: true });
+            } else {
+                console.log('❌ API 응답: 삭제 실패');
+                reject(new Error('삭제 권한이 없거나 서버 오류가 발생했습니다.'));
+            }
+        }, 2000);
+    });
+}
+
+// 토스트 메시지 표시
+function showToast(message, type = 'info', duration = 3000) {
+    // 기존 토스트 제거
+    const existingToast = document.querySelector('.toast-message');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast-message toast-${type}`;
+
+    const colors = {
+        success: 'rgba(76, 175, 80, 0.9)',
+        error: 'rgba(244, 67, 54, 0.9)',
+        warning: 'rgba(255, 152, 0, 0.9)',
+        info: 'rgba(33, 150, 243, 0.9)'
+    };
+
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${colors[type]};
+        backdrop-filter: blur(20px);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        font-weight: 500;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-width: 400px;
+        word-wrap: break-word;
+    `;
+
+    toast.innerHTML = `${icons[type]} ${message}`;
+    document.body.appendChild(toast);
+
+    // 애니메이션
+    setTimeout(() => {
+        toast.style.transform = 'translateX(0)';
+    }, 10);
+
+    // 자동 제거
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, duration);
+
+    console.log(`📢 토스트: ${message}`);
+}
+
+// 접근성 설정
+function setupAccessibility() {
+    // 키보드 네비게이션을 위한 tabindex 설정
+    const interactiveElements = document.querySelectorAll(
+        '.like-button, .dislike-button, .edit-button, .delete-button, .back-button, .post-image'
+    );
+
+    interactiveElements.forEach((element, index) => {
+        if (!element.hasAttribute('tabindex')) {
+            element.setAttribute('tabindex', '0');
+        }
+
+        // Enter 키로 클릭 가능하게
+        element.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                element.click();
+            }
+        });
+    });
+
+    // ARIA 라벨 개선
+    if (likeButton) {
+        likeButton.setAttribute('aria-describedby', 'like-count');
+    }
+    if (dislikeButton) {
+        dislikeButton.setAttribute('aria-describedby', 'dislike-count');
+    }
+
+    console.log('♿ 접근성 기능이 설정되었습니다.');
+}
+
+// 인터랙티브 효과 추가
+function addInteractiveEffects() {
+    // 리플 효과
+    const buttons = document.querySelectorAll(
+        '.like-button, .dislike-button, .edit-button, .delete-button'
+    );
+
+    buttons.forEach(button => {
+        button.addEventListener('click', createRippleEffect);
+    });
+
+    // 스크롤 애니메이션
+    const observer = new IntersectionObserver(
+        (entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        },
+        { threshold: 0.1 }
+    );
+
+    // 관찰할 요소들
+    const animatedElements = document.querySelectorAll(
+        '.post-header, .post-content-wrapper, .post-reactions, .comment-section'
+    );
+
+    animatedElements.forEach(element => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(20px)';
+        element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(element);
+    });
+
+    console.log('✨ 인터랙티브 효과가 추가되었습니다.');
+}
+
+// 리플 효과 생성
+function createRippleEffect(e) {
+    const button = e.currentTarget;
+    const ripple = document.createElement('span');
+
+    const rect = button.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+
+    ripple.style.cssText = `
+        position: absolute;
+        width: ${size}px;
+        height: ${size}px;
+        left: ${x}px;
+        top: ${y}px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        transform: scale(0);
+        animation: ripple 0.6s linear;
+        pointer-events: none;
+    `;
+
+    button.appendChild(ripple);
+
+    setTimeout(() => {
+        ripple.remove();
+    }, 600);
+}
+
+// 현재 반응 상태 반환 (개발자 도구용)
+function getCurrentReactionState() {
+    return {
+        postId: window.postDetailData?.postId,
+        reactType: window.postDetailData?.reactType,
+        likeCount: window.postDetailData?.likeCount,
+        dislikeCount: window.postDetailData?.dislikeCount,
+        isLoggedIn: window.postDetailData?.isLoggedIn
+    };
+}
+
+// 반응 초기화 (개발자 도구용)
+function resetReactions() {
+    if (window.postDetailData) {
+        window.postDetailData.reactType = 'NONE';
+        window.postDetailData.likeCount = 0;
+        window.postDetailData.dislikeCount = 0;
+        updateReactionUI('NONE', 0, 0);
+        showToast('반응이 초기화되었습니다.', 'info');
+    }
+}
+
+// 리플 애니메이션 CSS 추가
+function addRippleStyles() {
+    if (document.getElementById('ripple-styles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'ripple-styles';
+    style.textContent = `
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        .like-button,
+        .dislike-button,
+        .edit-button,
+        .delete-button {
+            position: relative;
+            overflow: hidden;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 스타일 초기화
+addRippleStyles();
+
+// 전역 함수로 노출 (개발자 도구용)
+window.simulateReaction = (type) => handleReaction(type);
+window.getCurrentReactionState = getCurrentReactionState;
+window.resetReactions = resetReactions;

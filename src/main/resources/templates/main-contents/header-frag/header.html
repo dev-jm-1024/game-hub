@@ -2,107 +2,152 @@
 <header th:fragment="header" class="site-header">
     <!-- 사이트 로고 -->
     <div class="site-logo">
-        <h1>
-            <a href="/" title="홈으로" aria-label="사이트 홈으로 이동">
-                <!-- <img src="/static/logo.png" alt="사이트 로고"> -->
-                <span class="logo-text">사이트명</span>
-            </a>
-        </h1>
+        <a href="/" title="홈으로" aria-label="사이트 홈으로 이동">
+            <img src="https://plusb3b.kr/gamehub-img/logo.png" alt="GameHub Logo" class="logo">
+        </a>
     </div>
 
-    <!-- 글로벌 내비게이션 -->
-    <div class="nav-container">
-        <nav th:replace="main-contents/nav-frag/nav :: nav"></nav>
+    <!-- 간단한 네비게이션 -->
+    <nav class="main-nav" role="navigation" aria-label="주요 메뉴">
+        <ul class="nav-menu" role="menubar">
+            <!-- 게임 -->
+            <li class="nav-item has-dropdown" role="none">
+                <a href="#" class="nav-link dropdown-trigger" role="menuitem" aria-expanded="false" aria-haspopup="true">
+                    <span class="nav-text">게임</span>
+                    <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M6 8l-3-3h6l-3 3z"/>
+                    </svg>
+                </a>
+                <ul class="dropdown-menu" role="menu">
+                    <li class="dropdown-item" role="none">
+                        <a href="/games" class="dropdown-link" role="menuitem">🎮 게임 목록</a>
+                    </li>
+                    <li class="dropdown-item" role="none">
+                        <a href="/upload" class="dropdown-link" role="menuitem">📤 게임 업로드</a>
+                    </li>
+                    <li class="dropdown-item" role="none">
+                        <a href="/favorites" class="dropdown-link" role="menuitem">⭐ 즐겨찾기</a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- 커뮤니티 -->
+            <li class="nav-item has-dropdown" role="none">
+                <a href="#" class="nav-link dropdown-trigger" role="menuitem" aria-expanded="false" aria-haspopup="true">
+                    <span class="nav-text">커뮤니티</span>
+                    <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M6 8l-3-3h6l-3 3z"/>
+                    </svg>
+                </a>
+                <ul class="dropdown-menu" role="menu">
+                    <li class="dropdown-item" role="none">
+                        <a href="/board" class="dropdown-link" role="menuitem">📋 전체 게시판</a>
+                    </li>
+                    <li class="dropdown-separator" role="none"></li>
+                    <li class="dropdown-item" role="none">
+                        <a href="/board/1/view" class="dropdown-link" role="menuitem">💬 자유 게시판</a>
+                    </li>
+                    <li class="dropdown-item" role="none">
+                        <a href="/board/2/view" class="dropdown-link" role="menuitem">📢 공지사항</a>
+                    </li>
+                    <li class="dropdown-item" role="none">
+                        <a href="/board/3/view" class="dropdown-link" role="menuitem">❓ Q&A</a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- 마이페이지 -->
+            <li class="nav-item has-dropdown" role="none">
+                <a href="#" class="nav-link dropdown-trigger" role="menuitem" aria-expanded="false" aria-haspopup="true">
+                    <span class="nav-text">마이페이지</span>
+                    <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M6 8l-3-3h6l-3 3z"/>
+                    </svg>
+                </a>
+                <ul class="dropdown-menu" role="menu">
+                    <li class="dropdown-item" role="none">
+                        <a href="/my-page/edit-profile" class="dropdown-link" role="menuitem">👤 프로필 수정</a>
+                    </li>
+                    <li class="dropdown-item" role="none">
+                        <a href="/my-page/games" class="dropdown-link" role="menuitem">🎯 내 게임</a>
+                    </li>
+                    <li class="dropdown-item" role="none">
+                        <a href="/my-page/posts" class="dropdown-link" role="menuitem">📝 내 게시글</a>
+                    </li>
+                    <li class="dropdown-item" role="none">
+                        <a href="/my-page/settings" class="dropdown-link" role="menuitem">⚙️ 설정</a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- 사용자 영역 (간소화) -->
+    <div class="user-actions">
+        <!-- 로그인/회원가입 드롭다운 -->
+        <div class="auth-dropdown has-dropdown">
+            <button class="auth-trigger dropdown-trigger" aria-expanded="false" aria-haspopup="true">
+                <span>계정</span>
+                <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M6 8l-3-3h6l-3 3z"/>
+                </svg>
+            </button>
+            <ul class="dropdown-menu auth-menu" role="menu">
+                <li class="dropdown-item" role="none">
+                    <a href="/game-hub/login" class="dropdown-link" role="menuitem">🔑 로그인</a>
+                </li>
+                <li class="dropdown-item" role="none">
+                    <a href="/game-hub/join" class="dropdown-link" role="menuitem">📝 회원가입</a>
+                </li>
+                <li class="dropdown-item" role="none">
+                    <a href="/game-hub/join-prod" class="dropdown-link" role="menuitem">👥 팀 회원가입</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 관리자 메뉴 (조건부 표시) -->
+        <div class="admin-dropdown has-dropdown" style="display: none;">
+            <button class="admin-trigger dropdown-trigger" aria-expanded="false" aria-haspopup="true">
+                <span>관리자</span>
+                <span class="admin-badge">Admin</span>
+            </button>
+            <ul class="dropdown-menu admin-menu" role="menu">
+                <li class="dropdown-item" role="none">
+                    <a href="/admin" class="dropdown-link" role="menuitem">🛠️ 관리자 패널</a>
+                </li>
+                <li class="dropdown-item" role="none">
+                    <a href="/admin/users" class="dropdown-link" role="menuitem">👥 사용자 관리</a>
+                </li>
+                <li class="dropdown-item" role="none">
+                    <a href="/admin/games" class="dropdown-link" role="menuitem">🎮 게임 관리</a>
+                </li>
+            </ul>
+        </div>
     </div>
 
-    <!-- 검색창 -->
+    <!-- 모바일 메뉴 버튼 -->
+    <button class="mobile-menu-btn" aria-expanded="false" aria-label="모바일 메뉴">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+    </button>
+</header>
+
+<!-- 검색창 (헤더 바로 아래) -->
+<div class="search-section">
     <div class="search-container">
         <form class="search-form" action="/search" method="get" role="search">
-            <label for="search-input" class="sr-only">검색</label>
             <div class="search-input-wrapper">
-                <input type="text"
-                       id="search-input"
-                       name="q"
-                       placeholder="검색어를 입력하세요"
-                       aria-label="검색어 입력"
-                       autocomplete="off">
-                <button type="submit" class="search-btn" aria-label="검색 실행">
-                    <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 16 16" fill="none">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                </svg>
+                <input type="text" id="search-input" name="q" placeholder="게임, 게시글을 검색해보세요..." aria-label="검색어 입력" autocomplete="off">
+                <button type="submit" class="search-submit" aria-label="검색 실행">
+                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                        <path d="M6 2l6 6-6 6"/>
                     </svg>
                 </button>
             </div>
         </form>
     </div>
-
-    <!-- 사용자 영역 -->
-    <div class="user-area">
-        <!-- 로그인 상태가 아닐 때 -->
-        <div class="guest-user" th:if="${not isLoggedIn}">
-            <a href="/game-hub/login" class="login-btn btn-secondary" style="color: deepskyblue">로그인</a>
-            <a href="/game-hub/join" class="signup-btn btn-primary" style="color: deepskyblue">회원가입</a>
-            <a href="/game-hub/join-prod" class="team-signup-btn btn-outline" style="color: deepskyblue">팀 회원가입</a>
-        </div>
-
-        <!-- 로그인 상태일 때 -->
-        <div class="logged-user" th:if="${isLoggedIn}">
-            <div class="user-profile">
-                <img th:src="${profileImage}"
-                     alt="프로필 이미지"
-                     class="profile-img"
-                     onerror="this.src='/static/images/default-profile.png'">
-                <span class="user-nickname" th:text="${nickname}">닉네임</span>
-                <button class="profile-dropdown-btn" aria-expanded="false" aria-haspopup="true">
-                    <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                        <path d="M6 8l-3-3h6l-3 3z"/>
-                    </svg>
-                </button>
-            </div>
-
-            <div class="user-actions dropdown-menu" role="menu">
-                <form class="logout-form" th:action="@{/logout}" method="post">
-                    <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
-                    <button type="submit" class="logout-btn" role="menuitem">로그아웃</button>
-                </form>
-
-                <!-- 숨겨진 계정 비활성화 폼 -->
-                <form class="deactivate-form" th:action="@{${deactivatePath}}" method="patch"
-                      style="background-color: #EBF4F6; color: rgb(54,54,52); font-weight: 900;">
-                    <input type="text" name="authUserId" id="authUserId" aria-label="사용자 ID">
-                    <input type="password" name="authUserPassword" id="authUserPassword" aria-label="사용자 비밀번호">
-                    <button type="submit" aria-label="계정 비활성화"></button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- 다국어 선택 -->
-    <div class="lang-select">
-        <label for="lang-selector" id="lang-selector" class="sr-only">언어 선택</label>
-        <div class="lang-options" role="group" aria-label="언어 선택">
-            <a href="?lang=ko" class="lang-option" aria-label="한국어로 변경">
-                <span class="lang-flag" aria-hidden="true">🇰🇷</span>
-                <span class="lang-text">한국어</span>
-            </a>
-            <span class="lang-separator" aria-hidden="true">|</span>
-            <a href="?lang=en" class="lang-option" aria-label="English로 변경">
-                <span class="lang-flag" aria-hidden="true">🇺🇸</span>
-                <span class="lang-text">English</span>
-            </a>
-        </div>
-    </div>
-
-    <!-- 모바일 메뉴 버튼 -->
-    <button class="mobile-menu-btn" aria-expanded="false" aria-controls="mobile-nav" aria-label="모바일 메뉴 열기">
-        <span class="hamburger-line"></span>
-        <span class="hamburger-line"></span>
-        <span class="hamburger-line"></span>
-    </button>
-
-    <!-- 모바일 네비게이션 -->
-    <div class="mobile-nav" id="mobile-nav" role="navigation" aria-label="모바일 메뉴">
-        <div class="mobile-nav-content">
-            <!-- 모바일에서 네비게이션 내용이 복사될 영역 -->
-        </div>
-    </div>
-</header>
+</div>

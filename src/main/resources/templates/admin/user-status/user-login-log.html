@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<!-- 로그인 기록 보기 -->
+
+<!--
+보여줘야할 데이터
+: 고유 아이디, 로그인 시간, 접속 IP (로그인 시간 기준으로 내림차순 정렬)
+-->
+<button onclick=history.back()>뒤로가기</button>
+<div style="display: flex">
+    <th:block th:each="vm : ${vm}">
+        <p th:text="${vm.user.mbId}">고유 아이디</p>
+        <p th:text="${vm.loginTime}">로그인 시각</p>
+        <p th:text="${vm.ipAddress}">접속 IP 주소</p>
+    </th:block>
+</div>
+
+</body>
+</html>

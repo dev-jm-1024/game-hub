@@ -215,6 +215,10 @@
         <div class="file-info">
           <img class="file-name" th:src="@{file.fileUrl}">파일명.jpg</img>
           <a th:href="@{file.fileUrl}"><button>해당 사진 보기</button></a>
+          <form th:action="@{'/admin/api/v1/posts/' + ${file.post.postId} + '/deactivate'}" method="post">
+            <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
+            <button type="submit">삭제하기</button>
+          </form>
           <div class="file-details">
             업로드: <span th:text="${#temporals.format(file.uploadDate, 'yyyy-MM-dd')}">2024-01-01</span>
           </div>

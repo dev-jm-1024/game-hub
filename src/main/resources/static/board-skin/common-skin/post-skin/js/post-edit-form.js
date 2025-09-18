@@ -1,675 +1,655 @@
-// Apple macOS/iOS 스타일 게시글 수정 폼 JavaScript
+// ===== 게시글 수정 폼 JavaScript - 글래스모피즘 디자인 =====
 
-// 네임스페이스 정의
-window.BoardSkin = window.BoardSkin || {};
-window.BoardSkin.PostSkin = window.BoardSkin.PostSkin || {};
+// 전역 변수
+let isSubmitting = false;
+let originalData = {};
+let hasChanges = false;
 
-BoardSkin.PostSkin.EditForm = {
-    // 설정
-    config: {
-        autoSaveInterval: 30000, // 30초
-        minTitleLength: 2,
-        minContentLength: 10,
-        maxTitleLength: 100,
-        maxContentLength: 10000,
-        changeDetectionDelay: 500
-    },
+// DOM 요소들
+const postForm = document.getElementById('postForm');
+const titleInput = document.getElementById('title');
+const contentTextarea = document.getElementById('content');
+const boardIdInput = document.querySelector('input[name="boardId"]');
+const postIdInput = document.querySelector('input[name="postId"]');
+const submitButton = document.querySelector('.submit-button');
+const cancelButton = document.querySelector('.cancel-button');
 
-    // 상태
-    state: {
-        isSubmitting: false,
-        hasChanges: false,
-        originalData: {},
-        currentData: {},
-        autoSaveTimer: null,
-        validationErrors: {}
-    },
+// 초기화 함수
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTinyMCE();
+    initializeEventListeners();
+    initializeValidation();
+    storeOriginalData();
+    setupAccessibility();
+    addInteractiveEffects();
 
-    // DOM 요소
-    elements: {},
+    console.log('✏️ 게시글 수정 시스템이 초기화되었습니다.');
 
-    // 초기화
-    init() {
-        this.cacheElements();
-        this.storeOriginalData();
-        this.bindEvents();
-        this.setupCSRF();
-        this.setupValidation();
-        this.setupChangeDetection();
-        this.startAutoSave();
-        this.showEditNotice();
-        
-        console.log('BoardSkin.PostSkin.EditForm initialized');
-    },
+    // 개발자 도구 안내
+    console.log('%c개발자 도구 명령어:', 'color: #3f51b5; font-weight: bold; font-size: 14px;');
+    console.log('%c• validateForm() - 폼 유효성 검사', 'color: #7986cb;');
+    console.log('%c• resetForm() - 폼 초기화', 'color: #7986cb;');
+    console.log('%c• submitToApi() - 실제 API 제출', 'color: #7986cb;');
+    console.log('%c• checkChanges() - 변경사항 확인', 'color: #7986cb;');
+});
 
-    // DOM 요소 캐싱
-    cacheElements() {
-        this.elements = {
-            form: document.querySelector('#postForm'),
-            titleInput: document.querySelector('#title'),
-            contentTextarea: document.querySelector('#content'),
-            boardIdInput: document.querySelector('input[name="boardId"]'),
-            postIdInput: document.querySelector('input[name="postId"]'),
-            submitButton: document.querySelector('button[type="submit"]'),
-            cancelButton: document.querySelector('button[type="button"]'),
-            charCounters: {}
-        };
-
-        // 문자 카운터 생성
-        this.createCharCounters();
-    },
-
-    // 원본 데이터 저장
-    storeOriginalData() {
-        this.state.originalData = {
-            title: this.elements.titleInput?.value || '',
-            content: this.elements.contentTextarea?.value || '',
-            boardId: this.elements.boardIdInput?.value || '',
-            postId: this.elements.postIdInput?.value || ''
-        };
-
-        this.state.currentData = { ...this.state.originalData };
-    },
-
-    // 이벤트 바인딩
-    bindEvents() {
-        // 폼 제출
-        if (this.elements.form) {
-            this.elements.form.addEventListener('submit', this.handleSubmit.bind(this));
-        }
-
-        // 입력 필드 변경사항 추적
-        [this.elements.titleInput, this.elements.contentTextarea].forEach(element => {
-            if (element) {
-                element.addEventListener('input', this.handleInputChange.bind(this));
-                element.addEventListener('blur', this.validateField.bind(this));
+// TinyMCE 초기화
+function initializeTinyMCE() {
+    tinymce.init({
+        selector: '#content',
+        height: 400,
+        language: 'ko_KR',
+        plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+            'insertdatetime', 'media', 'table', 'help', 'wordcount', 'emoticons'
+        ],
+        toolbar: 'undo redo | blocks | bold italic forecolor backcolor | ' +
+            'alignleft aligncenter alignright alignjustify | ' +
+            'bullist numlist outdent indent | removeformat | ' +
+            'link image media table | code preview fullscreen | emoticons',
+        content_style: `
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+                background: transparent;
+                color: #333;
             }
-        });
+        `,
+        // 이미지 업로드 설정
+        automatic_uploads: true,
+        file_picker_types: 'image',
+        file_picker_callback: function (callback, value, meta) {
+            if (meta.filetype === 'image') {
+                const input = document.createElement('input');
+                input.setAttribute('type', 'file');
+                input.setAttribute('accept', 'image/*');
 
-        // 취소 버튼
-        if (this.elements.cancelButton) {
-            this.elements.cancelButton.addEventListener('click', this.handleCancel.bind(this));
-        }
+                input.onchange = function () {
+                    const file = this.files[0];
+                    const reader = new FileReader();
+                    reader.onload = function () {
+                        callback(reader.result, {
+                            alt: file.name
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                };
 
-        // 페이지 이탈 경고
-        window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this));
-
-        // 키보드 단축키
-        document.addEventListener('keydown', this.handleKeyDown.bind(this));
-    },
-
-    // CSRF 토큰 설정
-    setupCSRF() {
-        this.csrfToken = document.querySelector('meta[name="_csrf"]')?.content || '';
-        this.csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || '';
-    },
-
-    // 유효성 검사 설정
-    setupValidation() {
-        this.validators = {
-            title: (value) => {
-                const trimmed = value.trim();
-                if (trimmed.length < this.config.minTitleLength) {
-                    return `제목은 최소 ${this.config.minTitleLength}자 이상이어야 합니다.`;
-                }
-                if (trimmed.length > this.config.maxTitleLength) {
-                    return `제목은 최대 ${this.config.maxTitleLength}자까지 입력 가능합니다.`;
-                }
-                return null;
-            },
-            
-            content: (value) => {
-                const trimmed = value.trim();
-                if (trimmed.length < this.config.minContentLength) {
-                    return `내용은 최소 ${this.config.minContentLength}자 이상이어야 합니다.`;
-                }
-                if (trimmed.length > this.config.maxContentLength) {
-                    return `내용은 최대 ${this.config.maxContentLength}자까지 입력 가능합니다.`;
-                }
-                return null;
+                input.click();
             }
-        };
-    },
-
-    // 변경사항 감지 설정
-    setupChangeDetection() {
-        this.changeDetectionTimer = null;
-    },
-
-    // 자동 저장 시작
-    startAutoSave() {
-        this.state.autoSaveTimer = setInterval(() => {
-            if (this.state.hasChanges) {
-                this.saveToStorage();
-            }
-        }, this.config.autoSaveInterval);
-    },
-
-    // 수정 알림 표시
-    showEditNotice() {
-        const notice = document.createElement('div');
-        notice.className = 'edit-notice';
-        notice.innerHTML = '기존 게시글을 수정하고 있습니다. 변경사항은 자동으로 감지됩니다.';
-        
-        this.elements.form?.parentNode?.insertBefore(notice, this.elements.form);
-    },
-
-    // 이벤트 핸들러들
-    handleSubmit(event) {
-        event.preventDefault();
-        
-        if (this.state.isSubmitting) return;
-
-        // 변경사항 확인
-        if (!this.state.hasChanges) {
-            this.showWarning('변경된 내용이 없습니다.');
-            return;
-        }
-
-        // 유효성 검사
-        if (!this.validateForm()) {
-            this.showValidationErrors();
-            return;
-        }
-
-        // 변경 확인 모달 표시
-        this.showChangeConfirmation();
-    },
-
-    async submitForm() {
-        this.state.isSubmitting = true;
-        this.showLoading(true);
-
-        try {
-            const data = {
-                postTitle: this.elements.titleInput.value.trim(),
-                postContent: this.elements.contentTextarea.value.trim(),
-                boardId: this.state.currentData.boardId,
-                postId: this.state.currentData.postId
-            };
-
-            const response = await fetch(`/api/v1/board/${data.boardId}/posts/${data.postId}`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    [this.csrfHeader]: this.csrfToken
-                },
-                credentials: "include",
-                body: JSON.stringify(data)
+        },
+        setup: function (editor) {
+            editor.on('change', function () {
+                editor.save();
+                hasChanges = true;
             });
 
-            if (response.ok) {
-                this.showSuccess('게시글이 성공적으로 수정되었습니다.');
-                this.clearStorage();
-                this.state.hasChanges = false;
-                
-                setTimeout(() => {
-                    window.location.href = "/board";
-                }, 1500);
-            } else {
-                const errorText = await response.text();
-                throw new Error(errorText || '수정 실패');
-            }
+            editor.on('init', function () {
+                // TinyMCE 로드 후 원본 데이터 저장
+                setTimeout(storeOriginalData, 100);
+            });
+        },
+        // 스킨 설정 (글래스모피즘과 어울리게)
+        skin: 'oxide-dark',
+        content_css: 'dark'
+    });
+}
 
-        } catch (error) {
-            console.error("수정 실패:", error);
-            this.showError("수정 실패: " + error.message);
-        } finally {
-            this.state.isSubmitting = false;
-            this.showLoading(false);
-        }
-    },
+// 이벤트 리스너 초기화
+function initializeEventListeners() {
+    // 폼 제출 이벤트
+    postForm.addEventListener('submit', handleFormSubmit);
 
-    handleInputChange(event) {
-        const field = event.target;
-        const fieldName = field.id || field.name;
-        
-        // 현재 데이터 업데이트
-        this.state.currentData[fieldName] = field.value;
-        
-        // 변경사항 감지
-        this.detectChanges();
-        
-        // 문자 카운터 업데이트
-        this.updateCharCounter(field);
-        
-        // 필드 에러 제거
-        this.clearFieldError(field);
-        
-        // 실시간 유효성 검사 (디바운스 적용)
-        clearTimeout(this.validationTimeout);
-        this.validationTimeout = setTimeout(() => {
-            this.validateField(event);
-        }, 500);
-    },
-
-    handleCancel(event) {
-        event.preventDefault();
-        
-        if (this.state.hasChanges) {
-            if (confirm('수정 중인 내용이 있습니다. 정말 취소하시겠습니까?')) {
-                this.clearStorage();
-                window.history.back();
-            }
-        } else {
-            window.history.back();
-        }
-    },
-
-    handleBeforeUnload(event) {
-        if (this.state.hasChanges && !this.state.isSubmitting) {
-            event.preventDefault();
-            event.returnValue = '수정 중인 내용이 있습니다. 정말 떠나시겠습니까?';
-            return event.returnValue;
-        }
-    },
-
-    handleKeyDown(event) {
-        // Ctrl+S로 임시저장
-        if ((event.ctrlKey || event.metaKey) && event.key === 's') {
-            event.preventDefault();
-            this.saveToStorage();
-            this.showSuccess('임시저장되었습니다.');
-        }
-
-        // Ctrl+Enter로 제출
-        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-            event.preventDefault();
-            this.elements.submitButton?.click();
-        }
-
-        // Ctrl+Z로 되돌리기
-        if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
-            if (confirm('원본 내용으로 되돌리시겠습니까?')) {
-                this.restoreOriginalData();
-            }
-        }
-    },
+    // 입력 필드 이벤트
+    titleInput.addEventListener('input', handleTitleInput);
+    titleInput.addEventListener('blur', () => validateTitle());
 
     // 변경사항 감지
-    detectChanges() {
-        const hasChanges = 
-            this.state.currentData.title !== this.state.originalData.title ||
-            this.state.currentData.content !== this.state.originalData.content;
+    titleInput.addEventListener('input', () => hasChanges = true);
 
-        if (hasChanges !== this.state.hasChanges) {
-            this.state.hasChanges = hasChanges;
-            this.updateChangeIndicators();
-            this.updateUnsavedWarning();
-        }
-    },
+    // 키보드 단축키
+    document.addEventListener('keydown', handleKeyboardShortcuts);
 
-    updateChangeIndicators() {
-        // 제목 필드 변경 표시
-        if (this.elements.titleInput) {
-            const isChanged = this.state.currentData.title !== this.state.originalData.title;
-            this.elements.titleInput.classList.toggle('modified', isChanged);
-            this.toggleModifiedIndicator(this.elements.titleInput, isChanged);
-        }
+    // 페이지 벗어날 때 경고
+    window.addEventListener('beforeunload', handleBeforeUnload);
+}
 
-        // 내용 필드 변경 표시
-        if (this.elements.contentTextarea) {
-            const isChanged = this.state.currentData.content !== this.state.originalData.content;
-            this.elements.contentTextarea.classList.toggle('modified', isChanged);
-            this.toggleModifiedIndicator(this.elements.contentTextarea, isChanged);
-        }
+// 원본 데이터 저장
+function storeOriginalData() {
+    originalData = {
+        title: titleInput.value.trim(),
+        content: tinymce.get('content') ? tinymce.get('content').getContent() : contentTextarea.value.trim(),
+        boardId: boardIdInput.value,
+        postId: postIdInput.value
+    };
 
-        // 제출 버튼 상태 업데이트
-        if (this.elements.submitButton) {
-            this.elements.submitButton.disabled = !this.state.hasChanges;
-            this.elements.submitButton.textContent = this.state.hasChanges ? '수정 완료' : '변경사항 없음';
-        }
-    },
+    console.log('📄 원본 데이터가 저장되었습니다:', originalData);
+}
 
-    toggleModifiedIndicator(field, isModified) {
-        let indicator = field.parentNode.querySelector('.modified-indicator');
-        
-        if (isModified && !indicator) {
-            indicator = document.createElement('div');
-            indicator.className = 'modified-indicator';
-            indicator.textContent = '수정됨';
-            field.parentNode.appendChild(indicator);
-        } else if (!isModified && indicator) {
-            indicator.remove();
-        }
-    },
+// 변경사항 확인
+function checkChanges() {
+    if (!originalData.title) return false;
 
-    updateUnsavedWarning() {
-        let warning = document.querySelector('.unsaved-changes-warning');
-        
-        if (this.state.hasChanges && !warning) {
-            warning = document.createElement('div');
-            warning.className = 'unsaved-changes-warning';
-            warning.textContent = '저장되지 않은 변경사항이 있습니다.';
-            document.body.appendChild(warning);
-            
-            setTimeout(() => {
-                warning.classList.add('show');
-            }, 100);
-        } else if (!this.state.hasChanges && warning) {
-            warning.classList.remove('show');
-            setTimeout(() => {
-                warning.remove();
-            }, 300);
-        }
-    },
+    const currentData = {
+        title: titleInput.value.trim(),
+        content: tinymce.get('content') ? tinymce.get('content').getContent() : contentTextarea.value.trim(),
+        boardId: boardIdInput.value,
+        postId: postIdInput.value
+    };
 
-    // 변경 확인 모달
-    showChangeConfirmation() {
-        const modal = this.createChangeConfirmationModal();
-        document.body.appendChild(modal);
-        
-        setTimeout(() => {
-            modal.classList.add('show');
-        }, 10);
+    const changed =
+        currentData.title !== originalData.title ||
+        currentData.content !== originalData.content;
 
-        // 확인 버튼 이벤트
-        const confirmBtn = modal.querySelector('.confirm-button');
-        const cancelBtn = modal.querySelector('.confirm-cancel-button');
+    hasChanges = changed;
+    return changed;
+}
 
-        confirmBtn.addEventListener('click', () => {
-            this.hideChangeConfirmation();
-            this.submitForm();
-        });
+// 페이지 벗어날 때 경고
+function handleBeforeUnload(e) {
+    if (checkChanges() && !isSubmitting) {
+        e.preventDefault();
+        e.returnValue = '수정 중인 내용이 있습니다. 정말 페이지를 벗어나시겠습니까?';
+        return e.returnValue;
+    }
+}
 
-        cancelBtn.addEventListener('click', () => {
-            this.hideChangeConfirmation();
-        });
+// 폼 제출 처리
+async function handleFormSubmit(e) {
+    e.preventDefault();
 
-        // ESC 키로 닫기
-        const handleEscape = (e) => {
-            if (e.key === 'Escape') {
-                this.hideChangeConfirmation();
-                document.removeEventListener('keydown', handleEscape);
-            }
-        };
-        document.addEventListener('keydown', handleEscape);
-    },
+    if (isSubmitting) return;
 
-    hideChangeConfirmation() {
-        const modal = document.querySelector('.confirm-modal');
-        if (modal) {
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.remove();
-            }, 300);
-        }
-    },
+    console.log('📝 폼 제출 시작...');
 
-    createChangeConfirmationModal() {
-        const modal = document.createElement('div');
-        modal.className = 'confirm-modal modal';
-        
-        const changes = this.getChangesSummary();
-        
-        modal.innerHTML = `
-            <div class="modal-backdrop"></div>
-            <div class="confirm-modal-content">
-                <div class="confirm-modal-title">변경사항 저장</div>
-                <div class="confirm-modal-message">
-                    <p>다음 내용이 수정됩니다:</p>
-                    <ul class="changes-list">
-                        ${changes.map(change => `<li>${change}</li>`).join('')}
-                    </ul>
-                    <p>저장하시겠습니까?</p>
-                </div>
-                <div class="confirm-modal-actions">
-                    <button type="button" class="confirm-cancel-button form-button">취소</button>
-                    <button type="button" class="confirm-button form-button">저장</button>
-                </div>
-            </div>
-        `;
-
-        return modal;
-    },
-
-    getChangesSummary() {
-        const changes = [];
-        
-        if (this.state.currentData.title !== this.state.originalData.title) {
-            changes.push('제목 변경');
-        }
-        
-        if (this.state.currentData.content !== this.state.originalData.content) {
-            changes.push('내용 변경');
-        }
-        
-        return changes;
-    },
-
-    // 원본 데이터 복원
-    restoreOriginalData() {
-        if (this.elements.titleInput) {
-            this.elements.titleInput.value = this.state.originalData.title;
-        }
-        
-        if (this.elements.contentTextarea) {
-            this.elements.contentTextarea.value = this.state.originalData.content;
-        }
-
-        this.state.currentData = { ...this.state.originalData };
-        this.state.hasChanges = false;
-        this.updateChangeIndicators();
-        this.updateUnsavedWarning();
-        
-        this.showSuccess('원본 내용으로 복원되었습니다.');
-    },
+    // TinyMCE 내용 저장
+    if (tinymce.get('content')) {
+        tinymce.get('content').save();
+    }
 
     // 유효성 검사
-    validateField(event) {
-        const field = event.target;
-        const fieldName = field.id || field.name;
-        const validator = this.validators[fieldName];
+    if (!validateForm()) {
+        showToast('입력 내용을 확인해주세요.', 'error');
+        return;
+    }
 
-        if (validator) {
-            const error = validator(field.value);
-            if (error) {
-                this.state.validationErrors[fieldName] = error;
-                this.showFieldError(field, error);
-            } else {
-                delete this.state.validationErrors[fieldName];
-                this.clearFieldError(field);
-            }
-        }
-    },
+    // 변경사항 확인
+    if (!checkChanges()) {
+        showToast('변경된 내용이 없습니다.', 'info');
+        return;
+    }
 
-    validateForm() {
-        this.state.validationErrors = {};
+    try {
+        isSubmitting = true;
+        setLoadingState(true);
 
-        Object.keys(this.validators).forEach(fieldName => {
-            const field = this.elements[fieldName + 'Input'] || this.elements[fieldName + 'Textarea'];
-            if (field) {
-                const error = this.validators[fieldName](field.value);
-                if (error) {
-                    this.state.validationErrors[fieldName] = error;
-                }
-            }
-        });
+        const formData = collectFormData();
+        console.log('📤 제출 데이터:', formData);
 
-        return Object.keys(this.state.validationErrors).length === 0;
-    },
+        // 실제 API 호출
+        await submitToApi(formData);
 
-    showFieldError(field, message) {
-        this.clearFieldError(field);
-        
-        field.classList.add('invalid');
-        
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        errorDiv.textContent = message;
-        
-        field.parentNode.appendChild(errorDiv);
-    },
+        showToast('게시글이 성공적으로 수정되었습니다! 🎉', 'success');
 
-    clearFieldError(field) {
-        field.classList.remove('invalid');
-        
-        const errorDiv = field.parentNode.querySelector('.error-message');
-        if (errorDiv) {
-            errorDiv.remove();
-        }
-    },
-
-    showValidationErrors() {
-        Object.keys(this.state.validationErrors).forEach(fieldName => {
-            const field = document.querySelector(`#${fieldName}`) || 
-                          document.querySelector(`[name="${fieldName}"]`);
-            if (field) {
-                this.showFieldError(field, this.state.validationErrors[fieldName]);
-            }
-        });
-
-        // 첫 번째 에러 필드로 스크롤
-        const firstErrorField = document.querySelector('.invalid');
-        if (firstErrorField) {
-            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            firstErrorField.focus();
-        }
-    },
-
-    // 문자 카운터
-    createCharCounters() {
-        [this.elements.titleInput, this.elements.contentTextarea].forEach(element => {
-            if (element) {
-                const counter = document.createElement('div');
-                counter.className = 'char-counter';
-                element.parentNode.appendChild(counter);
-                
-                this.elements.charCounters[element.id] = counter;
-                this.updateCharCounter(element);
-            }
-        });
-    },
-
-    updateCharCounter(element) {
-        const counter = this.elements.charCounters[element.id];
-        if (!counter) return;
-
-        const current = element.value.length;
-        const max = element.id === 'title' ? this.config.maxTitleLength : this.config.maxContentLength;
-        
-        counter.textContent = `${current}/${max}`;
-        counter.classList.toggle('over-limit', current > max);
-    },
-
-    // 로컬 스토리지 관리
-    saveToStorage() {
-        const data = {
-            ...this.state.currentData,
-            originalData: this.state.originalData,
-            timestamp: Date.now()
-        };
-
-        localStorage.setItem('post-edit-draft', JSON.stringify(data));
-    },
-
-    restoreFromStorage() {
-        try {
-            const saved = localStorage.getItem('post-edit-draft');
-            if (saved) {
-                const data = JSON.parse(saved);
-                
-                // 24시간 이내 데이터만 복원
-                if (Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
-                    if (data.postId === this.state.originalData.postId) {
-                        if (data.title && this.elements.titleInput) {
-                            this.elements.titleInput.value = data.title;
-                            this.state.currentData.title = data.title;
-                        }
-                        if (data.content && this.elements.contentTextarea) {
-                            this.elements.contentTextarea.value = data.content;
-                            this.state.currentData.content = data.content;
-                        }
-
-                        this.detectChanges();
-                        this.showSuccess('임시저장된 내용을 복원했습니다.');
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Failed to restore from storage:', error);
-        }
-    },
-
-    clearStorage() {
-        localStorage.removeItem('post-edit-draft');
-    },
-
-    // 상태 관리 및 메시지
-    showLoading(show) {
-        this.elements.form?.classList.toggle('loading', show);
-        
-        if (this.elements.submitButton) {
-            this.elements.submitButton.disabled = show || !this.state.hasChanges;
-            if (show) {
-                this.elements.submitButton.textContent = '수정 중...';
-            } else {
-                this.elements.submitButton.textContent = this.state.hasChanges ? '수정 완료' : '변경사항 없음';
-            }
-        }
-    },
-
-    showError(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        errorDiv.textContent = message;
-        
-        this.elements.form?.prepend(errorDiv);
-        
+        // 성공 후 처리
+        hasChanges = false;
         setTimeout(() => {
-            errorDiv.remove();
-        }, 5000);
-    },
+            window.location.href = "/board";
+        }, 1500);
 
-    showSuccess(message) {
-        const successDiv = document.createElement('div');
-        successDiv.className = 'success-message';
-        successDiv.textContent = message;
-        
-        this.elements.form?.prepend(successDiv);
-        
-        setTimeout(() => {
-            successDiv.remove();
-        }, 3000);
-    },
+    } catch (error) {
+        console.error('❌ 제출 오류:', error);
+        showToast('수정 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+    } finally {
+        isSubmitting = false;
+        setLoadingState(false);
+    }
+}
 
-    showWarning(message) {
-        const warningDiv = document.createElement('div');
-        warningDiv.className = 'warning-message';
-        warningDiv.textContent = message;
-        
-        this.elements.form?.prepend(warningDiv);
-        
-        setTimeout(() => {
-            warningDiv.remove();
-        }, 3000);
-    },
+// 제목 입력 처리
+function handleTitleInput(e) {
+    const title = e.target.value;
 
-    // 정리
-    destroy() {
-        if (this.state.autoSaveTimer) {
-            clearInterval(this.state.autoSaveTimer);
-        }
-        
-        if (this.validationTimeout) {
-            clearTimeout(this.validationTimeout);
-        }
-        
-        if (this.changeDetectionTimer) {
-            clearTimeout(this.changeDetectionTimer);
+    // 실시간 글자 수 표시
+    updateCharCount(e.target, title.length, 100);
+
+    // 실시간 검증
+    if (title.length > 0) {
+        validateTitle();
+    }
+}
+
+// 키보드 단축키 처리
+function handleKeyboardShortcuts(e) {
+    // Ctrl + Enter: 폼 제출
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!isSubmitting) {
+            postForm.dispatchEvent(new Event('submit'));
         }
     }
-};
 
-// DOM 로드 완료 시 초기화
-document.addEventListener('DOMContentLoaded', () => {
-    BoardSkin.PostSkin.EditForm.init();
-});
+    // Ctrl + R: 폼 초기화 (개발자 도구용)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'r' && e.shiftKey) {
+        e.preventDefault();
+        resetForm();
+    }
 
-// 페이지 언로드 시 정리
-window.addEventListener('beforeunload', () => {
-    BoardSkin.PostSkin.EditForm.destroy();
-});
+    // ESC: 취소
+    if (e.key === 'Escape') {
+        if (confirm('수정을 취소하시겠습니까?')) {
+            history.back();
+        }
+    }
+}
 
-// 전역 함수로 노출
-window.PostEditForm = BoardSkin.PostSkin.EditForm; 
+// 폼 유효성 검사
+function validateForm() {
+    console.log('🔍 폼 유효성 검사 시작...');
+
+    const titleValid = validateTitle();
+    const contentValid = validateContent();
+
+    const isValid = titleValid && contentValid;
+    console.log(`✅ 검증 결과: ${isValid ? '통과' : '실패'}`);
+
+    return isValid;
+}
+
+// 제목 검증
+function validateTitle() {
+    const title = titleInput.value.trim();
+
+    if (!title) {
+        showFieldError(titleInput, '제목을 입력해주세요.');
+        return false;
+    }
+
+    if (title.length < 2) {
+        showFieldError(titleInput, '제목은 2자 이상 입력해주세요.');
+        return false;
+    }
+
+    if (title.length > 100) {
+        showFieldError(titleInput, '제목은 100자 이하로 입력해주세요.');
+        return false;
+    }
+
+    showFieldSuccess(titleInput);
+    return true;
+}
+
+// 내용 검증
+function validateContent() {
+    // TinyMCE에서 내용 가져오기
+    const content = tinymce.get('content') ? tinymce.get('content').getContent() : contentTextarea.value;
+    const textContent = content.replace(/<[^>]*>/g, '').trim(); // HTML 태그 제거
+
+    if (!textContent) {
+        showFieldError(contentTextarea, '내용을 입력해주세요.');
+        return false;
+    }
+
+    if (textContent.length < 10) {
+        showFieldError(contentTextarea, '내용은 10자 이상 입력해주세요.');
+        return false;
+    }
+
+    if (textContent.length > 5000) {
+        showFieldError(contentTextarea, '내용은 5000자 이하로 입력해주세요.');
+        return false;
+    }
+
+    showFieldSuccess(contentTextarea);
+    return true;
+}
+
+// 필드 에러 표시
+function showFieldError(field, message) {
+    const formGroup = field.closest('.form-group');
+
+    // 기존 메시지 제거
+    const existingMessage = formGroup.querySelector('.error-message, .success-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+
+    // 에러 상태 추가
+    formGroup.classList.remove('success');
+    formGroup.classList.add('error');
+
+    // 에러 메시지 추가
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.textContent = message;
+    formGroup.appendChild(errorDiv);
+
+    // 필드 포커스
+    field.focus();
+}
+
+// 필드 성공 표시
+function showFieldSuccess(field) {
+    const formGroup = field.closest('.form-group');
+
+    // 기존 메시지 제거
+    const existingMessage = formGroup.querySelector('.error-message, .success-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+
+    // 성공 상태 추가
+    formGroup.classList.remove('error');
+    formGroup.classList.add('success');
+}
+
+// 로딩 상태 설정
+function setLoadingState(loading) {
+    if (loading) {
+        submitButton.disabled = true;
+        submitButton.classList.add('loading');
+        submitButton.textContent = '수정 중...';
+
+        cancelButton.disabled = true;
+        cancelButton.style.opacity = '0.5';
+    } else {
+        submitButton.disabled = false;
+        submitButton.classList.remove('loading');
+        submitButton.textContent = '수정 완료';
+
+        cancelButton.disabled = false;
+        cancelButton.style.opacity = '1';
+    }
+}
+
+// 폼 데이터 수집
+function collectFormData() {
+    // TinyMCE 내용 저장
+    if (tinymce.get('content')) {
+        tinymce.get('content').save();
+    }
+
+    return {
+        postId: postIdInput.value,
+        title: titleInput.value.trim(),
+        content: tinymce.get('content') ? tinymce.get('content').getContent() : contentTextarea.value.trim(),
+        boardId: boardIdInput.value,
+        timestamp: new Date().toISOString()
+    };
+}
+
+// 실제 API 제출
+async function submitToApi(formData) {
+    // CSRF 토큰 가져오기
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content || '';
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || '';
+
+    const data = {
+        postTitle: formData.title,
+        postContent: formData.content,
+        boardId: formData.boardId,
+        postId: formData.postId
+    };
+
+    const response = await fetch(`/api/v1/board/${data.boardId}/posts/${data.postId}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            [csrfHeader]: csrfToken
+        },
+        credentials: "include",
+        body: JSON.stringify(data)
+    });
+
+    if (response.ok) {
+        console.log('✅ API 응답: 수정 성공');
+        return {
+            success: true,
+            message: '게시글이 성공적으로 수정되었습니다.',
+            data: formData
+        };
+    } else {
+        const errorText = await response.text();
+        throw new Error(errorText || '수정 실패');
+    }
+}
+
+// 폼 초기화
+function resetForm() {
+    if (!confirm('작성 중인 내용이 모두 삭제됩니다. 계속하시겠습니까?')) {
+        return;
+    }
+
+    titleInput.value = originalData.title || '';
+
+    if (tinymce.get('content')) {
+        tinymce.get('content').setContent(originalData.content || '');
+    } else {
+        contentTextarea.value = originalData.content || '';
+    }
+
+    // 에러 상태 제거
+    document.querySelectorAll('.form-group').forEach(group => {
+        group.classList.remove('error', 'success');
+        const message = group.querySelector('.error-message, .success-message');
+        if (message) message.remove();
+    });
+
+    hasChanges = false;
+    showToast('폼이 초기화되었습니다.', 'info');
+    console.log('🔄 폼이 초기화되었습니다.');
+}
+
+// 글자 수 표시 업데이트
+function updateCharCount(element, current, max) {
+    let countElement = element.parentNode.querySelector('.char-count');
+
+    if (!countElement) {
+        countElement = document.createElement('div');
+        countElement.className = 'char-count';
+        countElement.style.cssText = `
+            position: absolute;
+            right: 16px;
+            top: 12px;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            pointer-events: none;
+            z-index: 1;
+        `;
+        element.parentNode.style.position = 'relative';
+        element.parentNode.appendChild(countElement);
+    }
+
+    countElement.textContent = `${current}/${max}`;
+
+    // 글자 수에 따른 색상 변경
+    if (current > max * 0.9) {
+        countElement.style.color = '#ff6b6b';
+    } else if (current > max * 0.7) {
+        countElement.style.color = '#ffa726';
+    } else {
+        countElement.style.color = 'rgba(255, 255, 255, 0.6)';
+    }
+}
+
+// 토스트 메시지 표시
+function showToast(message, type = 'info', duration = 3000) {
+    // 기존 토스트 제거
+    const existingToast = document.querySelector('.toast-message');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast-message toast-${type}`;
+
+    const colors = {
+        success: 'rgba(76, 175, 80, 0.9)',
+        error: 'rgba(244, 67, 54, 0.9)',
+        warning: 'rgba(255, 152, 0, 0.9)',
+        info: 'rgba(33, 150, 243, 0.9)'
+    };
+
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${colors[type]};
+        backdrop-filter: blur(20px);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        font-weight: 500;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-width: 400px;
+        word-wrap: break-word;
+    `;
+
+    toast.innerHTML = `${icons[type]} ${message}`;
+    document.body.appendChild(toast);
+
+    // 애니메이션
+    setTimeout(() => {
+        toast.style.transform = 'translateX(0)';
+    }, 10);
+
+    // 자동 제거
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, duration);
+
+    console.log(`📢 토스트: ${message}`);
+}
+
+// 접근성 설정
+function setupAccessibility() {
+    // 키보드 네비게이션
+    const focusableElements = postForm.querySelectorAll(
+        'input:not([disabled]), textarea:not([disabled]), button:not([disabled]), select:not([disabled])'
+    );
+
+    focusableElements.forEach((element, index) => {
+        element.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                // Tab 순서 관리는 브라우저에 위임
+                return;
+            }
+
+            if (e.key === 'Enter' && element.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                const nextElement = focusableElements[index + 1];
+                if (nextElement) {
+                    nextElement.focus();
+                } else {
+                    submitButton.focus();
+                }
+            }
+        });
+    });
+
+    // ARIA 라벨 설정
+    titleInput.setAttribute('aria-describedby', 'title-help');
+    contentTextarea.setAttribute('aria-describedby', 'content-help');
+
+    console.log('♿ 접근성 기능이 설정되었습니다.');
+}
+
+// 인터랙티브 효과 추가
+function addInteractiveEffects() {
+    // 리플 효과
+    [submitButton, cancelButton].forEach(button => {
+        button.addEventListener('click', createRippleEffect);
+    });
+
+    // 입력 필드 포커스 효과
+    [titleInput, contentTextarea].forEach(input => {
+        input.addEventListener('focus', () => {
+            input.parentNode.style.transform = 'translateY(-2px)';
+        });
+
+        input.addEventListener('blur', () => {
+            input.parentNode.style.transform = 'translateY(0)';
+        });
+    });
+
+    console.log('✨ 인터랙티브 효과가 추가되었습니다.');
+}
+
+// 리플 효과 생성
+function createRippleEffect(e) {
+    const button = e.currentTarget;
+    const ripple = document.createElement('span');
+
+    const rect = button.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+
+    ripple.style.cssText = `
+        position: absolute;
+        width: ${size}px;
+        height: ${size}px;
+        left: ${x}px;
+        top: ${y}px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        transform: scale(0);
+        animation: ripple 0.6s linear;
+        pointer-events: none;
+    `;
+
+    button.appendChild(ripple);
+
+    setTimeout(() => {
+        ripple.remove();
+    }, 600);
+}
+
+// 리플 애니메이션 CSS 추가
+function addRippleStyles() {
+    if (document.getElementById('ripple-styles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'ripple-styles';
+    style.textContent = `
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        .submit-button,
+        .cancel-button {
+            position: relative;
+            overflow: hidden;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 스타일 초기화
+addRippleStyles();
+
+// 전역 함수로 노출 (개발자 도구용)
+window.validateForm = validateForm;
+window.resetForm = resetForm;
+window.submitToApi = submitToApi;
+window.checkChanges = checkChanges;

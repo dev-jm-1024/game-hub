@@ -26,11 +26,12 @@
         <div class="form-group">
             <label for="boardId" class="form-label">카테고리</label>
             <select id="boardId" class="form-select" required>
-                <option value="free" th:selected="${boardId == 'free'}">자유 게시판</option>
-                <option value="guide" th:selected="${boardId == 'guide'}">공략 게시판</option>
-                <option value="qna" th:selected="${boardId == 'qna'}">Q&A 게시판</option>
-                <option value="suggestion" th:selected="${boardId == 'suggestion'}">건의사항 게시판</option>
-                <option value="report" th:selected="${boardId == 'report'}">신고 게시판</option>
+                <th:block th:each="board : ${vm}">
+                    <option th:value="${board.boardId}"
+                            th:text="${board.boardName.boardName}"
+                            th:selected="${boardId == board.boardId}">
+                    </option>
+                </th:block>
             </select>
         </div>
 

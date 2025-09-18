@@ -24,7 +24,7 @@
     <h2>게시판 정보 수정</h2>
 
     <div class="board-list">
-        <div th:each="board : ${boardList}" class="board-edit-item">
+        <div th:each="board : ${vm.boardList}" class="board-edit-item">
             <div class="board-info">
                 <h3>게시판 ID: <span th:text="${board.boardId}">board-001</span></h3>
                 <p>현재 이름: <span th:text="${board.boardName}">자유 게시판</span></p>
@@ -87,7 +87,7 @@
         </div>
     </div>
 
-    <div th:if="${boardList == null or boardList.isEmpty()}" class="no-boards">
+    <div th:if="${vm.boardList == null or vm.boardList.isEmpty()}" class="no-boards">
         <p>수정할 게시판이 없습니다.</p>
     </div>
 

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>비밀번호 찾기 - GameHub</title>
+    
+    <link rel="stylesheet" href="../../static/find-skin/find-pw.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background: url('https://plusb3b.kr/gamehub-img/main-bg.png') center/cover no-repeat fixed;
+            background-attachment: fixed;
+            min-height: 100vh;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg,
+                rgba(0, 0, 0, 0.4) 0%,
+                rgba(30, 30, 60, 0.5) 25%,
+                rgba(15, 25, 50, 0.6) 50%,
+                rgba(30, 30, 60, 0.5) 75%,
+                rgba(0, 0, 0, 0.4) 100%);
+            backdrop-filter: blur(3px) saturate(120%);
+            -webkit-backdrop-filter: blur(3px) saturate(120%);
+            z-index: -1;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @media screen and (max-width: 768px) {
+            body {
+                background-attachment: scroll;
+                align-items: flex-start;
+                padding-top: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="find-pw-container">
+        <!-- 헤더 섹션 -->
+        <div class="form-header">
+            <div class="header-icon">
+                <i class="fas fa-key" aria-hidden="true"></i>
+            </div>
+            <h1 class="form-title">비밀번호 찾기</h1>
+            <p class="form-subtitle">가입 시 입력한 정보로 비밀번호를 재설정할 수 있습니다</p>
+        </div>
+
+        <!-- 탭 네비게이션 -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" data-tab="email" type="button">
+                <i class="fas fa-envelope"></i>
+                <span>이메일로 찾기</span>
+            </button>
+            <button class="tab-btn" data-tab="phone" type="button">
+                <i class="fas fa-mobile-alt"></i>
+                <span>휴대폰으로 찾기</span>
+            </button>
+        </div>
+
+        <!-- 이메일로 찾기 탭 -->
+        <div class="tab-content active" id="email-tab">
+            <form class="find-form" id="email-form" novalidate>
+                <div class="input-group">
+                    <label for="user-id-email" class="input-label">
+                        <i class="fas fa-user"></i>
+                        아이디
+                    </label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="user-id-email" 
+                            name="userId" 
+                            class="form-input"
+                            placeholder="아이디를 입력해주세요"
+                            autocomplete="username"
+                            required
+                            aria-describedby="user-id-email-error"
+                        >
+                        <div class="input-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <div class="error-message" id="user-id-email-error" role="alert"></div>
+                </div>
+
+                <div class="input-group">
+                    <label for="user-name-email" class="input-label">
+                        <i class="fas fa-signature"></i>
+                        이름
+                    </label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="user-name-email" 
+                            name="name" 
+                            class="form-input"
+                            placeholder="실명을 입력해주세요"
+                            autocomplete="name"
+                            required
+                            aria-describedby="user-name-email-error"
+                        >
+                        <div class="input-icon">
+                            <i class="fas fa-signature"></i>
+                        </div>
+                    </div>
+                    <div class="error-message" id="user-name-email-error" role="alert"></div>
+                </div>
+
+                <div class="input-group">
+                    <label for="user-email" class="input-label">
+                        <i class="fas fa-envelope"></i>
+                        이메일 주소
+                    </label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="email" 
+                            id="user-email" 
+                            name="email" 
+                            class="form-input"
+                            placeholder="example@gamehub.com"
+                            autocomplete="email"
+                            required
+                            aria-describedby="user-email-error"
+                        >
+                        <div class="input-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                    </div>
+                    <div class="error-message" id="user-email-error" role="alert"></div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="email-submit">
+                    <span class="btn-text">비밀번호 재설정 링크 전송</span>
+                    <div class="btn-loading" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>전송 중...</span>
+                    </div>
+                </button>
+            </form>
+        </div>
+
+        <!-- 휴대폰으로 찾기 탭 -->
+        <div class="tab-content" id="phone-tab">
+            <form class="find-form" id="phone-form" novalidate>
+                <div class="input-group">
+                    <label for="user-id-phone" class="input-label">
+                        <i class="fas fa-user"></i>
+                        아이디
+                    </label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="user-id-phone" 
+                            name="userId" 
+                            class="form-input"
+                            placeholder="아이디를 입력해주세요"
+                            autocomplete="username"
+                            required
+                            aria-describedby="user-id-phone-error"
+                        >
+                        <div class="input-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <div class="error-message" id="user-id-phone-error" role="alert"></div>
+                </div>
+
+                <div class="input-group">
+                    <label for="user-name-phone" class="input-label">
+                        <i class="fas fa-signature"></i>
+                        이름
+                    </label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="user-name-phone" 
+                            name="name" 
+                            class="form-input"
+                            placeholder="실명을 입력해주세요"
+                            autocomplete="name"
+                            required
+                            aria-describedby="user-name-phone-error"
+                        >
+                        <div class="input-icon">
+                            <i class="fas fa-signature"></i>
+                        </div>
+                    </div>
+                    <div class="error-message" id="user-name-phone-error" role="alert"></div>
+                </div>
+
+                <div class="input-group">
+                    <label for="user-phone" class="input-label">
+                        <i class="fas fa-mobile-alt"></i>
+                        휴대폰 번호
+                    </label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="tel" 
+                            id="user-phone" 
+                            name="phone" 
+                            class="form-input"
+                            placeholder="010-1234-5678"
+                            autocomplete="tel"
+                            required
+                            aria-describedby="user-phone-error"
+                            maxlength="13"
+                        >
+                        <div class="input-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                    </div>
+                    <div class="error-message" id="user-phone-error" role="alert"></div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="phone-submit">
+                    <span class="btn-text">인증번호 전송</span>
+                    <div class="btn-loading" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>전송 중...</span>
+                    </div>
+                </button>
+            </form>
+        </div>
+
+        <!-- 인증번호 입력 섹션 (휴대폰 탭용) -->
+        <div class="verification-section" id="verification-section" style="display: none;">
+            <div class="verification-header">
+                <div class="verification-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="verification-title">인증번호 확인</h3>
+                <p class="verification-subtitle">휴대폰으로 전송된 인증번호를 입력해주세요</p>
+            </div>
+            
+            <form class="verification-form" id="verification-form">
+                <div class="input-group">
+                    <label for="verification-code" class="input-label">
+                        <i class="fas fa-key"></i>
+                        인증번호 (6자리)
+                    </label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="verification-code" 
+                            name="verificationCode" 
+                            class="form-input verification-input"
+                            placeholder="123456"
+                            maxlength="6"
+                            required
+                            aria-describedby="verification-code-error"
+                        >
+                        <div class="input-icon">
+                            <i class="fas fa-key"></i>
+                        </div>
+                    </div>
+                    <div class="error-message" id="verification-code-error" role="alert"></div>
+                    <div class="verification-timer">
+                        <span class="timer-text">남은 시간: </span>
+                        <span class="timer-countdown" id="timer-countdown">03:00</span>
+                        <button type="button" class="resend-btn" id="resend-btn" disabled>재전송</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <span class="btn-text">인증 확인</span>
+                    <div class="btn-loading" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>확인 중...</span>
+                    </div>
+                </button>
+            </form>
+        </div>
+
+        <!-- 결과 표시 영역 -->
+        <div class="result-container" id="result-container" style="display: none;">
+            <div class="result-header">
+                <div class="result-icon success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h2 class="result-title">비밀번호 재설정 준비 완료!</h2>
+            </div>
+            
+            <div class="result-content">
+                <div class="result-info">
+                    <div class="info-text" id="result-message">
+                        이메일로 비밀번호 재설정 링크를 전송했습니다.<br>
+                        이메일을 확인하여 비밀번호를 재설정해주세요.
+                    </div>
+                    <div class="info-note">
+                        <i class="fas fa-info-circle"></i>
+                        <span>이메일이 오지 않으면 스팸함을 확인해주세요.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-actions">
+                <a href="/login" class="action-btn primary">
+                    <i class="fas fa-sign-in-alt"></i>
+                    로그인하기
+                </a>
+                <button type="button" class="action-btn secondary" onclick="resetForm()">
+                    <i class="fas fa-redo"></i>
+                    다시 찾기
+                </button>
+            </div>
+        </div>
+
+        <!-- 추가 옵션 -->
+        <div class="additional-options">
+            <div class="option-links">
+                <a href="/find-id" class="option-link">
+                    <i class="fas fa-search"></i>
+                    아이디 찾기
+                </a>
+                <a href="/join" class="option-link">
+                    <i class="fas fa-user-plus"></i>
+                    회원가입
+                </a>
+            </div>
+        </div>
+
+        <!-- 도움말 섹션 -->
+        <div class="help-section">
+            <div class="help-container">
+                <h3 class="help-title">
+                    <i class="fas fa-question-circle"></i>
+                    비밀번호 찾기 도움말
+                </h3>
+                <div class="help-content">
+                    <div class="help-item">
+                        <div class="help-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="help-text">
+                            <strong>이메일로 찾기</strong>
+                            <p>가입 시 등록한 이메일로 비밀번호 재설정 링크를 전송합니다.</p>
+                        </div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="help-text">
+                            <strong>휴대폰으로 찾기</strong>
+                            <p>휴대폰 인증을 통해 즉시 비밀번호를 재설정할 수 있습니다.</p>
+                        </div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="help-text">
+                            <strong>보안</strong>
+                            <p>모든 과정은 안전하게 암호화되어 개인정보가 보호됩니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../static/find-skin/find-pw.js"></script>
+</body>
+</html>

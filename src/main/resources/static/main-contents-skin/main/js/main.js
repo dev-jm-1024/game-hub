@@ -1,951 +1,574 @@
-/**
- * Apple macOS/iOS 스타일 메인 콘텐츠 JavaScript - PC 최적화
- * 게임 허브 메인 페이지 인터랙션 및 애니메이션 처리
- */
+// ===== GameHub JavaScript - 메인 스크립트 =====
+
+// 전역 변수 초기화
+let isInitialized = false;
+let resizeTimeout, scrollTimeout;
+
+// DOM 요소 캐시
+const elements = {
+    header: null,
+    searchInput: null,
+    searchForm: null,
+    dropdownTriggers: null,
+    mobileMenuBtn: null,
+    gameCards: null,
+    postItems: null,
+    widgets: null
+};
+
+// ===== 초기화 =====
+document.addEventListener('DOMContentLoaded', function() {
+    initializeElements();
+    initializeEventListeners();
+    initializeAnimations();
+    initializeObserver();
+    isInitialized = true;
+    console.log('🎮 GameHub 초기화 완료!');
+});
+
+// DOM 요소 초기화
+function initializeElements() {
+    elements.header = document.querySelector('.site-header');
+    elements.searchInput = document.getElementById('search-input');
+    elements.searchForm = document.querySelector('.search-form');
+    elements.dropdownTriggers = document.querySelectorAll('.dropdown-trigger');
+    elements.mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    elements.gameCards = document.querySelectorAll('.game-card');
+    elements.postItems = document.querySelectorAll('.post-item');
+    elements.widgets = document.querySelectorAll('.widget');
+}
+
+// 이벤트 리스너 초기화
+function initializeEventListeners() {
+    initializeDropdowns();
+    initializeSearch();
+    initializeMobileMenu();
+    initializeScrollEffects();
+    initializeCardEffects();
+
+    window.addEventListener('resize', handleResize);
+    document.addEventListener('keydown', handleKeyboard);
+}
+
+// ===== 드롭다운 메뉴 =====
+function initializeDropdowns() {
+    elements.dropdownTriggers.forEach(trigger => {
+        const dropdown = trigger.closest('.has-dropdown');
+        const menu = dropdown?.querySelector('.dropdown-menu');
+
+        if (!dropdown || !menu) return;
 
-class MainContentController {
-    constructor() {
-        this.isInitialized = false;
-        this.observers = new Map();
-        this.animations = new Map();
-        this.performanceMetrics = {
-            loadTime: 0,
-            interactionCount: 0,
-            errorCount: 0
-        };
-
-        this.init();
-    }
-
-    init() {
-        if (this.isInitialized) return;
-
-        const startTime = performance.now();
-
-        try {
-            this.setupEventListeners();
-            this.initializeAnimations();
-            this.setupIntersectionObservers();
-            this.initializeHeroSection();
-            this.initializeGameCards();
-            this.initializeCommunitySection();
-            this.initializeWidgets();
-            this.initializeKeyboardNavigation();
-
-            this.performanceMetrics.loadTime = performance.now() - startTime;
-            this.isInitialized = true;
-
-            console.log(`메인 콘텐츠 초기화 완료: ${this.performanceMetrics.loadTime.toFixed(2)}ms`);
-        } catch (error) {
-            console.error('메인 콘텐츠 초기화 실패:', error);
-            this.performanceMetrics.errorCount++;
-        }
-    }
-
-    setupEventListeners() {
-        // 리사이즈 이벤트 (디바운스 적용)
-        window.addEventListener('resize', this.debounce(() => {
-            this.handleResize();
-        }, 250));
-
-        // 스크롤 이벤트 (스로틀 적용)
-        window.addEventListener('scroll', this.throttle(() => {
-            this.handleScroll();
-        }, 16));
-
-        // 포커스 이벤트
-        document.addEventListener('focusin', (e) => {
-            this.handleFocusIn(e);
-        });
-
-        // 키보드 이벤트
-        document.addEventListener('keydown', (e) => {
-            this.handleKeyDown(e);
-        });
-    }
-
-    initializeAnimations() {
-        // CSS 애니메이션 지원 확인
-        if (!this.supportsAnimations()) {
-            document.documentElement.style.setProperty('--animation-duration', '0s');
-            return;
-        }
-
-        // 스태거 애니메이션 설정
-        this.setupStaggeredAnimations();
-
-        // 패럴랙스 효과 초기화
-        this.initializeParallax();
-    }
-
-    setupIntersectionObservers() {
-        // 메인 콘텐츠 요소들의 가시성 감지
-        const observerOptions = {
-            root: null,
-            rootMargin: '50px',
-            threshold: [0.1, 0.5, 0.9]
-        };
-
-        const mainObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    this.animateElementIn(entry.target);
-                }
-            });
-        }, observerOptions);
-
-        // 관찰할 요소들 등록
-        const elementsToObserve = [
-            '.hero-section',
-            '.featured-games-section',
-            '.community-section',
-            '.widget',
-            '.game-card',
-            '.post-item',
-            '.stat-card'
-        ];
-
-        elementsToObserve.forEach(selector => {
-            document.querySelectorAll(selector).forEach(element => {
-                mainObserver.observe(element);
-            });
-        });
-
-        this.observers.set('main', mainObserver);
-    }
-
-    initializeHeroSection() {
-        const heroSection = document.querySelector('.hero-section');
-        if (!heroSection) return;
-
-        // 히어로 통계 카운터 애니메이션
-        this.initializeStatCounters();
-
-        // 히어로 버튼 인터랙션
-        this.initializeHeroButtons();
-
-        // 배경 장식 애니메이션
-        this.initializeHeroDecorations();
-    }
-
-    initializeStatCounters() {
-        const statItems = document.querySelectorAll('.stat-item');
-
-        statItems.forEach(item => {
-            const numberElement = item.querySelector('.stat-number');
-            if (!numberElement) return;
-
-            const targetText = numberElement.textContent;
-            const targetNumber = parseInt(targetText.replace(/[^\d]/g, ''));
-
-            if (isNaN(targetNumber)) return;
-
-            // 카운터 애니메이션 설정
-            item.addEventListener('mouseenter', () => {
-                this.animateCounter(numberElement, targetNumber, targetText);
-            });
-        });
-    }
-
-    animateCounter(element, targetNumber, originalText) {
-        if (element.dataset.animated === 'true') return;
-
-        element.dataset.animated = 'true';
-        const duration = 1000;
-        const startTime = performance.now();
-
-        const animate = (currentTime) => {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-
-            // 이징 함수 적용
-            const easeProgress = this.easeOutCubic(progress);
-            const currentNumber = Math.floor(targetNumber * easeProgress);
-
-            // 숫자 포맷팅
-            const formattedNumber = this.formatNumber(currentNumber);
-            const suffix = originalText.replace(/[\d,]/g, '');
-            element.textContent = formattedNumber + suffix;
-
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            } else {
-                element.textContent = originalText;
-                setTimeout(() => {
-                    element.dataset.animated = 'false';
-                }, 2000);
-            }
-        };
-
-        requestAnimationFrame(animate);
-    }
-
-    initializeHeroButtons() {
-        const heroButtons = document.querySelectorAll('.hero-actions .btn-primary, .hero-actions .btn-secondary');
-
-        heroButtons.forEach(button => {
-            // 마우스 인터랙션
-            button.addEventListener('mouseenter', () => {
-                this.createRippleEffect(button);
-            });
-
-            // 클릭 피드백
-            button.addEventListener('click', (e) => {
-                this.handleButtonClick(e);
-                this.trackInteraction('hero_button_click', {
-                    button: button.textContent.trim(),
-                    href: button.getAttribute('href')
-                });
-            });
-
-            // 키보드 접근성
-            button.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    this.handleButtonClick(e);
-                }
-            });
-        });
-    }
-
-    initializeHeroDecorations() {
-        const decorationOrbs = document.querySelectorAll('.decoration-orb');
-
-        decorationOrbs.forEach((orb, index) => {
-            // 마우스 추적 효과
-            document.addEventListener('mousemove', this.throttle((e) => {
-                const rect = orb.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-
-                const deltaX = (e.clientX - centerX) * 0.1;
-                const deltaY = (e.clientY - centerY) * 0.1;
-
-                orb.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-            }, 16));
-        });
-    }
-
-    initializeGameCards() {
-        const gameCards = document.querySelectorAll('.game-card');
-
-        gameCards.forEach(card => {
-            // 3D 틸트 효과
-            this.add3DTiltEffect(card);
-
-            // 이미지 로딩 처리
-            this.handleImageLoading(card);
-
-            // 클릭 인터랙션
-            card.addEventListener('click', (e) => {
-                this.handleGameCardClick(e, card);
-            });
-
-            // 키보드 네비게이션
-            const link = card.querySelector('.game-title a');
-            if (link) {
-                link.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        this.createClickAnimation(card);
-                    }
-                });
-            }
-        });
-    }
-
-    add3DTiltEffect(element) {
-        element.addEventListener('mouseenter', () => {
-            element.style.transformStyle = 'preserve-3d';
-        });
-
-        element.addEventListener('mousemove', (e) => {
-            const rect = element.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-
-            const deltaX = (e.clientX - centerX) / rect.width;
-            const deltaY = (e.clientY - centerY) / rect.height;
-
-            const rotateX = deltaY * -10;
-            const rotateY = deltaX * 10;
-
-            element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
-        });
-
-        element.addEventListener('mouseleave', () => {
-            element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
-        });
-    }
-
-    handleImageLoading(card) {
-        const img = card.querySelector('.game-image');
-        if (!img || img.tagName !== 'IMG') return;
-
-        // 로딩 스켈레톤 표시
-        const thumbnail = card.querySelector('.game-thumbnail');
-        thumbnail.classList.add('loading');
-
-        img.addEventListener('load', () => {
-            thumbnail.classList.remove('loading');
-            thumbnail.classList.add('loaded');
-
-            // 이미지 페이드 인 애니메이션
-            img.style.opacity = '0';
-            img.style.transition = 'opacity 0.3s ease';
-
-            requestAnimationFrame(() => {
-                img.style.opacity = '1';
-            });
-        });
-
-        img.addEventListener('error', () => {
-            thumbnail.classList.remove('loading');
-            thumbnail.classList.add('error');
-
-            // 에러 시 플레이스홀더 표시
-            const placeholder = document.createElement('div');
-            placeholder.className = 'placeholder-image';
-            placeholder.textContent = '🎮';
-            thumbnail.appendChild(placeholder);
-        });
-    }
-
-    initializeCommunitySection() {
-        const communitySection = document.querySelector('.community-section');
-        if (!communitySection) return;
-
-        // 통계 카드 애니메이션
-        this.initializeStatCards();
-
-        // 포스트 아이템 인터랙션
-        this.initializePostItems();
-
-        // 실시간 업데이트 시뮬레이션
-        this.simulateRealTimeUpdates();
-    }
-
-    initializeStatCards() {
-        const statCards = document.querySelectorAll('.stat-card');
-
-        statCards.forEach(card => {
-            card.addEventListener('mouseenter', () => {
-                this.animateStatCard(card);
-            });
-
-            // 클릭 시 관련 페이지로 이동
-            card.addEventListener('click', () => {
-                this.handleStatCardClick(card);
-            });
-        });
-    }
-
-    animateStatCard(card) {
-        const number = card.querySelector('.stat-number');
-        if (!number) return;
-
-        // 숫자 증가 애니메이션
-        const originalValue = parseInt(number.textContent.replace(/[^\d]/g, ''));
-        const increment = Math.floor(originalValue * 0.1);
-
-        number.textContent = (originalValue + increment).toLocaleString();
-
-        setTimeout(() => {
-            number.textContent = originalValue.toLocaleString();
-        }, 1000);
-    }
-
-    initializePostItems() {
-        const postItems = document.querySelectorAll('.post-item');
-
-        postItems.forEach(item => {
-            // 호버 효과
-            item.addEventListener('mouseenter', () => {
-                this.highlightPostItem(item);
-            });
-
-            item.addEventListener('mouseleave', () => {
-                this.unhighlightPostItem(item);
-            });
-
-            // 클릭 인터랙션
-            const link = item.querySelector('.post-title a');
-            if (link) {
-                link.addEventListener('click', (e) => {
-                    this.handlePostClick(e, item);
-                });
-            }
-        });
-    }
-
-    highlightPostItem(item) {
-        // 관련 포스트 미리보기 확장
-        const preview = item.querySelector('.post-preview');
-        if (preview) {
-            preview.style.webkitLineClamp = '3';
-        }
-
-        // 메타 정보 강조
-        const meta = item.querySelector('.post-meta');
-        if (meta) {
-            meta.style.opacity = '1';
-        }
-    }
-
-    unhighlightPostItem(item) {
-        const preview = item.querySelector('.post-preview');
-        if (preview) {
-            preview.style.webkitLineClamp = '2';
-        }
-
-        const meta = item.querySelector('.post-meta');
-        if (meta) {
-            meta.style.opacity = '0.7';
-        }
-    }
-
-    initializeWidgets() {
-        // 신규 게임 위젯
-        this.initializeNewGamesWidget();
-
-        // 카테고리 위젯
-        this.initializeCategoryWidget();
-
-        // 랭킹 위젯
-        this.initializeRankingWidget();
-    }
-
-    initializeNewGamesWidget() {
-        const newGameItems = document.querySelectorAll('.new-game-item');
-
-        newGameItems.forEach(item => {
-            item.addEventListener('mouseenter', () => {
-                this.animateNewGameItem(item);
-            });
-
-            const link = item.querySelector('.new-game-title a');
-            if (link) {
-                link.addEventListener('click', (e) => {
-                    this.trackInteraction('new_game_click', {
-                        game: link.textContent.trim()
-                    });
-                });
-            }
-        });
-    }
-
-    animateNewGameItem(item) {
-        const badge = item.querySelector('.new-badge');
-        if (badge) {
-            badge.style.animation = 'none';
-            badge.offsetHeight; // 리플로우 강제 실행
-            badge.style.animation = 'pulse 0.5s ease-in-out';
-        }
-    }
-
-    initializeCategoryWidget() {
-        const categoryItems = document.querySelectorAll('.category-item');
-
-        categoryItems.forEach(item => {
-            item.addEventListener('mouseenter', () => {
-                this.animateCategoryItem(item);
-            });
-
-            item.addEventListener('click', (e) => {
-                this.handleCategoryClick(e, item);
-            });
-        });
-    }
-
-    animateCategoryItem(item) {
-        const icon = item.querySelector('.category-icon');
-        if (icon) {
-            icon.style.transform = 'scale(1.2) rotate(5deg)';
-            setTimeout(() => {
-                icon.style.transform = 'scale(1) rotate(0deg)';
-            }, 200);
-        }
-    }
-
-    initializeRankingWidget() {
-        const rankingItems = document.querySelectorAll('.ranking-item');
-
-        rankingItems.forEach((item, index) => {
-            // 순차적 애니메이션
-            item.style.animationDelay = `${index * 0.1}s`;
-
-            item.addEventListener('mouseenter', () => {
-                this.animateRankingItem(item);
-            });
-        });
-    }
-
-    animateRankingItem(item) {
-        const medal = item.querySelector('.rank-medal');
-        if (medal) {
-            medal.style.animation = 'bounce 0.6s ease-in-out';
-            setTimeout(() => {
-                medal.style.animation = '';
-            }, 600);
-        }
-    }
-
-    initializeKeyboardNavigation() {
-        // 탭 네비게이션 개선
-        const focusableElements = document.querySelectorAll(`
-            .hero-actions a,
-            .game-title a,
-            .post-title a,
-            .new-game-title a,
-            .category-item,
-            .section-link
-        `);
-
-        focusableElements.forEach(element => {
-            element.addEventListener('focus', () => {
-                this.handleElementFocus(element);
-            });
-
-            element.addEventListener('blur', () => {
-                this.handleElementBlur(element);
-            });
-        });
-    }
-
-    handleElementFocus(element) {
-        // 포커스 시 부모 요소 강조
-        const parent = element.closest('.game-card, .post-item, .widget');
-        if (parent) {
-            parent.classList.add('focused');
-        }
-
-        // 스크롤 위치 조정
-        this.ensureElementVisible(element);
-    }
-
-    handleElementBlur(element) {
-        const parent = element.closest('.game-card, .post-item, .widget');
-        if (parent) {
-            parent.classList.remove('focused');
-        }
-    }
-
-    ensureElementVisible(element) {
-        const rect = element.getBoundingClientRect();
-        const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
-
-        if (!isVisible) {
-            element.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
-        }
-    }
-
-    // 이벤트 핸들러들
-    handleResize() {
-        // 레이아웃 재계산
-        this.updateLayoutMetrics();
-
-        // 애니메이션 재설정
-        this.resetAnimations();
-    }
-
-    handleScroll() {
-        const scrollY = window.scrollY;
-
-        // 패럴랙스 효과 업데이트
-        this.updateParallaxEffect(scrollY);
-
-        // 히어로 섹션 스케일 효과
-        this.updateHeroScale(scrollY);
-    }
-
-    updateParallaxEffect(scrollY) {
-        const heroSection = document.querySelector('.hero-section');
-        if (!heroSection) return;
-
-        const decorationGrid = heroSection.querySelector('.decoration-grid');
-        if (decorationGrid) {
-            const translateY = scrollY * 0.5;
-            decorationGrid.style.transform = `translateY(${translateY}px)`;
-        }
-    }
-
-    updateHeroScale(scrollY) {
-        const heroSection = document.querySelector('.hero-section');
-        if (!heroSection) return;
-
-        const scale = Math.max(0.8, 1 - scrollY * 0.0005);
-        const opacity = Math.max(0.3, 1 - scrollY * 0.001);
-
-        heroSection.style.transform = `scale(${scale})`;
-        heroSection.style.opacity = opacity;
-    }
-
-    handleFocusIn(e) {
-        // 포커스 링 스타일 개선
-        if (e.target.matches('a, button, input, textarea, select')) {
-            e.target.classList.add('focus-visible');
-        }
-    }
-
-    handleKeyDown(e) {
-        // 키보드 단축키 처리
-        if (e.ctrlKey || e.metaKey) {
-            switch (e.key) {
-                case 'k':
-                    e.preventDefault();
-                    this.focusSearchInput();
-                    break;
-                case 'g':
-                    e.preventDefault();
-                    this.navigateToGames();
-                    break;
-                case 'b':
-                    e.preventDefault();
-                    this.navigateToBoard();
-                    break;
-            }
-        }
-    }
-
-    handleButtonClick(e) {
-        const button = e.target.closest('a, button');
-        if (!button) return;
-
-        // 클릭 애니메이션
-        this.createClickAnimation(button);
-
-        // 햅틱 피드백 시뮬레이션
-        if (navigator.vibrate) {
-            navigator.vibrate(50);
-        }
-    }
-
-    handleGameCardClick(e, card) {
-        const link = card.querySelector('.game-title a');
-        if (!link) return;
-
-        // 카드 클릭 시 링크로 이동
-        if (!e.target.closest('a')) {
-            link.click();
-        }
-
-        this.trackInteraction('game_card_click', {
-            game: link.textContent.trim()
-        });
-    }
-
-    handlePostClick(e, item) {
-        this.createClickAnimation(item);
-
-        this.trackInteraction('post_click', {
-            post: e.target.textContent.trim()
-        });
-    }
-
-    handleStatCardClick(card) {
-        const icon = card.querySelector('.stat-icon');
-        const label = card.querySelector('.stat-label');
-
-        if (label) {
-            const labelText = label.textContent.trim();
-            let targetUrl = '/';
-
-            switch (labelText) {
-                case '오늘의 게시글':
-                    targetUrl = '/board?date=today';
-                    break;
-                case '온라인 유저':
-                    targetUrl = '/users/online';
-                    break;
-                case '인기 토론':
-                    targetUrl = '/board?sort=popular';
-                    break;
-            }
-
-            window.location.href = targetUrl;
-        }
-    }
-
-    handleCategoryClick(e, item) {
-        e.preventDefault();
-
-        this.createClickAnimation(item);
-
-        setTimeout(() => {
-            window.location.href = item.getAttribute('href');
-        }, 150);
-    }
-
-    // 유틸리티 메서드들
-    createRippleEffect(element) {
-        const ripple = document.createElement('span');
-        ripple.className = 'ripple';
-
-        const rect = element.getBoundingClientRect();
-        const size = Math.max(rect.width, rect.height);
-
-        ripple.style.width = ripple.style.height = size + 'px';
-        ripple.style.left = (rect.width / 2 - size / 2) + 'px';
-        ripple.style.top = (rect.height / 2 - size / 2) + 'px';
-
-        element.appendChild(ripple);
-
-        setTimeout(() => {
-            ripple.remove();
-        }, 600);
-    }
-
-    createClickAnimation(element) {
-        element.style.transform = 'scale(0.95)';
-        element.style.transition = 'transform 0.1s ease';
-
-        setTimeout(() => {
-            element.style.transform = 'scale(1)';
-        }, 100);
-    }
-
-    animateElementIn(element) {
-        if (element.classList.contains('animated')) return;
-
-        element.classList.add('animated');
-        element.style.opacity = '0';
-        element.style.transform = 'translateY(20px)';
-
-        requestAnimationFrame(() => {
-            element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            element.style.opacity = '1';
-            element.style.transform = 'translateY(0)';
-        });
-    }
-
-    setupStaggeredAnimations() {
-        const groups = [
-            '.games-grid .game-card',
-            '.posts-list .post-item',
-            '.community-stats .stat-card',
-            '.ranking-list .ranking-item'
-        ];
-
-        groups.forEach(selector => {
-            const elements = document.querySelectorAll(selector);
-            elements.forEach((element, index) => {
-                element.style.animationDelay = `${index * 0.1}s`;
-            });
-        });
-    }
-
-    initializeParallax() {
-        if (!this.supportsAnimations()) return;
-
-        const parallaxElements = document.querySelectorAll('.decoration-orb');
-
-        parallaxElements.forEach(element => {
-            element.style.willChange = 'transform';
-        });
-    }
-
-    simulateRealTimeUpdates() {
-        // 실시간 업데이트 시뮬레이션 (실제 구현 시 WebSocket 사용)
-        setInterval(() => {
-            this.updateRandomStats();
-        }, 30000); // 30초마다 업데이트
-    }
-
-    updateRandomStats() {
-        const statNumbers = document.querySelectorAll('.stat-number');
-
-        statNumbers.forEach(number => {
-            const currentValue = parseInt(number.textContent.replace(/[^\d]/g, ''));
-            const change = Math.floor(Math.random() * 10) - 5; // -5 ~ +5
-            const newValue = Math.max(0, currentValue + change);
-
-            if (change !== 0) {
-                number.textContent = newValue.toLocaleString();
-                number.style.color = change > 0 ? 'var(--system-green)' : 'var(--system-red)';
-
-                setTimeout(() => {
-                    number.style.color = '';
-                }, 1000);
-            }
-        });
-    }
-
-    // 유틸리티 메서드들
-    debounce(func, wait) {
         let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
+
+        dropdown.addEventListener('mouseenter', () => {
             clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-
-    throttle(func, limit) {
-        let inThrottle;
-        return function(...args) {
-            if (!inThrottle) {
-                func.apply(this, args);
-                inThrottle = true;
-                setTimeout(() => inThrottle = false, limit);
-            }
-        };
-    }
-
-    supportsAnimations() {
-        return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    }
-
-    easeOutCubic(t) {
-        return 1 - Math.pow(1 - t, 3);
-    }
-
-    formatNumber(num) {
-        if (num >= 1000000) {
-            return (num / 1000000).toFixed(1) + 'M';
-        } else if (num >= 1000) {
-            return (num / 1000).toFixed(1) + 'K';
-        }
-        return num.toString();
-    }
-
-    updateLayoutMetrics() {
-        // 레이아웃 메트릭 업데이트
-        const viewport = {
-            width: window.innerWidth,
-            height: window.innerHeight
-        };
-
-        // 모바일 레이아웃 조정
-        if (viewport.width <= 768) {
-            document.documentElement.classList.add('mobile-layout');
-        } else {
-            document.documentElement.classList.remove('mobile-layout');
-        }
-    }
-
-    resetAnimations() {
-        // 애니메이션 재설정
-        this.animations.forEach(animation => {
-            if (animation.cancel) {
-                animation.cancel();
-            }
-        });
-        this.animations.clear();
-    }
-
-    trackInteraction(eventName, data = {}) {
-        // 사용자 인터랙션 추적
-        this.performanceMetrics.interactionCount++;
-
-        // 실제 구현 시 분석 도구로 전송
-        console.log(`인터랙션 추적: ${eventName}`, data);
-    }
-
-    focusSearchInput() {
-        // 헤더의 검색 입력 필드에 포커스
-        const searchInput = document.querySelector('.search-input');
-        if (searchInput) {
-            searchInput.focus();
-        }
-    }
-
-    navigateToGames() {
-        window.location.href = '/games';
-    }
-
-    navigateToBoard() {
-        window.location.href = '/board';
-    }
-
-    // 정리 메서드
-    destroy() {
-        // 이벤트 리스너 제거
-        this.observers.forEach(observer => {
-            observer.disconnect();
+            showDropdown(trigger, menu);
         });
 
-        // 애니메이션 정리
-        this.resetAnimations();
+        dropdown.addEventListener('mouseleave', () => {
+            timeout = setTimeout(() => hideDropdown(trigger, menu), 150);
+        });
 
-        // 메모리 정리
-        this.observers.clear();
-        this.animations.clear();
+        trigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleDropdown(trigger, menu);
+        });
+    });
 
-        console.log('메인 콘텐츠 컨트롤러 정리 완료');
+    // 외부 클릭으로 드롭다운 닫기
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.has-dropdown')) {
+            closeAllDropdowns();
+        }
+    });
+}
+
+function showDropdown(trigger, menu) {
+    trigger.setAttribute('aria-expanded', 'true');
+    menu.style.opacity = '1';
+    menu.style.visibility = 'visible';
+    menu.style.transform = 'translateY(0)';
+}
+
+function hideDropdown(trigger, menu) {
+    trigger.setAttribute('aria-expanded', 'false');
+    menu.style.opacity = '0';
+    menu.style.visibility = 'hidden';
+    menu.style.transform = 'translateY(-10px)';
+}
+
+function toggleDropdown(trigger, menu) {
+    const isOpen = trigger.getAttribute('aria-expanded') === 'true';
+    closeAllDropdowns();
+
+    if (!isOpen) {
+        showDropdown(trigger, menu);
     }
 }
 
-// 페이지 로드 시 초기화
-document.addEventListener('DOMContentLoaded', () => {
-    window.mainContentController = new MainContentController();
-});
+function closeAllDropdowns() {
+    elements.dropdownTriggers.forEach(trigger => {
+        const dropdown = trigger.closest('.has-dropdown');
+        const menu = dropdown?.querySelector('.dropdown-menu');
+        if (menu) hideDropdown(trigger, menu);
+    });
+}
 
-// 페이지 언로드 시 정리
-window.addEventListener('beforeunload', () => {
-    if (window.mainContentController) {
-        window.mainContentController.destroy();
-    }
-});
+// ===== 검색 기능 =====
+function initializeSearch() {
+    if (!elements.searchInput || !elements.searchForm) return;
 
-// CSS 스타일 추가 (JavaScript로 동적 생성)
-const additionalStyles = `
-    .ripple {
+    let searchTimeout;
+
+    elements.searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        const query = e.target.value.trim();
+
+        if (query.length > 2) {
+            searchTimeout = setTimeout(() => showSearchSuggestions(query), 300);
+        } else {
+            hideSearchSuggestions();
+        }
+    });
+
+    elements.searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const query = elements.searchInput.value.trim();
+
+        if (query.length > 0) {
+            performSearch(query);
+        } else {
+            showToast('검색어를 입력해주세요.', 'warning');
+        }
+    });
+
+    elements.searchInput.addEventListener('focus', () => {
+        elements.searchInput.closest('.search-input-wrapper').classList.add('focused');
+    });
+
+    elements.searchInput.addEventListener('blur', () => {
+        setTimeout(() => {
+            elements.searchInput.closest('.search-input-wrapper').classList.remove('focused');
+            hideSearchSuggestions();
+        }, 200);
+    });
+}
+
+function showSearchSuggestions(query) {
+    hideSearchSuggestions();
+
+    const suggestions = [
+        { type: 'game', title: '레이저 디펜더', category: '액션' },
+        { type: 'game', title: '타일 바니아', category: '플랫폼' },
+        { type: 'post', title: '게임 공략법', author: '게임마스터' }
+    ].filter(item =>
+        item.title.toLowerCase().includes(query.toLowerCase())
+    );
+
+    if (suggestions.length === 0) return;
+
+    const container = document.createElement('div');
+    container.className = 'search-suggestions';
+    container.innerHTML = suggestions.slice(0, 5).map(item => `
+        <div class="suggestion-item" data-type="${item.type}">
+            <div class="suggestion-icon">${item.type === 'game' ? '🎮' : '📝'}</div>
+            <div class="suggestion-info">
+                <div class="suggestion-title">${item.title}</div>
+                <div class="suggestion-meta">
+                    ${item.type === 'game' ? item.category : `작성자: ${item.author}`}
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    // 스타일 적용
+    container.style.cssText = `
         position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, rgba(20, 20, 40, 0.98), rgba(30, 30, 60, 0.98));
+        backdrop-filter: blur(25px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        padding: 8px 0;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        z-index: 1002;
+        animation: slideInDown 0.3s ease-out;
+    `;
+
+    elements.searchForm.style.position = 'relative';
+    elements.searchForm.appendChild(container);
+
+    container.querySelectorAll('.suggestion-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const title = item.querySelector('.suggestion-title').textContent;
+            elements.searchInput.value = title;
+            performSearch(title);
+            hideSearchSuggestions();
+        });
+    });
+}
+
+function hideSearchSuggestions() {
+    const suggestions = document.querySelector('.search-suggestions');
+    if (suggestions) {
+        suggestions.remove();
+    }
+}
+
+function performSearch(query) {
+    showToast(`"${query}" 검색 중...`, 'info');
+
+    const submitBtn = elements.searchForm.querySelector('.search-submit');
+    const originalHTML = submitBtn.innerHTML;
+
+    submitBtn.innerHTML = '<div style="width:18px;height:18px;border:2px solid transparent;border-top:2px solid white;border-radius:50%;animation:spin 1s linear infinite;"></div>';
+    submitBtn.style.pointerEvents = 'none';
+
+    setTimeout(() => {
+        submitBtn.innerHTML = originalHTML;
+        submitBtn.style.pointerEvents = 'auto';
+        showToast(`"${query}" 검색 완료!`, 'success');
+        console.log(`검색 실행: ${query}`);
+    }, 1500);
+}
+
+// ===== 모바일 메뉴 =====
+function initializeMobileMenu() {
+    if (!elements.mobileMenuBtn) return;
+
+    elements.mobileMenuBtn.addEventListener('click', () => {
+        const isExpanded = elements.mobileMenuBtn.getAttribute('aria-expanded') === 'true';
+        elements.mobileMenuBtn.setAttribute('aria-expanded', !isExpanded);
+
+        const lines = elements.mobileMenuBtn.querySelectorAll('.hamburger-line');
+        if (!isExpanded) {
+            lines[0].style.transform = 'rotate(45deg) translate(6px, 6px)';
+            lines[1].style.opacity = '0';
+            lines[2].style.transform = 'rotate(-45deg) translate(6px, -6px)';
+        } else {
+            lines.forEach(line => {
+                line.style.transform = 'none';
+                line.style.opacity = '1';
+            });
+        }
+
+        showToast(isExpanded ? '메뉴 닫기' : '메뉴 열기', 'info');
+    });
+}
+
+// ===== 스크롤 효과 =====
+function initializeScrollEffects() {
+    let lastScrollY = window.scrollY;
+
+    window.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            const currentScrollY = window.scrollY;
+
+            if (elements.header) {
+                if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                    elements.header.style.transform = 'translateX(-50%) translateY(-100%)';
+                    elements.header.style.opacity = '0.8';
+                } else {
+                    elements.header.style.transform = 'translateX(-50%) translateY(0)';
+                    elements.header.style.opacity = '1';
+                }
+            }
+
+            lastScrollY = currentScrollY;
+        }, 10);
+    });
+}
+
+// ===== 애니메이션 초기화 =====
+function initializeAnimations() {
+    animateCounters();
+    initializeRippleEffects();
+}
+
+function animateCounters() {
+    const counters = document.querySelectorAll('.stat-number');
+
+    counters.forEach(counter => {
+        const target = parseInt(counter.textContent.replace(/[^\d]/g, ''));
+        const increment = Math.ceil(target / 100);
+        let current = 0;
+
+        const updateCounter = () => {
+            if (current < target) {
+                current += increment;
+                if (current > target) current = target;
+
+                let displayValue = current.toLocaleString();
+                if (counter.textContent.includes('+')) displayValue += '+';
+                if (counter.textContent.includes('%')) displayValue += '%';
+
+                counter.textContent = displayValue;
+                requestAnimationFrame(updateCounter);
+            }
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    setTimeout(updateCounter, Math.random() * 500);
+                    observer.unobserve(entry.target);
+                }
+            });
+        });
+
+        observer.observe(counter);
+    });
+}
+
+function initializeRippleEffects() {
+    const rippleElements = document.querySelectorAll('.btn-primary, .btn-secondary, .search-submit, .nav-link');
+
+    rippleElements.forEach(element => {
+        element.addEventListener('click', createRipple);
+    });
+}
+
+function createRipple(e) {
+    const element = e.currentTarget;
+    const rect = element.getBoundingClientRect();
+    const ripple = document.createElement('span');
+
+    const size = Math.max(rect.width, rect.height);
+    const x = (e.clientX || rect.left + rect.width / 2) - rect.left - size / 2;
+    const y = (e.clientY || rect.top + rect.height / 2) - rect.top - size / 2;
+
+    ripple.style.cssText = `
+        position: absolute;
+        width: ${size}px;
+        height: ${size}px;
+        left: ${x}px;
+        top: ${y}px;
+        background: rgba(255, 255, 255, 0.3);
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.6);
         transform: scale(0);
-        animation: ripple-animation 0.6s linear;
+        animation: ripple 0.6s ease-out;
         pointer-events: none;
+        z-index: 1;
+    `;
+
+    element.style.position = 'relative';
+    element.style.overflow = 'hidden';
+    element.appendChild(ripple);
+
+    setTimeout(() => ripple.remove(), 600);
+}
+
+// ===== Intersection Observer =====
+function initializeObserver() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '50px' });
+
+    const observeElements = document.querySelectorAll(`
+        .game-card, .post-item, .widget, .stat-card,
+        .hero-section, .featured-games-section, .community-section
+    `);
+
+    observeElements.forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+        observer.observe(el);
+    });
+}
+
+// ===== 카드 효과 =====
+function initializeCardEffects() {
+    elements.gameCards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-8px) scale(1.02)';
+            card.style.boxShadow = '0 25px 80px rgba(0, 0, 0, 0.5)';
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0) scale(1)';
+            card.style.boxShadow = '';
+        });
+    });
+
+    elements.postItems.forEach(item => {
+        item.addEventListener('mouseenter', () => {
+            item.style.transform = 'translateX(12px)';
+            item.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.4)';
+        });
+
+        item.addEventListener('mouseleave', () => {
+            item.style.transform = 'translateX(0)';
+            item.style.boxShadow = '';
+        });
+    });
+}
+
+// ===== 키보드 네비게이션 =====
+function handleKeyboard(e) {
+    if (e.key === 'Escape') {
+        closeAllDropdowns();
+        hideSearchSuggestions();
     }
-    
-    @keyframes ripple-animation {
-        to {
-            transform: scale(4);
-            opacity: 0;
+
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        if (elements.searchInput) {
+            elements.searchInput.focus();
+            showToast('검색창 활성화', 'info');
         }
     }
-    
-    .loading .game-image {
-        opacity: 0.3;
-        animation: pulse 1.5s ease-in-out infinite;
+}
+
+// ===== 리사이즈 핸들러 =====
+function handleResize() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        if (window.innerWidth > 768) {
+            if (elements.mobileMenuBtn) {
+                elements.mobileMenuBtn.setAttribute('aria-expanded', 'false');
+                const lines = elements.mobileMenuBtn.querySelectorAll('.hamburger-line');
+                lines.forEach(line => {
+                    line.style.transform = 'none';
+                    line.style.opacity = '1';
+                });
+            }
+        }
+
+        closeAllDropdowns();
+    }, 250);
+}
+
+// ===== 토스트 알림 =====
+function showToast(message, type = 'info', duration = 3000) {
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) existingToast.remove();
+
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.innerHTML = `
+        <div class="toast-icon">
+            ${type === 'success' ? '✅' : type === 'warning' ? '⚠️' : type === 'error' ? '❌' : 'ℹ️'}
+        </div>
+        <div class="toast-message">${message}</div>
+        <button class="toast-close" aria-label="닫기">×</button>
+    `;
+
+    toast.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: linear-gradient(135deg, rgba(20, 20, 40, 0.98), rgba(30, 30, 60, 0.98));
+        backdrop-filter: blur(25px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        padding: 16px 20px;
+        color: white;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 400px;
+        animation: slideInRight 0.5s ease-out;
+        font-family: inherit;
+        font-size: 14px;
+    `;
+
+    document.body.appendChild(toast);
+
+    const closeBtn = toast.querySelector('.toast-close');
+    closeBtn.style.cssText = `
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.7);
+        cursor: pointer;
+        font-size: 18px;
+        padding: 0;
+        margin-left: auto;
+    `;
+
+    closeBtn.addEventListener('click', () => removeToast(toast));
+    setTimeout(() => removeToast(toast), duration);
+}
+
+function removeToast(toast) {
+    if (toast && toast.parentNode) {
+        toast.style.animation = 'slideInRight 0.3s ease-out reverse';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }
+}
+
+// ===== CSS 애니메이션 추가 =====
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(100%); }
+        to { opacity: 1; transform: translateX(0); }
     }
     
-    .focused {
-        outline: 2px solid var(--system-blue);
-        outline-offset: 2px;
-        border-radius: var(--border-radius-medium);
+    @keyframes slideInDown {
+        from { opacity: 0; transform: translateY(-30px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
-    .mobile-layout .hero-stats {
-        flex-direction: column;
+    @keyframes ripple {
+        0% { transform: scale(0); opacity: 1; }
+        100% { transform: scale(4); opacity: 0; }
     }
     
-    .mobile-layout .content-grid {
-        flex-direction: column;
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
     
-    @keyframes bounce {
-        0%, 20%, 53%, 80%, 100% {
-            transform: translate3d(0, 0, 0);
-        }
-        40%, 43% {
-            transform: translate3d(0, -30px, 0);
-        }
-        70% {
-            transform: translate3d(0, -15px, 0);
-        }
-        90% {
-            transform: translate3d(0, -4px, 0);
-        }
+    .suggestion-item {
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .suggestion-item:hover {
+        background: rgba(100, 181, 246, 0.2);
+    }
+    
+    .suggestion-icon {
+        font-size: 16px;
+    }
+    
+    .suggestion-title {
+        font-weight: 500;
+        margin-bottom: 2px;
+    }
+    
+    .suggestion-meta {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
     }
 `;
+document.head.appendChild(style);
 
-// 스타일 시트 추가
-const styleSheet = document.createElement('style');
-styleSheet.textContent = additionalStyles;
-document.head.appendChild(styleSheet);
+// ===== 개발자 도구 =====
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('🎮 GameHub 개발 모드 활성화');
+    window.GameHubDev = { showToast, createRipple, elements };
+}
+
+console.log('🚀 GameHub JavaScript 로드 완료!');

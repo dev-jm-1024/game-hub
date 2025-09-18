@@ -6,153 +6,155 @@
     <title>사용자 관리</title>
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    <link rel="stylesheet" th:href="@{/admin-skin/css/admin-user-status.css}">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            margin: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: end;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        label {
+            font-size: 14px;
+            color: #555;
+        }
+        input, select, button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .btn {
+            padding: 6px 12px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+    </style>
 </head>
 <body>
 <div class="container">
-    <div class="header">
-        <h2>사용자 관리</h2>
-        <div class="admin-info" th:if="${adminDetailsDto != null}">
-            <span th:text="${adminDetailsDto.user.mbNickname}">관리자</span>
-            <span class="admin-badge">관리자</span>
+    <h2>사용자 관리</h2>
+
+    <form class="search-form" method="get" th:action="@{/admin/user-status}">
+        <div class="form-group">
+            <label for="search">닉네임 검색</label>
+            <input type="text" id="search" name="search" th:value="${searchKeyword}">
         </div>
-    </div>
-
-    <!-- 검색 및 필터 -->
-    <div class="search-filters">
-        <form th:action="@{/admin/user-status}" method="get" style="display: flex; gap: 10px; align-items: center;">
-            <input type="text" name="search" placeholder="닉네임 검색"
-                   th:value="${searchKeyword}">
-
-            <select name="status">
-                <option value="">전체 상태</option>
+        <div class="form-group">
+            <label for="status">상태</label>
+            <select id="status" name="status">
+                <option value="">전체</option>
                 <option value="1" th:selected="${selectedStatus == '1'}">활성</option>
                 <option value="0" th:selected="${selectedStatus == '0'}">비활성</option>
             </select>
-
-            <select name="role">
-                <option value="">전체 역할</option>
+        </div>
+        <div class="form-group">
+            <label for="role">권한</label>
+            <select id="role" name="role">
+                <option value="">전체</option>
                 <option value="ROLE_USER" th:selected="${selectedRole == 'ROLE_USER'}">일반 사용자</option>
                 <option value="ROLE_ADMIN" th:selected="${selectedRole == 'ROLE_ADMIN'}">관리자</option>
                 <option value="ROLE_PRODUCER" th:selected="${selectedRole == 'ROLE_PRODUCER'}">제작자</option>
             </select>
-
-            <button type="submit" class="btn btn-primary">검색</button>
-            <a th:href="@{/admin/user-status}" class="btn btn-info">전체보기</a>
-        </form>
-    </div>
-
-    <!-- 사용자 목록 -->
-    <div th:if="${usersList != null and !usersList.isEmpty()}">
-        <div class="users-grid">
-            <div class="user-card" th:each="userDetail : ${usersList}">
-                <div class="user-header">
-                    <span class="user-id" th:text="'ID: ' + ${userDetail.user.mbId}">ID: 12345</span>
-                    <span th:class="${userDetail.user.mbAct == 1 ? 'user-status status-active' : 'user-status status-inactive'}"
-                          th:text="${userDetail.user.mbAct == 1 ? '활성' : '비활성'}">활성</span>
-                </div>
-
-                <div class="user-info">
-                    <div class="info-row">
-                        <span class="info-label">닉네임:</span>
-                        <span th:text="${userDetail.user.mbNickname}">사용자닉네임</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">역할:</span>
-                        <span th:text="${userDetail.user.mbRole.name()}">ROLE_USER</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">가입일:</span>
-                        <span th:text="${#temporals.format(userDetail.user.mbJoinDate, 'yyyy-MM-dd')}">2024-01-15</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">신고횟수:</span>
-                        <span th:text="${userDetail.user.mbReportCnt}">0</span>
-                    </div>
-                    <div class="info-row" th:if="${userDetail.userPrivate != null}">
-                        <span class="info-label">성별:</span>
-                        <span th:text="${userDetail.userPrivate.priGender}">-</span>
-                    </div>
-                </div>
-
-                <div class="user-actions">
-                    <!-- 활성화 버튼 (비활성 상태일 때만) -->
-                    <form th:if="${userDetail.user.mbAct == 0}"
-                          th:action="@{${apiPaths[0]}}" method="post" style="display: inline;">
-                        <input type="hidden" name="userId" th:value="${userDetail.user.mbId}">
-                        <button type="submit" class="btn btn-success">활성화</button>
-                    </form>
-
-                    <!-- 비활성화 버튼 (활성 상태일 때만) -->
-                    <form th:if="${userDetail.user.mbAct == 1}"
-                          th:action="@{${apiPaths[1]}}" method="post" style="display: inline;">
-                        <input type="hidden" name="userId" th:value="${userDetail.user.mbId}">
-                        <button type="submit" class="btn btn-warning">비활성화</button>
-                    </form>
-
-                    <!-- 로그인 기록 -->
-                    <form th:action="@{${apiPaths[2]}}" method="post" style="display: inline;">
-                        <input type="hidden" name="userId" th:value="${userDetail.user.mbId}">
-                        <button type="submit" class="btn btn-info">로그인 기록</button>
-                    </form>
-
-                    <!-- 활동 정보 -->
-                    <form th:action="@{${apiPaths[3]}}" method="post" style="display: inline;">
-                        <input type="hidden" name="userId" th:value="${userDetail.user.mbId}">
-                        <button type="submit" class="btn btn-primary">활동 정보</button>
-                    </form>
-                </div>
-            </div>
         </div>
-    </div>
+        <div class="form-group">
+            <button type="submit">검색</button>
+        </div>
+    </form>
 
-    <!-- 데이터 없음 -->
-    <div th:if="${usersList == null or usersList.isEmpty()}"
-         style="text-align: center; padding: 40px; color: #6c757d;">
-        <p>조건에 맞는 사용자가 없습니다.</p>
-    </div>
+    <table>
+        <thead>
+        <tr>
+            <th>고유 아이디</th>
+            <th>닉네임</th>
+            <th>가입일</th>
+            <th>신고횟수</th>
+            <th>권한</th>
+            <th>상태</th>
+            <th>액션</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="user : ${usersList}">
+            <td th:text="${user.user.mbId}"></td>
+            <td th:text="${user.user.mbNickname}"></td>
+            <td th:text="${user.user.mbJoinDate}"></td>
+            <td th:text="${user.user.mbReportCnt}"></td>
+            <td th:text="${user.user.mbRole}"></td>
+            <td th:text="${user.user.mbAct}"></td>
+            <td>
+                <a th:href="@{/admin/user-status/{mbId}/login-record(mbId=${user.user.mbId})}" class="btn btn-secondary">로그인 기록</a>
+                <button class="btn btn-danger">상태변경</button>
+            </td>
+        </tr>
+        <tr th:if="${usersList.isEmpty()}">
+            <td colspan="7" style="text-align: center;">검색 결과가 없습니다.</td>
+        </tr>
+        </tbody>
+    </table>
 
-    <!-- 페이징 -->
-    <div th:if="${totalPages > 1}" class="pagination">
-        <!-- 첫 페이지 -->
-        <a th:if="${currentPage > 0}"
-           th:href="@{/admin/user-status(page=0, search=${searchKeyword}, status=${selectedStatus}, role=${selectedRole})}">
-            처음
-        </a>
+    <div th:if="${totalPages > 1}">
+        <div style="margin-top: 20px; text-align: center;">
+            <a th:if="${currentPage > 0}" th:href="@{/admin/user-status(page=${currentPage - 1}, size=${pageSize}, search=${searchKeyword}, status=${selectedStatus}, role=${selectedRole})}" style="padding: 8px; margin: 2px; text-decoration: none; border: 1px solid #ddd;">이전</a>
 
-        <!-- 이전 페이지 -->
-        <a th:if="${currentPage > 0}"
-           th:href="@{/admin/user-status(page=${currentPage - 1}, search=${searchKeyword}, status=${selectedStatus}, role=${selectedRole})}">
-            이전
-        </a>
+            <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
+                    <a th:href="@{/admin/user-status(page=${i}, size=${pageSize}, search=${searchKeyword}, status=${selectedStatus}, role=${selectedRole})}"
+                       th:text="${i + 1}"
+                       th:style="${i == currentPage} ? 'padding: 8px; margin: 2px; background: #007bff; color: white; text-decoration: none; border: 1px solid #007bff;' : 'padding: 8px; margin: 2px; text-decoration: none; border: 1px solid #ddd;'"></a>
+                </span>
 
-        <!-- 페이지 번호들 -->
-        <span th:each="pageNum : ${#numbers.sequence(T(java.lang.Math).max(0, currentPage - 2), T(java.lang.Math).min(totalPages - 1, currentPage + 2))}">
-                <a th:if="${pageNum != currentPage}"
-                   th:href="@{/admin/user-status(page=${pageNum}, search=${searchKeyword}, status=${selectedStatus}, role=${selectedRole})}"
-                   th:text="${pageNum + 1}">1</a>
-                <span th:if="${pageNum == currentPage}"
-                      class="current" th:text="${pageNum + 1}">1</span>
-            </span>
+            <a th:if="${currentPage < totalPages - 1}" th:href="@{/admin/user-status(page=${currentPage + 1}, size=${pageSize}, search=${searchKeyword}, status=${selectedStatus}, role=${selectedRole})}" style="padding: 8px; margin: 2px; text-decoration: none; border: 1px solid #ddd;">다음</a>
+        </div>
 
-        <!-- 다음 페이지 -->
-        <a th:if="${currentPage < totalPages - 1}"
-           th:href="@{/admin/user-status(page=${currentPage + 1}, search=${searchKeyword}, status=${selectedStatus}, role=${selectedRole})}">
-            다음
-        </a>
-
-        <!-- 마지막 페이지 -->
-        <a th:if="${currentPage < totalPages - 1}"
-           th:href="@{/admin/user-status(page=${totalPages - 1}, search=${searchKeyword}, status=${selectedStatus}, role=${selectedRole})}">
-            마지막
-        </a>
-    </div>
-
-    <!-- 페이징 정보 -->
-    <div class="pagination-info" th:if="${usersPage != null}">
-            <span th:text="'전체 ' + ${totalElements} + '명 중 ' + ${currentPage * pageSize + 1} + '-' + ${(currentPage + 1) * pageSize < totalElements ? (currentPage + 1) * pageSize : totalElements} + '명 표시'">
-                전체 100명 중 1-10명 표시
-            </span>
+        <div style="text-align: center; margin-top: 10px;">
+            총 <span th:text="${totalElements}"></span>명 |
+            <span th:text="${currentPage + 1}"></span>/<span th:text="${totalPages}"></span> 페이지
+        </div>
     </div>
 </div>
 </body>

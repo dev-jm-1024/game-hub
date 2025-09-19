@@ -60,7 +60,7 @@ public class GameHubController {
         model.addAttribute("boardList", boardList);
 
         if (isLoggedIn) {
-            model.addAttribute("nickname", user.getMbNickname());
+            model.addAttribute("nickname", user.getMbNickName());
             model.addAttribute("profileImage", user.getMbProfileUrl() != null ? user.getMbProfileUrl() : testImageUrl);
         }
 

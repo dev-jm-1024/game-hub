@@ -20,22 +20,8 @@ public interface BoardService {
 
     Board getBoardByBoardId(String boardId);
 
-    //게시판 데이터 가져오기 - 관리자 용도
+    List<String> getBoardIds();
+
     List<Board> getAllBoards();
 
-    //게시판의 이름 변경 - 관리자 용도
-    boolean renameBoard(String boardId, String newName);
-
-    //게시판 제거하기 - 관리자 용도
-    boolean changeBoardStatus(String boardId, int status);
-
-    //게시판 생성하기 - 관리자 용도
-    int createBoard(CreateBoardDto createBoardDto);
-
-    //게시판 이름 중복 확인 - 관리자 용도
-    boolean isDuplicateBoardName(String boardName);
-
-    // 편의 메서드
-    boolean deactivateBoard(String boardId);
-    boolean activateBoard(String boardId);
 }

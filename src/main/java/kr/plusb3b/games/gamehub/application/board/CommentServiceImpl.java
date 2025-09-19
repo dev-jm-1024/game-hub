@@ -9,6 +9,7 @@ import kr.plusb3b.games.gamehub.domain.board.repository.CommentsRepository;
 import kr.plusb3b.games.gamehub.domain.board.repository.PostsRepository;
 import kr.plusb3b.games.gamehub.domain.board.service.CommentService;
 import kr.plusb3b.games.gamehub.domain.board.vo.CreateCommentsVO;
+import kr.plusb3b.games.gamehub.domain.board.vo.business.CommentContent;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.security.SnowflakeIdGenerator;
 import org.springframework.stereotype.Service;
@@ -35,26 +36,25 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public Comments createComment(CreateCommentsVO cvo, RequestCommentDto requestCommentDto, User user) {
+    public Comments createComment(RequestCommentDto requestCommentDto, User user) {
 
         // 1. 게시글 조회
         Posts post = postsRepo.findById(requestCommentDto.getPostId())
                 .orElseThrow(() -> new IllegalArgumentException("해당 게시글을 찾을 수 없습니다."));
 
-        // 2. 댓글 엔티티 생성
-        Comments comment = new Comments(
+        CreateCommentsVO cvo = new CreateCommentsVO();
+
+        // 2. 댓글 엔티티 생성 ,저장 및 반환
+        return commentsRepo.save(new Comments(
                 post,
                 user,
-                requestCommentDto.getCommentContent(),
+                CommentContent.of(requestCommentDto.getCommentContent()),
                 cvo.getLikeCount(),
                 cvo.getDislikeCount(),
                 cvo.getReportCount(),
                 LocalDate.now(),
                 cvo.getCommentAct()
-        );
-
-        // 3. 저장 및 반환
-        return commentsRepo.save(comment);
+        ));
     }
 
 
@@ -87,7 +87,7 @@ public class CommentServiceImpl implements CommentService {
         if (comments.getCommentContent().equals(commentContent)) {
             return false;
         }
-        comments.changeCommentContent(commentContent);
+        comments.changeCommentContent(CommentContent.of(commentContent));
 
         return true;
     }

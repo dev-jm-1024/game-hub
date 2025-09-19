@@ -113,7 +113,7 @@ public class UserProviderImpl implements UserProvider {
     public Page<UserDetailsDto> searchUsersByNickname(String nickname, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("mbJoinDate").descending());
 
-        Page<User> usersPage = userRepository.findByMbNicknameContaining(nickname, pageable);
+        Page<User> usersPage = userRepository.findByMbNickName_MbNickNameContaining(nickname, pageable);
 
         return usersPage.map(user -> new UserDetailsDto(
                 user,

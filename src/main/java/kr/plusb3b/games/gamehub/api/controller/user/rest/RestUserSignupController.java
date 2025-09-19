@@ -1,5 +1,6 @@
 package kr.plusb3b.games.gamehub.api.controller.user.rest;
 
+import jakarta.validation.Valid;
 import kr.plusb3b.games.gamehub.domain.user.dto.UserSignupDto;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.service.UserJoinService;
@@ -31,7 +32,7 @@ public class RestUserSignupController {
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> registerUser(
-            @RequestPart("userSignupDto") UserSignupDto userSignupDto,
+            @Valid @RequestPart("userSignupDto") UserSignupDto userSignupDto,
             @RequestPart(value = "file", required = false) MultipartFile file) {
 
         try {
@@ -42,9 +43,6 @@ public class RestUserSignupController {
                         .body("잘못된 사용자 타입입니다. (generalUser 또는 producer만 허용)");
             }
 
-            // VO는 그대로 사용 (값 변경 안 함)
-            UserSignupVO userSignupVO = new UserSignupVO();
-
             // prod 값에 따라 Role이 설정된 새로운 DTO 생성
             UserSignupDto processedDto = createProcessedDto(userSignupDto, prod);
 
@@ -52,7 +50,7 @@ public class RestUserSignupController {
             List<MultipartFile> files = file != null ? List.of(file) : null;
 
             // 기존 서비스 메서드 시그니처 유지
-            userJoinService.signupUser(processedDto, userSignupVO, files);
+            userJoinService.signupUser(processedDto, new UserSignupVO(), files);
 
             // 사용자 타입에 따른 성공 메시지
             String successMessage = "producer".equals(prod) ?

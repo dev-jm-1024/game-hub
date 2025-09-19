@@ -1,6 +1,7 @@
 package kr.plusb3b.games.gamehub.domain.board.entity;
 
 import jakarta.persistence.*;
+import kr.plusb3b.games.gamehub.domain.board.vo.business.BoardName;
 import kr.plusb3b.games.gamehub.domain.game.entity.Games;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,8 +20,12 @@ public class Board {
     @Column(name="board_id")
     private String boardId;
 
+
     // 게시판 이름 (예: 공지사항, 자유게시판 등)
-    private String boardName;
+    @Embedded
+    @AttributeOverride(name = "boardName",
+            column = @Column(name = "board_name", length = 20, nullable = false))
+    private BoardName boardName;
 
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Games> games = new ArrayList<>();
@@ -44,17 +49,18 @@ public class Board {
     // 기본 생성자 (JPA에서 필수로 요구됨)
     public Board() {}
 
-    public Board(String boardId, String boardName, int boardAct) {
+    public Board(String boardId, BoardName boardName, int boardAct) {
         this.boardId = boardId;
         this.boardName = boardName;
         this.boardAct = boardAct;
     }
 
+
     @Override
     public String toString() {
         return "Board{" +
                 "boardId='" + boardId + '\'' +
-                ", boardName='" + boardName + '\'' +
+                ", boardName=" + boardName +
                 ", games=" + games +
                 ", boardAct=" + boardAct +
                 '}';
@@ -70,6 +76,10 @@ public class Board {
         return boardAct == 0;
     }
 
+    public void changeBoardStatus(int status){
+        this.boardAct = status;
+    }
+
     //게시판 상태가 활성화인 지 검사
     public boolean isActivateBoard(){
         if(this.boardAct == 1)
@@ -78,18 +88,11 @@ public class Board {
         return false;
     }
 
-    //게시판 이름 변경
-    public void changeBoardName(String newName){
+    // Board 엔티티 안에 추가
+    public void changeBoardName(BoardName newName) {
         this.boardName = newName;
     }
 
-    //게시판 이름 업데이트
-    public void updateBoardName(String newBoardName){
-        if(newBoardName == null || newBoardName.isBlank()){
-            throw new IllegalArgumentException("Board name cannot be blank");
-        }
 
-        this.boardName = newBoardName;
-    }
 
 }

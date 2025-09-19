@@ -1,20 +1,17 @@
 package kr.plusb3b.games.gamehub.api.controller.board.rest;
 
 import jakarta.servlet.http.HttpServletRequest;
-import kr.plusb3b.games.gamehub.application.board.PostsInteractionServiceImpl;
-import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
+import jakarta.servlet.http.HttpServletResponse;
 import kr.plusb3b.games.gamehub.domain.board.entity.PostsReactionCount;
 import kr.plusb3b.games.gamehub.domain.board.repository.PostsRepository;
 import kr.plusb3b.games.gamehub.domain.board.service.PostsInteractionService;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
-import kr.plusb3b.games.gamehub.domain.user.entity.UserPostsReaction;
-import kr.plusb3b.games.gamehub.domain.user.repository.UserPostsReactionRepository;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping(path="/api/v1/board/posts")
@@ -34,8 +31,8 @@ public class RestPostsInteractionController {
 
     // 좋아요 등록: POST /api/v1/board/posts/{postId}/reactions/likes
     @PostMapping("/{postId}/reactions/likes")
-    public ResponseEntity<?> createLike(@PathVariable("postId") Long postId,
-                                        HttpServletRequest request) {
+    public ResponseEntity<?> createPostsLike(@PathVariable("postId") Long postId,
+                                        HttpServletRequest request, HttpServletResponse response) {
 
         // 1. 로그인 확인
         User user = access.getAuthenticatedUser(request);
@@ -44,16 +41,10 @@ public class RestPostsInteractionController {
                     .body("로그인이 필요합니다");
         }
 
-        // 2. 게시물 존재 확인
-        Optional<Posts> postsOpt = postsRepo.findById(postId);
-        if (postsOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("게시물이 존재하지 않습니다");
-        }
 
-        // 3. 좋아요 등록 처리
+        // 2. 좋아요 등록 처리
         try {
-            boolean result = postInteract.likePost(user, postsOpt.get());
+            boolean result = postInteract.likePost(user, postId);
 
             if (result) {
                 return ResponseEntity.status(HttpStatus.CREATED)
@@ -81,16 +72,10 @@ public class RestPostsInteractionController {
                     .body("로그인이 필요합니다");
         }
 
-        // 2. 게시물 존재 확인
-        Optional<Posts> postsOpt = postsRepo.findById(postId);
-        if (postsOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("게시물이 존재하지 않습니다");
-        }
 
         // 3. 좋아요 취소 처리
         try {
-            boolean result = postInteract.likePostCancel(user, postsOpt.get());
+            boolean result = postInteract.likePostCancel(user, postId);
 
             if (result) {
                 return ResponseEntity.status(HttpStatus.OK)
@@ -118,16 +103,10 @@ public class RestPostsInteractionController {
                     .body("로그인이 필요합니다");
         }
 
-        // 2. 게시물 존재 확인
-        Optional<Posts> postsOpt = postsRepo.findById(postId);
-        if (postsOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("게시물이 존재하지 않습니다");
-        }
 
-        // 3. 싫어요 등록 처리
+        // 2. 싫어요 등록 처리
         try {
-            boolean result = postInteract.dislikePost(user, postsOpt.get());
+            boolean result = postInteract.dislikePost(user, postId);
 
             if (result) {
                 return ResponseEntity.status(HttpStatus.CREATED)
@@ -155,16 +134,10 @@ public class RestPostsInteractionController {
                     .body("로그인이 필요합니다");
         }
 
-        // 2. 게시물 존재 확인
-        Optional<Posts> postsOpt = postsRepo.findById(postId);
-        if (postsOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("게시물이 존재하지 않습니다");
-        }
 
-        // 3. 싫어요 취소 처리
+        // 2. 싫어요 취소 처리
         try {
-            boolean result = postInteract.dislikePostCancel(user, postsOpt.get());
+            boolean result = postInteract.dislikePostCancel(user, postId);
 
             if (result) {
                 return ResponseEntity.status(HttpStatus.OK)
@@ -187,29 +160,12 @@ public class RestPostsInteractionController {
 
         // 1. 로그인 확인
         User user = access.getAuthenticatedUser(request);
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("로그인이 필요합니다");
-        }
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다");
 
-        // 2. 게시물 존재 확인
-        Optional<Posts> postsOpt = postsRepo.findById(postId);
-        if (postsOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("게시물이 존재하지 않습니다");
-        }
 
-        Posts posts = postsOpt.get();
-
-        // 3. 자신의 게시물 신고 방지
-        if (user.getMbId().equals(posts.getUser().getMbId())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("자신의 게시물은 신고할 수 없습니다");
-        }
-
-        // 4. 신고 처리
+        // 2. 신고 처리
         try {
-            boolean result = postInteract.reportPost(user, posts);
+            boolean result = postInteract.reportPost(user, postId);
 
             if (result) {
                 return ResponseEntity.status(HttpStatus.OK)
@@ -228,7 +184,6 @@ public class RestPostsInteractionController {
     // 게시물 반응 조회: GET /api/v1/board/posts/{postId}/reactions
     @GetMapping("/{postId}/reactions")
     public ResponseEntity<?> getPostReactions(@PathVariable("postId") Long postId) {
-
         try {
             PostsReactionCount reactionCount = postInteract.getPostsReactionCount(postId);
 
@@ -237,7 +192,14 @@ public class RestPostsInteractionController {
                         .body("게시물이 존재하지 않습니다");
             }
 
-            return ResponseEntity.ok(reactionCount);
+            // Map 으로 변환하여 순환참조 방지
+            Map<String, Integer> response = Map.of(
+                    "likeCount", reactionCount.getLikeCount(),
+                    "dislikeCount", reactionCount.getDislikeCount(),
+                    "reportCount", reactionCount.getReportCount()
+            );
+
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -2,6 +2,7 @@ package kr.plusb3b.games.gamehub.api.controller.admin.rest;
 
 import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.domain.board.service.PostsService;
+import kr.plusb3b.games.gamehub.domain.board.service.admin.AdminPostsService;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import org.springframework.http.HttpStatus;
@@ -17,10 +18,13 @@ public class RestAdminPostsController {
 
     private final AccessControlService access;
     private final PostsService postsService;
+    private final AdminPostsService adminPostsService;
 
-    public RestAdminPostsController(AccessControlService access, PostsService postsService) {
+    public RestAdminPostsController(AccessControlService access, PostsService postsService,
+                                    AdminPostsService adminPostsService) {
         this.access = access;
         this.postsService = postsService;
+        this.adminPostsService = adminPostsService;
     }
 
 
@@ -37,7 +41,7 @@ public class RestAdminPostsController {
         }
 
         try {
-            boolean result = postsService.deactivatePost(postId);
+            boolean result = adminPostsService.deactivatePost(postId);
             if(!result) return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("게시물 삭제에 실패했습니다");
 
             return ResponseEntity.status(HttpStatus.OK).body("삭제에 성공하였습니다");

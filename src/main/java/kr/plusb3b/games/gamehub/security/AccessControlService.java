@@ -4,6 +4,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.*;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserAuth;
+import kr.plusb3b.games.gamehub.domain.user.vo.business.AuthUserId;
 import kr.plusb3b.games.gamehub.security.jwt.JwtProvider;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserAuthRepository;
 import org.springframework.stereotype.Component;
@@ -49,7 +50,7 @@ public class AccessControlService {
 //        User user1 = userRepo.findByUserAuth_AuthUserId(authUserId)
 //                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        Optional<UserAuth> userAuthOpt = userAuthRepo.findByAuthUserId(authUserId);
+        Optional<UserAuth> userAuthOpt = userAuthRepo.findByAuthUserId(AuthUserId.of(authUserId));
         if(!(userAuthOpt.isPresent())) {
             throw new IllegalArgumentException("사용자를 찾을 수 없습니다");
         }
@@ -75,6 +76,21 @@ public class AccessControlService {
 
         if(user.getMbRole() != User.Role.ROLE_ADMIN) {
             response.sendRedirect("/access-denied");
+            return;
+        }
+    }
+
+    public void validateUserAccess(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        User user = getAuthenticatedUser(request);
+
+        if(user == null) {
+            response.sendRedirect("/login");
+            return;
+        }
+
+        if(user.getMbRole() != User.Role.ROLE_USER) {
+            response.sendRedirect("/");
             return;
         }
     }

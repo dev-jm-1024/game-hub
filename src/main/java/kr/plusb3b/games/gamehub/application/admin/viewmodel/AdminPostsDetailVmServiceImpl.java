@@ -1,15 +1,12 @@
-package kr.plusb3b.games.gamehub.application.board.viewmodel;
+package kr.plusb3b.games.gamehub.application.admin.viewmodel;
 
 import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
 import kr.plusb3b.games.gamehub.domain.board.service.BoardService;
 import kr.plusb3b.games.gamehub.domain.board.service.PostFilesService;
 import kr.plusb3b.games.gamehub.domain.board.service.PostsService;
-import kr.plusb3b.games.gamehub.domain.board.service.viewmodel.AdminPostsDetailVmService;
+import kr.plusb3b.games.gamehub.domain.admin.service.viewmodel.AdminPostsDetailVmService;
 import kr.plusb3b.games.gamehub.view.admin.AdminPostsDetailVM;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class AdminPostsDetailVmServiceImpl implements AdminPostsDetailVmService {

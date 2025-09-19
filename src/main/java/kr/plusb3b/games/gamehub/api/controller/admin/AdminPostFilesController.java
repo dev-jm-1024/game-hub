@@ -2,7 +2,7 @@ package kr.plusb3b.games.gamehub.api.controller.admin;
 
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
 import kr.plusb3b.games.gamehub.domain.board.entity.PostFiles;
-import kr.plusb3b.games.gamehub.domain.board.service.viewmodel.AdminPostFilesVmService;
+import kr.plusb3b.games.gamehub.domain.admin.service.viewmodel.AdminPostFilesVmService;
 import kr.plusb3b.games.gamehub.view.admin.AdminPostFilesVM;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

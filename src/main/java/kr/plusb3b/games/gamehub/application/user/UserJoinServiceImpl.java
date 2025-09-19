@@ -1,6 +1,7 @@
 package kr.plusb3b.games.gamehub.application.user;
 
 import jakarta.servlet.http.HttpServletRequest;
+import kr.plusb3b.games.gamehub.common.util.FileValidator;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.dto.UserSignupDto;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserAuth;
@@ -10,6 +11,7 @@ import kr.plusb3b.games.gamehub.domain.user.vo.UserSignupVO;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserAuthRepository;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserPrivateRepository;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
+import kr.plusb3b.games.gamehub.domain.user.vo.business.*;
 import kr.plusb3b.games.gamehub.security.AccessControlService;
 import kr.plusb3b.games.gamehub.security.SnowflakeIdGenerator;
 import kr.plusb3b.games.gamehub.upload.FileUpload;
@@ -126,7 +128,7 @@ public class UserJoinServiceImpl implements UserJoinService {
 
     @Override
     public boolean isDuplicatedLoginId(String loginId) {
-        Optional<UserAuth> userAuthOpt = userAuthRepo.findById(loginId);
+        Optional<UserAuth> userAuthOpt = userAuthRepo.findById(AuthUserId.of(loginId));
         return userAuthOpt.isPresent();
     }
 
@@ -153,7 +155,7 @@ public class UserJoinServiceImpl implements UserJoinService {
         return new User(
                 userSignupVO.getMbReportCnt(),
                 mbId,
-                userSignupDto.getMbNickname(),
+                MbNickName.of(userSignupDto.getMbNickname()),
                 profileUrl, // 프로필 URL 설정
                 userSignupDto.getMbStatusMessage(),
                 LocalDateTime.now(),
@@ -169,9 +171,9 @@ public class UserJoinServiceImpl implements UserJoinService {
         return new UserPrivate(
                 priMbId,
                 user,
-                userSignupDto.getPriEmail(),
-                userSignupDto.getPriBirth(),
-                userSignupDto.getPriGender()
+                PriEmail.of(userSignupDto.getPriEmail()),
+                PriBirth.of(userSignupDto.getPriBirth()),
+                PriGender.of(userSignupDto.getPriGender())
         );
     }
 }

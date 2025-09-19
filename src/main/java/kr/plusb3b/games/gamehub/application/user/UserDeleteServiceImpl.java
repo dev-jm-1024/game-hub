@@ -33,7 +33,7 @@ public class UserDeleteServiceImpl implements UserDeleteService {
         UserAuth userAuth = userAuthRepo.findByUser(user)
                 .orElseThrow(() -> new IllegalArgumentException("인증 정보를 찾을 수 없습니다."));
 
-        if (!passwordEncoder.matches(password, userAuth.getAuthPassword())) {
+        if (!passwordEncoder.matches(password, userAuth.getAuthPassword().getAuthPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 

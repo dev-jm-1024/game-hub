@@ -3,6 +3,7 @@ package kr.plusb3b.games.gamehub.domain.user.repository;
 import jakarta.transaction.Transactional;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserPrivate;
+import kr.plusb3b.games.gamehub.domain.user.vo.business.PriEmail;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -28,6 +29,5 @@ public interface UserPrivateRepository extends JpaRepository<UserPrivate, Long> 
 
     Optional<UserPrivate> findByUser(User user);
 
-
-
+    Optional<UserPrivate> findUserPrivateByPriEmail(PriEmail priEmail);
 }

@@ -52,10 +52,15 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
 
     @Override
     @Transactional
-    public boolean likeComment(User user, Comments comment) {
+    public boolean likeComment(User user, Long commentId) {
+
+        Comments comments = commentsRepo.findById(commentId).orElseThrow(
+                () -> new IllegalArgumentException("댓글이 존재하지 않습니다")
+        );
+
         try {
             // 1. 기존의 사용자 reaction 확인
-            Optional<UserCommentsReaction> reactOpt = userCommentsReactionRepo.findByUserAndComment(user, comment);
+            Optional<UserCommentsReaction> reactOpt = userCommentsReactionRepo.findByUserAndComment(user, comments);
 
             if (reactOpt.isPresent()) {
                 UserCommentsReaction reaction = reactOpt.get();
@@ -67,7 +72,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
                     userCommentsReactionRepo.delete(reaction);
                     userCommentsReactionRepo.flush(); // 즉시 DB 반영
 
-                    int decrementResult = commentsReactionRepo.decrementLikeCountByCommentId(comment.getCommentId());
+                    int decrementResult = commentsReactionRepo.decrementLikeCountByCommentId(commentId);
                     System.out.println("댓글 좋아요 카운트 감소 결과: " + decrementResult);
 
                     return true;
@@ -77,7 +82,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
                     System.out.println("댓글 싫어요→좋아요 변경 처리 시작");
 
                     // 싫어요 카운트 감소
-                    int decrementDislikeResult = commentsReactionRepo.decrementDislikeCountByCommentId(comment.getCommentId());
+                    int decrementDislikeResult = commentsReactionRepo.decrementDislikeCountByCommentId(commentId);
                     System.out.println("댓글 싫어요 카운트 감소 결과: " + decrementDislikeResult);
 
                     // 반응 타입 변경
@@ -86,7 +91,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
                     userCommentsReactionRepo.flush();
 
                     // 좋아요 카운트 증가
-                    int incrementLikeResult = commentsReactionRepo.incrementLikeCountByCommentId(comment.getCommentId());
+                    int incrementLikeResult = commentsReactionRepo.incrementLikeCountByCommentId(commentId);
                     System.out.println("댓글 좋아요 카운트 증가 결과: " + incrementLikeResult);
 
                     return true;
@@ -97,7 +102,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
             System.out.println("댓글 새로운 좋아요 등록 처리 시작");
 
             // 좋아요 카운트 증가
-            int incrementResult = commentsReactionRepo.incrementLikeCountByCommentId(comment.getCommentId());
+            int incrementResult = commentsReactionRepo.incrementLikeCountByCommentId(commentId);
             System.out.println("댓글 좋아요 카운트 증가 결과: " + incrementResult);
 
             if (incrementResult == 0) {
@@ -105,7 +110,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
 
                 // CommentsReactionCount 레코드가 없으면 새로 생성
                 CommentsReactionCount newReactionCount = new CommentsReactionCount(
-                        comment, 1, 0, 0  // 좋아요 1, 싫어요 0, 신고 0
+                        comments, 1, 0, 0  // 좋아요 1, 싫어요 0, 신고 0
                 );
                 commentsReactionRepo.save(newReactionCount);
                 System.out.println("새로운 CommentsReactionCount 레코드 생성 완료");
@@ -118,7 +123,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
             UserCommentsReaction newReaction = new UserCommentsReaction(
                     reactionId,
                     user,
-                    comment,
+                    comments,
                     UserCommentsReaction.ReactionType.LIKE,
                     LocalDate.now()
             );
@@ -143,10 +148,15 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
 
     @Override
     @Transactional
-    public boolean dislikeComment(User user, Comments comment) {
+    public boolean dislikeComment(User user, Long commentId) {
+
+        Comments comments = commentsRepo.findById(commentId).orElseThrow(
+                () -> new IllegalArgumentException("댓글이 존재하지 않습니다")
+        );
+
         try {
             // 1. 기존의 사용자 reaction 확인
-            Optional<UserCommentsReaction> reactOpt = userCommentsReactionRepo.findByUserAndComment(user, comment);
+            Optional<UserCommentsReaction> reactOpt = userCommentsReactionRepo.findByUserAndComment(user, comments);
 
             if (reactOpt.isPresent()) {
                 UserCommentsReaction reaction = reactOpt.get();
@@ -158,7 +168,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
                     userCommentsReactionRepo.delete(reaction);
                     userCommentsReactionRepo.flush();
 
-                    int decrementResult = commentsReactionRepo.decrementDislikeCountByCommentId(comment.getCommentId());
+                    int decrementResult = commentsReactionRepo.decrementDislikeCountByCommentId(commentId);
                     System.out.println("댓글 싫어요 카운트 감소 결과: " + decrementResult);
 
                     return true;
@@ -168,7 +178,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
                     System.out.println("댓글 좋아요→싫어요 변경 처리 시작");
 
                     // 좋아요 카운트 감소
-                    int decrementLikeResult = commentsReactionRepo.decrementLikeCountByCommentId(comment.getCommentId());
+                    int decrementLikeResult = commentsReactionRepo.decrementLikeCountByCommentId(commentId);
                     System.out.println("댓글 좋아요 카운트 감소 결과: " + decrementLikeResult);
 
                     // 반응 타입 변경
@@ -177,7 +187,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
                     userCommentsReactionRepo.flush();
 
                     // 싫어요 카운트 증가
-                    int incrementDislikeResult = commentsReactionRepo.incrementDislikeCountByCommentId(comment.getCommentId());
+                    int incrementDislikeResult = commentsReactionRepo.incrementDislikeCountByCommentId(commentId);
                     System.out.println("댓글 싫어요 카운트 증가 결과: " + incrementDislikeResult);
 
                     return true;
@@ -188,7 +198,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
             System.out.println("댓글 새로운 싫어요 등록 처리 시작");
 
             // 싫어요 카운트 증가
-            int incrementResult = commentsReactionRepo.incrementDislikeCountByCommentId(comment.getCommentId());
+            int incrementResult = commentsReactionRepo.incrementDislikeCountByCommentId(commentId);
             System.out.println("댓글 싫어요 카운트 증가 결과: " + incrementResult);
 
             if (incrementResult == 0) {
@@ -196,7 +206,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
 
                 // CommentsReactionCount 레코드가 없으면 새로 생성
                 CommentsReactionCount newReactionCount = new CommentsReactionCount(
-                        comment, 0, 1, 0  // 좋아요 0, 싫어요 1, 신고 0
+                        comments, 0, 1, 0  // 좋아요 0, 싫어요 1, 신고 0
                 );
                 commentsReactionRepo.save(newReactionCount);
                 System.out.println("새로운 CommentsReactionCount 레코드 생성 완료");
@@ -209,7 +219,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
             UserCommentsReaction newReaction = new UserCommentsReaction(
                     reactionId,
                     user,
-                    comment,
+                    comments,
                     UserCommentsReaction.ReactionType.DISLIKE,
                     LocalDate.now()
             );
@@ -234,30 +244,35 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
 
     @Override
     @Transactional
-    public boolean likeCommentCancel(User user, Comments comment) {
+    public boolean likeCommentCancel(User user, Long commentId) {
         // likeComment()에서 토글 처리하므로 동일하게 호출
-        return likeComment(user, comment);
+        return likeComment(user, commentId);
     }
 
     @Override
     @Transactional
-    public boolean dislikeCommentCancel(User user, Comments comment) {
+    public boolean dislikeCommentCancel(User user, Long commentId) {
         // dislikeComment()에서 토글 처리하므로 동일하게 호출
-        return dislikeComment(user, comment);
+        return dislikeComment(user, commentId);
     }
 
     @Override
     @Transactional
-    public boolean reportComment(User user, Comments comment) {
+    public boolean reportComment(User user, Long commentId) {
+
+        Comments comments = commentsRepo.findById(commentId).orElseThrow(
+                () -> new IllegalArgumentException("댓글이 존재하지 않습니다")
+        );
+
         try {
             // 1. 자신의 댓글을 신고하는 것을 방지
-            if (user.getMbId().equals(comment.getUser().getMbId())) {
+            if (user.getMbId().equals(comments.getUser().getMbId())) {
                 System.out.println("자신의 댓글은 신고할 수 없습니다.");
                 return false;
             }
 
             // 2. 사용자가 해당 댓글을 이미 신고했는지 확인
-            Optional<UserCommentsReaction> existingReaction = userCommentsReactionRepo.findByUserAndComment(user, comment);
+            Optional<UserCommentsReaction> existingReaction = userCommentsReactionRepo.findByUserAndComment(user, comments);
 
             if (existingReaction.isPresent() &&
                     existingReaction.get().getReactionType() == UserCommentsReaction.ReactionType.REPORT) {
@@ -266,7 +281,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
             }
 
             // 3. 댓글의 신고 카운트 증가
-            int result1 = commentsReactionRepo.incrementReportCountByCommentId(comment.getCommentId());
+            int result1 = commentsReactionRepo.incrementReportCountByCommentId(commentId);
             System.out.println("댓글 신고 카운트 증가 결과: " + result1);
 
             if (result1 == 0) {
@@ -274,14 +289,14 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
 
                 // CommentsReactionCount 레코드가 없으면 새로 생성
                 CommentsReactionCount newReactionCount = new CommentsReactionCount(
-                        comment, 0, 0, 1  // 좋아요 0, 싫어요 0, 신고 1
+                        comments, 0, 0, 1  // 좋아요 0, 싫어요 0, 신고 1
                 );
                 commentsReactionRepo.save(newReactionCount);
                 System.out.println("새로운 CommentsReactionCount 레코드 생성 완료");
             }
 
             // 4. 댓글 작성자의 신고 받은 횟수 증가
-            User commentAuthor = comment.getUser();
+            User commentAuthor = comments.getUser();
             commentAuthor.increaseReportCnt(); // User 엔티티의 메서드 사용
             userRepo.save(commentAuthor); // UserRepository 추가 필요
             userRepo.flush();
@@ -295,7 +310,7 @@ public class CommentsInteractionServiceImpl implements CommentsInteractionServic
             UserCommentsReaction reportReaction = new UserCommentsReaction(
                     reactionId,
                     user,
-                    comment,
+                    comments,
                     UserCommentsReaction.ReactionType.REPORT,
                     LocalDate.now()
             );

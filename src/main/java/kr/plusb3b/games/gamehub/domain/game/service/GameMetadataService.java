@@ -1,10 +1,7 @@
 package kr.plusb3b.games.gamehub.domain.game.service;
 
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
-import kr.plusb3b.games.gamehub.domain.game.dto.GameDetailDto;
-import kr.plusb3b.games.gamehub.domain.game.dto.GameUploadDto;
-import kr.plusb3b.games.gamehub.domain.game.dto.GamesInfoDto;
-import kr.plusb3b.games.gamehub.domain.game.dto.SummaryGamesDto;
+import kr.plusb3b.games.gamehub.domain.game.dto.*;
 import kr.plusb3b.games.gamehub.domain.game.entity.Games;
 import kr.plusb3b.games.gamehub.domain.game.entity.GamesFile;
 import kr.plusb3b.games.gamehub.domain.game.vo.GamesVO;
@@ -40,5 +37,6 @@ public interface GameMetadataService {
     //단일 객체 상세 정보 가져오기 (게임 상세 페이지용 - 새로 추가)
     GameDetailDto getGameDetail(String boardId, Long gameId);
 
+    GameUploadResponseDto responseGameUploadResult(Games savedGame, GamesFile savedGamesFile);
 
 }

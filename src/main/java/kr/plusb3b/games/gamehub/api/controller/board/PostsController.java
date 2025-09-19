@@ -2,6 +2,8 @@ package kr.plusb3b.games.gamehub.api.controller.board;
 
 import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.domain.board.dto.PostsNotFoundException;
+import kr.plusb3b.games.gamehub.domain.board.entity.Board;
+import kr.plusb3b.games.gamehub.domain.board.service.BoardService;
 import kr.plusb3b.games.gamehub.domain.board.service.viewmodel.PostDetailVmService;
 import kr.plusb3b.games.gamehub.domain.board.service.viewmodel.PostEditFormVmService;
 import kr.plusb3b.games.gamehub.view.board.PostDetailVM;
@@ -10,6 +12,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/board")
 public class PostsController {
@@ -17,16 +21,22 @@ public class PostsController {
     /**리팩토링 후 의존성**/
     private final PostDetailVmService postDetailVmService;
     private final PostEditFormVmService postEditFormVmService;
+    private final BoardService boardService;
 
-    public PostsController(PostDetailVmService postDetailVmService, PostEditFormVmService postEditFormVmService) {
+    public PostsController(PostDetailVmService postDetailVmService, PostEditFormVmService postEditFormVmService,
+                           BoardService boardService) {
         this.postDetailVmService = postDetailVmService;
         this.postEditFormVmService = postEditFormVmService;
+        this.boardService = boardService;
     }
 
     //글 작성 페이지 경로 처리
     @GetMapping("/{boardId}/new")
     public String viewPostForm(@PathVariable("boardId") String boardId, Model model) {
+        List<Board> vm = boardService.getAllBoards();
+
         model.addAttribute("boardId", boardId);
+        model.addAttribute("vm", vm);
         return "board/common/post-form";
     }
 

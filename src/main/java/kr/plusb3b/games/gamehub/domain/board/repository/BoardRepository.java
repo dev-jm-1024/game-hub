@@ -1,6 +1,7 @@
 package kr.plusb3b.games.gamehub.domain.board.repository;
 
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
+import kr.plusb3b.games.gamehub.domain.board.vo.business.BoardName;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -20,4 +21,6 @@ public interface BoardRepository extends JpaRepository<Board, String> {
     int updateBoardActByBoardId(@Param("boardAct") int boardAct, @Param("boardId") String boardId);
 
     List<Board> findBoardsByBoardName(String boardName);
+
+    boolean existsBoardByBoardName(BoardName boardName);
 }

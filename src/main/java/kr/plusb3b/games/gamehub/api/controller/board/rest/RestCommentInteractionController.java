@@ -1,6 +1,7 @@
 package kr.plusb3b.games.gamehub.api.controller.board.rest;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import kr.plusb3b.games.gamehub.domain.board.entity.Comments;
 import kr.plusb3b.games.gamehub.domain.board.entity.CommentsReactionCount;
 import kr.plusb3b.games.gamehub.domain.board.repository.CommentsRepository;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Optional;
 
 @RestController
@@ -19,14 +21,10 @@ public class RestCommentInteractionController {
 
     private final CommentsInteractionService commentsInteract;
     private final AccessControlService access;
-    private final CommentsRepository commentsRepo;
 
-    public RestCommentInteractionController(CommentsInteractionService commentsInteract,
-                                            AccessControlService access,
-                                            CommentsRepository commentsRepo) {
+    public RestCommentInteractionController(CommentsInteractionService commentsInteract, AccessControlService access) {
         this.commentsInteract = commentsInteract;
         this.access = access;
-        this.commentsRepo = commentsRepo;
     }
 
     // 좋아요 등록: POST /api/v1/board/posts/comments/{commentId}/reactions/likes
@@ -41,29 +39,16 @@ public class RestCommentInteractionController {
                     .body("로그인이 필요합니다");
         }
 
-        // 2. 댓글 존재 확인
-        Optional<Comments> commentsOpt = commentsRepo.findById(commentId);
-        if (commentsOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("댓글이 존재하지 않습니다");
+        boolean result = commentsInteract.likeComment(user, commentId);
+
+        if (result) {
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body("좋아요 등록 성공");
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("이미 반응이 등록되어 있습니다");
         }
 
-        // 3. 좋아요 등록 처리
-        try {
-            boolean result = commentsInteract.likeComment(user, commentsOpt.get());
-
-            if (result) {
-                return ResponseEntity.status(HttpStatus.CREATED)
-                        .body("좋아요 등록 성공");
-            } else {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("이미 반응이 등록되어 있습니다");
-            }
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("서버 오류가 발생했습니다");
-        }
     }
 
     // 좋아요 취소: DELETE /api/v1/board/posts/comments/{commentId}/reactions/likes
@@ -78,167 +63,91 @@ public class RestCommentInteractionController {
                     .body("로그인이 필요합니다");
         }
 
-        // 2. 댓글 존재 확인
-        Optional<Comments> commentsOpt = commentsRepo.findById(commentId);
-        if (commentsOpt.isEmpty()) {
+        boolean result = commentsInteract.likeCommentCancel(user, commentId);
+
+        if (result) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body("좋아요 취소 성공");
+        } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("댓글이 존재하지 않습니다");
-        }
-
-        // 3. 좋아요 취소 처리
-        try {
-            boolean result = commentsInteract.likeCommentCancel(user, commentsOpt.get());
-
-            if (result) {
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body("좋아요 취소 성공");
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("취소할 좋아요가 없습니다");
-            }
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("서버 오류가 발생했습니다");
+                    .body("취소할 좋아요가 없습니다");
         }
     }
 
     // 싫어요 등록: POST /api/v1/board/posts/comments/{commentId}/reactions/dislikes
     @PostMapping("/{commentId}/reactions/dislikes")
     public ResponseEntity<?> createDislike(@PathVariable("commentId") Long commentId,
-                                           HttpServletRequest request) {
+                                           HttpServletRequest request,
+                                           HttpServletResponse response) throws IOException {
 
         // 1. 로그인 확인
         User user = access.getAuthenticatedUser(request);
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("로그인이 필요합니다");
-        }
+        access.validateUserAccess(request, response);
+        boolean result = commentsInteract.dislikeComment(user, commentId);
 
-        // 2. 댓글 존재 확인
-        Optional<Comments> commentsOpt = commentsRepo.findById(commentId);
-        if (commentsOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("댓글이 존재하지 않습니다");
-        }
-
-        // 3. 싫어요 등록 처리
-        try {
-            boolean result = commentsInteract.dislikeComment(user, commentsOpt.get());
-
-            if (result) {
-                return ResponseEntity.status(HttpStatus.CREATED)
-                        .body("싫어요 등록 성공");
-            } else {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("이미 반응이 등록되어 있습니다");
-            }
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("서버 오류가 발생했습니다");
+        if (result) {
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body("싫어요 등록 성공");
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("이미 반응이 등록되어 있습니다");
         }
     }
 
     // 싫어요 취소: DELETE /api/v1/board/posts/comments/{commentId}/reactions/dislikes
     @DeleteMapping("/{commentId}/reactions/dislikes")
     public ResponseEntity<?> deleteDislike(@PathVariable("commentId") Long commentId,
-                                           HttpServletRequest request) {
+                                           HttpServletRequest request,
+                                                HttpServletResponse response) throws IOException{
 
         // 1. 로그인 확인
         User user = access.getAuthenticatedUser(request);
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("로그인이 필요합니다");
-        }
+        access.validateUserAccess(request, response);
 
-        // 2. 댓글 존재 확인
-        Optional<Comments> commentsOpt = commentsRepo.findById(commentId);
-        if (commentsOpt.isEmpty()) {
+        boolean result = commentsInteract.dislikeCommentCancel(user, commentId);
+
+        if (result) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body("싫어요 취소 성공");
+        } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("댓글이 존재하지 않습니다");
+                    .body("취소할 싫어요가 없습니다");
         }
 
-        // 3. 싫어요 취소 처리
-        try {
-            boolean result = commentsInteract.dislikeCommentCancel(user, commentsOpt.get());
-
-            if (result) {
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body("싫어요 취소 성공");
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("취소할 싫어요가 없습니다");
-            }
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("서버 오류가 발생했습니다");
-        }
     }
 
     // 댓글 반응 조회: GET /api/v1/board/posts/comments/{commentId}/reactions
     @GetMapping("/{commentId}/reactions")
     public ResponseEntity<?> getCommentReactions(@PathVariable("commentId") Long commentId) {
 
-        try {
-            CommentsReactionCount reactionCount = commentsInteract.getCommentsReactionCount(commentId);
+        CommentsReactionCount reactionCount = commentsInteract.getCommentsReactionCount(commentId);
 
-            if (reactionCount == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("댓글이 존재하지 않습니다");
-            }
-
-            return ResponseEntity.ok(reactionCount);
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("서버 오류가 발생했습니다");
+        if (reactionCount == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("댓글이 존재하지 않습니다");
         }
+
+        return ResponseEntity.ok(reactionCount);
     }
 
     // 댓글 신고: PATCH /api/v1/board/posts/comments/{commentId}/reactions/report
     @PatchMapping("/{commentId}/reactions/report")
     public ResponseEntity<?> reportComment(@PathVariable("commentId") Long commentId,
-                                           HttpServletRequest request) {
+                                           HttpServletRequest request,
+                                           HttpServletResponse response) throws IOException {
 
         // 1. 로그인 확인
         User user = access.getAuthenticatedUser(request);
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("로그인이 필요합니다");
-        }
+        access.validateUserAccess(request, response);
 
-        // 2. 댓글 존재 확인
-        Optional<Comments> commentsOpt = commentsRepo.findById(commentId);
-        if (commentsOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("댓글이 존재하지 않습니다");
-        }
+        boolean result = commentsInteract.reportComment(user, commentId);
 
-        Comments comment = commentsOpt.get();
-
-        // 3. 자신의 댓글 신고 방지
-        if (user.getMbId().equals(comment.getUser().getMbId())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("자신의 댓글은 신고할 수 없습니다");
-        }
-
-        // 4. 댓글 신고 처리
-        try {
-            boolean result = commentsInteract.reportComment(user, comment);
-
-            if (result) {
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body("댓글 신고가 접수되었습니다");
-            } else {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("이미 신고한 댓글입니다");
-            }
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("서버 오류가 발생했습니다");
+        if (result) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body("댓글 신고가 접수되었습니다");
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("이미 신고한 댓글입니다");
         }
     }
 }

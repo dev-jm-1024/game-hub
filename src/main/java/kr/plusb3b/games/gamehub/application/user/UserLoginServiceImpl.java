@@ -9,6 +9,7 @@ import kr.plusb3b.games.gamehub.domain.user.repository.UserAuthRepository;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserLoginInfoRepository;
 import kr.plusb3b.games.gamehub.domain.user.repository.UserRepository;
 import kr.plusb3b.games.gamehub.domain.user.service.UserLoginService;
+import kr.plusb3b.games.gamehub.domain.user.vo.business.AuthUserId;
 import kr.plusb3b.games.gamehub.security.SnowflakeIdGenerator;
 import kr.plusb3b.games.gamehub.security.jwt.JwtProvider;
 import org.slf4j.Logger;
@@ -44,11 +45,11 @@ public class UserLoginServiceImpl implements UserLoginService {
 
     /** 로그인 ID로 UserAuth를 조회 */
     @Override
-    public Optional<UserAuth> findUserAuthByLoginId(String loginId) {
-        return userAuthRepo.findByAuthUserId(loginId);
+    public Optional<UserAuth> findUserAuthByLoginId(String authUserId) {
+        return userAuthRepo.findByAuthUserId(AuthUserId.of(authUserId));
     }
 
-    /** UserAuth로부터 User 객체 반환 */
+    /** UserAuth 로부터 User 객체 반환 */
     @Override
     public Optional<User> getUserByAuth(UserAuth userAuth) {
         return Optional.ofNullable(userAuth.getUser());
@@ -57,7 +58,7 @@ public class UserLoginServiceImpl implements UserLoginService {
     @Override
     public boolean isPasswordMatch(UserAuth userAuth, String rawPassword) {
         if (userAuth == null || rawPassword == null) return false;
-        return passwordEncoder.matches(rawPassword, userAuth.getAuthPassword());
+        return passwordEncoder.matches(rawPassword, userAuth.getAuthPassword().getAuthPassword());
     }
 
 

@@ -26,14 +26,10 @@ public class AdminController {
     }
 
     @GetMapping
-    public String viewAdminPage(Model model, HttpServletRequest request){
+    public String viewAdminPage(Model model, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
+        access.validateAdminAccess(request, response);
         User user = access.getAuthenticatedUser(request);
-        if(user == null) return "redirect: /game-hub/login";
-
-        if(user.getMbRole() != User.Role.ROLE_ADMIN) {
-            return "redirect:/game-hub";
-        }
 
         model.addAttribute("admin", user);
 

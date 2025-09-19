@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 개발자 도구 안내
     console.log('%c개발자 도구 명령어:', 'color: #3f51b5; font-weight: bold; font-size: 14px;');
-    console.log('%c• simulateReaction(type) - 반응 시뮬레이션', 'color: #7986cb;');
+    console.log('%c• callRealReactionAPI(postId, type) - 실제 반응 API', 'color: #7986cb;');
     console.log('%c• getCurrentReactionState() - 현재 반응 상태', 'color: #7986cb;');
     console.log('%c• resetReactions() - 반응 초기화', 'color: #7986cb;');
 });
@@ -110,8 +110,8 @@ async function handleReaction(type) {
             newReaction = type;
         }
 
-        // API 호출 시뮬레이션
-        const result = await simulateReactionAPI(postId, newReaction);
+        // 실제 API 호출
+        const result = await callRealReactionAPI(postId, newReaction);
 
         // UI 업데이트
         window.postDetailData.reactType = newReaction;
@@ -243,8 +243,8 @@ async function handleDeletePost(e) {
         isDeleting = true;
         setDeleteLoadingState(true);
 
-        // API 호출 시뮬레이션
-        await simulateDeleteAPI(postId);
+        // 실제 API 호출
+        await callRealDeleteAPI(postId);
 
         showToast('게시글이 성공적으로 삭제되었습니다.', 'success');
 
@@ -374,56 +374,79 @@ function handleKeyboardShortcuts(e) {
     }
 }
 
-// API 시뮬레이션 함수들
-async function simulateReactionAPI(postId, reactionType) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            // 95% 확률로 성공
-            if (Math.random() > 0.05) {
-                // 현재 카운트 기반으로 새 카운트 계산
-                const currentLikes = window.postDetailData.likeCount;
-                const currentDislikes = window.postDetailData.dislikeCount;
-                const currentReaction = window.postDetailData.reactType;
+// 실제 API 호출 함수
+async function callRealReactionAPI(postId, reactionType) {
+    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
-                let newLikes = currentLikes;
-                let newDislikes = currentDislikes;
+    let url, method;
 
-                // 현재 반응 제거
-                if (currentReaction === 'LIKE') newLikes--;
-                if (currentReaction === 'DISLIKE') newDislikes--;
+    if (reactionType === 'LIKE') {
+        url = `/api/v1/board/posts/${postId}/reactions/likes`;
+        method = 'POST';
+    } else if (reactionType === 'DISLIKE') {
+        url = `/api/v1/board/posts/${postId}/reactions/dislikes`;
+        method = 'POST';
+    } else if (reactionType === 'NONE') {
+        // 현재 반응에 따라 취소 URL 결정
+        const currentReaction = window.postDetailData.reactType;
+        if (currentReaction === 'LIKE') {
+            url = `/api/v1/board/posts/${postId}/reactions/likes`;
+            method = 'DELETE';
+        } else if (currentReaction === 'DISLIKE') {
+            url = `/api/v1/board/posts/${postId}/reactions/dislikes`;
+            method = 'DELETE';
+        }
+    }
 
-                // 새 반응 추가
-                if (reactionType === 'LIKE') newLikes++;
-                if (reactionType === 'DISLIKE') newDislikes++;
+    const headers = {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+    };
+    headers[csrfHeader] = csrfToken;
 
-                console.log('✅ API 응답: 반응 성공');
-                resolve({
-                    success: true,
-                    likeCount: Math.max(0, newLikes),
-                    dislikeCount: Math.max(0, newDislikes),
-                    userReaction: reactionType
-                });
-            } else {
-                console.log('❌ API 응답: 반응 실패');
-                reject(new Error('서버 오류가 발생했습니다.'));
-            }
-        }, 800);
+    const response = await fetch(url, {
+        method: method,
+        headers: headers
     });
+
+    if (!response.ok) {
+        throw new Error('API 호출 실패');
+    }
+
+    // 현재 카운트 업데이트 후 반환
+    const reactionCountResponse = await fetch(`/api/v1/board/posts/${postId}/reactions`);
+    const reactionData = await reactionCountResponse.json();
+
+    return {
+        success: true,
+        likeCount: reactionData.likeCount,
+        dislikeCount: reactionData.dislikeCount,
+        userReaction: reactionType
+    };
 }
 
-async function simulateDeleteAPI(postId) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            // 90% 확률로 성공
-            if (Math.random() > 0.1) {
-                console.log('✅ API 응답: 삭제 성공');
-                resolve({ success: true });
-            } else {
-                console.log('❌ API 응답: 삭제 실패');
-                reject(new Error('삭제 권한이 없거나 서버 오류가 발생했습니다.'));
-            }
-        }, 2000);
+// 실제 삭제 API 호출 함수
+async function callRealDeleteAPI(postId) {
+    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+    const headers = {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+    };
+    headers[csrfHeader] = csrfToken;
+
+    const response = await fetch(`/api/v1/board/posts/${postId}`, {
+        method: 'DELETE',
+        headers: headers
     });
+
+    if (!response.ok) {
+        throw new Error('삭제 권한이 없거나 서버 오류가 발생했습니다.');
+    }
+
+    return { success: true };
 }
 
 // 토스트 메시지 표시
@@ -642,6 +665,7 @@ function addRippleStyles() {
 addRippleStyles();
 
 // 전역 함수로 노출 (개발자 도구용)
-window.simulateReaction = (type) => handleReaction(type);
+window.callRealReactionAPI = callRealReactionAPI;
+window.callRealDeleteAPI = callRealDeleteAPI;
 window.getCurrentReactionState = getCurrentReactionState;
 window.resetReactions = resetReactions;

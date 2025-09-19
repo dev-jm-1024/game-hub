@@ -23,7 +23,7 @@
                         <a href="/games" class="dropdown-link" role="menuitem">🎮 게임 목록</a>
                     </li>
                     <li class="dropdown-item" role="none">
-                        <a href="/upload" class="dropdown-link" role="menuitem">📤 게임 업로드</a>
+                        <a href="/prod" class="dropdown-link" role="menuitem">📤 게임 업로드</a>
                     </li>
                     <li class="dropdown-item" role="none">
                         <a href="/favorites" class="dropdown-link" role="menuitem">⭐ 즐겨찾기</a>
@@ -44,20 +44,20 @@
                         <a href="/board" class="dropdown-link" role="menuitem">📋 전체 게시판</a>
                     </li>
                     <li class="dropdown-separator" role="none"></li>
-                    <li class="dropdown-item" role="none">
-                        <a href="/board/1/view" class="dropdown-link" role="menuitem">💬 자유 게시판</a>
-                    </li>
-                    <li class="dropdown-item" role="none">
-                        <a href="/board/2/view" class="dropdown-link" role="menuitem">📢 공지사항</a>
-                    </li>
-                    <li class="dropdown-item" role="none">
-                        <a href="/board/3/view" class="dropdown-link" role="menuitem">❓ Q&A</a>
+                    <li class="dropdown-item" role="none" th:each="board : ${boardList}">
+                        <a
+                                th:href="@{'/board/' + ${board.boardId} + '/view'}"
+                                th:text="${board.boardName}"
+                                class="dropdown-link"
+                                role="menuitem"
+                        >
+                            게시판 이름</a>
                     </li>
                 </ul>
             </li>
 
             <!-- 마이페이지 -->
-            <li class="nav-item has-dropdown" role="none">
+            <li class="nav-item has-dropdown" role="none" th:if="${isLoggedIn == true}">
                 <a href="#" class="nav-link dropdown-trigger" role="menuitem" aria-expanded="false" aria-haspopup="true">
                     <span class="nav-text">마이페이지</span>
                     <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -86,27 +86,37 @@
     <div class="user-actions">
         <!-- 로그인/회원가입 드롭다운 -->
         <div class="auth-dropdown has-dropdown">
-            <button class="auth-trigger dropdown-trigger" aria-expanded="false" aria-haspopup="true">
+
+            <!-- 로그인을 했을 경우 -->
+            <button class="auth-trigger dropdown-trigger" aria-expanded="false" aria-haspopup="true" >
                 <span>계정</span>
                 <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path d="M6 8l-3-3h6l-3 3z"/>
                 </svg>
             </button>
+
+            <!-- 로그인 안 한 경우 -->
             <ul class="dropdown-menu auth-menu" role="menu">
-                <li class="dropdown-item" role="none">
+                <li class="dropdown-item" role="none" th:if="${isLoggedIn == false}">
                     <a href="/game-hub/login" class="dropdown-link" role="menuitem">🔑 로그인</a>
                 </li>
-                <li class="dropdown-item" role="none">
+                <li class="dropdown-item" role="none" th:if="${isLoggedIn == false}">
                     <a href="/game-hub/join" class="dropdown-link" role="menuitem">📝 회원가입</a>
                 </li>
-                <li class="dropdown-item" role="none">
+                <li class="dropdown-item" role="none" th:if="${isLoggedIn == false}"><!-- 권한으로 분리해야할 듯 -->
                     <a href="/game-hub/join-prod" class="dropdown-link" role="menuitem">👥 팀 회원가입</a>
+                </li>
+                <li class="dropdown-item" role="none" th:if="${isLoggedIn == true}">
+                    <a href="/game-hub/join-prod" class="dropdown-link" role="menuitem">계정 설정</a>
+                </li>
+                <li class="dropdown-item" role="none" th:if="${isLoggedIn == true}">
+                    <a href="/logout" class="dropdown-link" role="menuitem">로그아웃</a>
                 </li>
             </ul>
         </div>
 
         <!-- 관리자 메뉴 (조건부 표시) -->
-        <div class="admin-dropdown has-dropdown" style="display: none;">
+        <div class="admin-dropdown has-dropdown" style="display: none;" >
             <button class="admin-trigger dropdown-trigger" aria-expanded="false" aria-haspopup="true">
                 <span>관리자</span>
                 <span class="admin-badge">Admin</span>

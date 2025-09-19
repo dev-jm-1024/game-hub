@@ -2,6 +2,7 @@ package kr.plusb3b.games.gamehub.domain.board.entity;
 
 
 import jakarta.persistence.*;
+import kr.plusb3b.games.gamehub.domain.board.vo.business.CommentContent;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.user.entity.UserCommentsReaction;
 import lombok.Getter;
@@ -33,7 +34,10 @@ public class Comments {
     private User user;
 
     //댓글 내용
-    private String commentContent;
+    @Embedded
+    @AttributeOverride(name = "commentContent",
+            column = @Column(name = "comment_content",  nullable = false))
+    private CommentContent commentContent;
     //좋아요 수
     private int likeCount;
     //싫어요 수
@@ -70,7 +74,7 @@ public class Comments {
 
     public Comments() {}
 
-    public Comments(Posts posts, User user, String commentContent,
+    public Comments(Posts posts, User user, CommentContent commentContent,
                     int likeCount, int dislikeCount, int reportCount,
                     LocalDate createdAt, int commentAct) {
         this.posts = posts;
@@ -121,7 +125,7 @@ public class Comments {
     }
 
     //댓글 내용 업데이트
-    public void changeCommentContent(String commentContent){
+    public void changeCommentContent(CommentContent commentContent){
         this.commentContent = commentContent;
     }
 }

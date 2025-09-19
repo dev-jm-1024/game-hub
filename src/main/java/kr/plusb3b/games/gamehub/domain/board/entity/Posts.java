@@ -2,6 +2,9 @@ package kr.plusb3b.games.gamehub.domain.board.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import kr.plusb3b.games.gamehub.domain.board.vo.business.BoardName;
+import kr.plusb3b.games.gamehub.domain.board.vo.business.PostContent;
+import kr.plusb3b.games.gamehub.domain.board.vo.business.PostTitle;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,11 +33,16 @@ public class Posts {
     @JoinColumn(name = "mb_id")
     private User user; // 작성자 외래키
 
-    @NotBlank(message = "제목을 입력하세요")
-    private String postTitle;
+    @Embedded
+    @AttributeOverride(name = "value",
+            column = @Column(name = "post_title", length = 255, nullable = false))
+    private PostTitle postTitle;
 
-    @NotBlank(message = "내용을 입력하세요.")
-    private String postContent; //게시물 내용
+
+    @Embedded
+    @AttributeOverride(name = "postContent",
+            column = @Column(name = "post_content", nullable = false))
+    private PostContent postContent;
 
     private int viewCount; //조회수
 
@@ -60,7 +68,7 @@ public class Posts {
 
     public Posts(
             Board board, User user,
-            String postTitle, String postContent,
+            PostTitle postTitle, PostContent postContent,
             int viewCount,
             LocalDate createdAt, LocalDate updatedAt,
             int postAct, int importantAct
@@ -76,38 +84,51 @@ public class Posts {
         this.importantAct = importantAct;
     }
 
+    public Posts updatePosts(Posts posts) {
+        if (posts.getPostTitle() != null) {
+            this.changeTitle(posts.getPostTitle());
+        }
+        if (posts.getPostContent() != null) {
+            this.changeContent(posts.getPostContent());
+        }
+
+        // 중요도 값 갱신
+        this.importantAct = posts.getImportantAct();
+
+        // postAct (활성/비활성 상태) 갱신
+        this.postAct = posts.getPostAct();
+
+        // updatedAt 자동 갱신
+        this.updatedAt = LocalDate.now();
+
+        return this;
+    }
+
+
     //글 제목 작성
-    public void createTitle(String title){
-        this.postTitle = title;
+    public void createTitle(PostTitle postTitle){
+        this.postTitle = postTitle;
     }
 
     //글 제목 변경
-    public void changeTitle(String newTitle){
+    public void changeTitle(PostTitle newTitle){
         this.postTitle = newTitle;
     }
 
     //글 내용 작성
-    public void createContent(String content){
+    public void createContent(PostContent content){
         this.postContent = content;
     }
 
     //글 내용 변경
-    public void changeContent(String newContent){
+    public void changeContent(PostContent newContent){
         this.postContent = newContent;
     }
+
 
     //조회수 증가
     public void increaseViewCount() {
         this.viewCount += 1;
-    }
-
-    //생성 및 수정 시간
-    public void markCreated(){
-        this.createdAt = LocalDate.now();
-    }
-
-    public void markUpdated(){
-        this.updatedAt = LocalDate.now();
     }
 
     //비활성화 세팅
@@ -134,5 +155,7 @@ public class Posts {
     public boolean isImportant(){
         return this.importantAct == 1;
     }
+
+
 }
 

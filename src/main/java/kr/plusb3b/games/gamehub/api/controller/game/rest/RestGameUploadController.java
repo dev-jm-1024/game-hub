@@ -1,7 +1,10 @@
 package kr.plusb3b.games.gamehub.api.controller.game.rest;
 
+import jakarta.servlet.http.HttpServletResponse;
+import kr.plusb3b.games.gamehub.common.util.FileValidator;
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
 import kr.plusb3b.games.gamehub.domain.board.repository.BoardRepository;
+import kr.plusb3b.games.gamehub.domain.board.service.BoardService;
 import kr.plusb3b.games.gamehub.domain.game.dto.GameUploadDto;
 import kr.plusb3b.games.gamehub.domain.game.dto.GameUploadResponseDto;
 import kr.plusb3b.games.gamehub.domain.game.entity.Games;
@@ -31,43 +34,38 @@ public class RestGameUploadController {
     private final GameMetadataService gameMetadataService;
     private final GameUploadValidator gameUploadValidator;
     private final AccessControlService access;
-    private final BoardRepository boardRepo;
+    private final BoardService boardService;
+
 
     public RestGameUploadController(CloudUploadService gcpUploadService,
                                     GameMetadataService gameMetadataService,
                                     GameUploadValidator gameUploadValidator,
                                     AccessControlService access,
-                                    BoardRepository boardRepo) {
+                                    BoardService boardService) {
         this.gcpUploadService = gcpUploadService;
         this.gameMetadataService = gameMetadataService;
         this.gameUploadValidator = gameUploadValidator;
         this.access = access;
-        this.boardRepo = boardRepo;
+        this.boardService = boardService;
     }
 
     @PostMapping("/upload")
     @Transactional
     public ResponseEntity<?> uploadGame(@Valid @ModelAttribute GameUploadDto gameUploadDto,
-                                        HttpServletRequest request) {
+                                        HttpServletRequest request,
+                                        HttpServletResponse response) {
 
         log.info("게임 업로드 요청 시작 - 게임명: {}, 팀명: {}",
                 gameUploadDto.getGameName(), gameUploadDto.getTeamName());
 
         try {
             // 1. 로그인 사용자 검증
+            access.validateUserAccess(request, response);
             User user = access.getAuthenticatedUser(request);
-            if (user == null) {
-                log.warn("미인증 사용자의 업로드 시도");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(ErrorResponseDto.of("로그인 후 이용할 수 있습니다.", "AUTH_REQUIRED"));
-            }
 
-            // 2. 파일 존재 여부 검증
-            if (gameUploadDto.getGameFile() == null || gameUploadDto.getGameFile().isEmpty()) {
-                log.warn("빈 파일 업로드 시도 - 사용자: {}", user.getUserAuth().getAuthUserId());
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ErrorResponseDto.of("업로드할 파일을 선택해주세요.", "FILE_REQUIRED"));
-            }
+            //피일 존재 여부 확인
+            FileValidator.validateGameFile(gameUploadDto.getGameFile());
+
 
             // 3. HTML 파일 존재 여부 검증
             boolean hasIndexHtml = gameUploadValidator.isIndexHtml(gameUploadDto.getGameFile());
@@ -79,8 +77,10 @@ public class RestGameUploadController {
             }
 
             // 4. 게시판 조회
-            Board board = boardRepo.findById("gameBoard")
-                    .orElseThrow(() -> new IllegalArgumentException("게임 게시판을 찾을 수 없습니다."));
+            boolean validateBoard = boardService.validateBoard("gameBoard");
+            if(!validateBoard) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("게시판이 존재하지 않습니다");
+
+            Board board = boardService.getBoardByBoardId("gameBoard");
 
             // 5. GCP에 파일 업로드
             log.info("GCP 업로드 시작 - 파일: {}", gameUploadDto.getGameFile().getOriginalFilename());
@@ -95,26 +95,12 @@ public class RestGameUploadController {
             GamesFile savedGamesFile = gameMetadataService.saveGameFileToDB(savedGame, uploadResult);
 
             // 8. 성공 응답 생성
-            GameUploadResponseDto responseDto = GameUploadResponseDto.builder()
-                    .gameId(savedGame.getGameId())
-                    .gameName(savedGame.getGameName())
-                    .teamName(savedGame.getTeamName())
-                    .status(savedGame.getStatus().name())
-                    .fileUrl(savedGamesFile.getGameUrl())
-                    .uploadedAt(savedGamesFile.getUploadedAt())
-                    .message("성공적으로 업로드되었습니다. 관리자의 승인을 기다리세요.")
-                    .success(true)
-                    .build();
+            GameUploadResponseDto responseDto = gameMetadataService.responseGameUploadResult(savedGame, savedGamesFile);
 
             log.info("게임 업로드 완료 - 게임ID: {}, 파일ID: {}",
                     savedGame.getGameId(), savedGamesFile.getFileId());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
-
-        } catch (GameUploadException e) {
-            log.error("게임 업로드 실패 - 사용자 오류: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ErrorResponseDto.of(e.getMessage(), "UPLOAD_ERROR"));
 
         } catch (IllegalArgumentException e) {
             log.error("게임 업로드 실패 - 잘못된 인수: {}", e.getMessage());

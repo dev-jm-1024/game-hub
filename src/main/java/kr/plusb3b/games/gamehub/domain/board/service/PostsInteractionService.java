@@ -12,19 +12,19 @@ public interface PostsInteractionService {
     boolean savePostsReactionCount(Long postId, PostsReactionCountVO prcVO);
 
     //좋아요 누르기
-    boolean likePost(User user, Posts posts);
+    boolean likePost(User user, Long postId);
 
     //좋아요 취소
-    boolean likePostCancel(User user, Posts posts);
+    boolean likePostCancel(User user, Long postId);
 
     //싫어요
-    boolean dislikePost(User user, Posts posts);
+    boolean dislikePost(User user, Long postId);
 
     //싫어요 취소
-    boolean dislikePostCancel(User user, Posts posts);
+    boolean dislikePostCancel(User user, Long postId);
 
     //신고하기
-    boolean reportPost(User user, Posts posts);
+    boolean reportPost(User user, Long postId);
 
     //신고하기 취소
     boolean reportPostCancel(User user, Posts posts);

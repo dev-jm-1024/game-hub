@@ -2,6 +2,7 @@ package kr.plusb3b.games.gamehub.domain.user.repository;
 
 
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
+import kr.plusb3b.games.gamehub.domain.user.vo.business.MbNickName;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,9 +28,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findByMbRole(User.Role mbRole, Pageable pageable);
 
     // 닉네임 검색
-    Page<User> findByMbNicknameContaining(String nickname, Pageable pageable);
+    Page<User> findByMbNickName_MbNickNameContaining(String keyword, Pageable pageable);
 
     // 신고 횟수가 특정 값 이상인 사용자
     Page<User> findByMbReportCntGreaterThanEqual(int reportCount, Pageable pageable);
 
+    Optional<User> findUsersByMbNickName(MbNickName mbNickName);
 }

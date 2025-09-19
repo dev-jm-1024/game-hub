@@ -15,12 +15,16 @@ import java.util.List;
 public interface PostsService {
 
     // 작성 & 수정
-    Posts createPost(PostRequestDto postRequestDto, CreatePostsVO createPostsVO,
+    Posts createPost(PostRequestDto postRequestDto,
                      String boardId, HttpServletRequest request);
 
     boolean updatePost(PostRequestDto postRequestDto, String boardId, Long postId);
 
     // 조회
+    List<Posts> getAllPosts();
+
+    //특정 게시판의 게시물 가져오기
+    List<Posts> getPostsByBoardId(String boardId);
 
     //게시판 메뉴에서 간단하게 보여지는 용도
     List<SummaryPostDto> summaryPosts(String boardId);
@@ -33,32 +37,12 @@ public interface PostsService {
 
     boolean validatePost(Long postId);
 
+    boolean deactivatePost(String boardId, Long postId);
+
     //전체적으로 보여지게 하는 용도 - 사용자
     Posts detailPosts(String boardId, Long postId);
 
-    //게시물 통계
-    List<Integer> statsBoard();
 
-    /*******************************************관리자*******************************************/
-    Posts createNotice(CreateNoticeDto createNoticeDto, CreateNoticeVO createNoticeVO,
-                       String boardId, HttpServletRequest request);
-
-    Posts updateNotice(UpdateNoticeDto updateNoticeDto);
-
-    // 삭제 - 사용자, 관리자
-    boolean deactivatePost(Long postId);
-
-    //게시물 중요도 활성화 - 공지사항: 관리자
-    boolean markPostAsImportant(Long postId);
-
-    //게시물 중요도 비활성화 - 공지사항: 관리자
-    boolean unsetPostImportant(Long postId);
-
-    //게시물 전체 데이터 가져오기 - 관리자
-    List<Posts> getAllPosts();
-
-    //특정 게시판의 게시물 가져오기
-    List<Posts> getPostsByBoardId(String boardId);
 
 }
 

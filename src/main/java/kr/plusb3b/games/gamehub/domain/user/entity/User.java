@@ -5,6 +5,7 @@ import kr.plusb3b.games.gamehub.domain.board.entity.Comments;
 import kr.plusb3b.games.gamehub.domain.board.entity.CommentsReactionCount;
 import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
 import kr.plusb3b.games.gamehub.domain.game.entity.Games;
+import kr.plusb3b.games.gamehub.domain.user.vo.business.MbNickName;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,7 +24,10 @@ public class User {
     @Column(name = "mb_id")
     private Long mbId;
 
-    private String mbNickname;
+    @Embedded
+    @AttributeOverride(name = "mbNickName",
+            column = @Column(name = "mb_nickname", nullable = false))
+    private MbNickName mbNickName;
     private String mbProfileUrl;
     private String mbStatusMessage;
     private LocalDateTime mbJoinDate;
@@ -86,10 +90,12 @@ public class User {
     */
     public User () {}
 
-    public User(int mbReportCnt, Long mbId, String mbNickname, String mbProfileUrl, String mbStatusMessage, LocalDateTime mbJoinDate, int mbAct, Role mbRole) {
+    public User(int mbReportCnt, Long mbId, MbNickName mbNickName, String mbProfileUrl,
+                String mbStatusMessage, LocalDateTime mbJoinDate, int mbAct, Role mbRole) {
+
         this.mbReportCnt = mbReportCnt;
         this.mbId = mbId;
-        this.mbNickname = mbNickname;
+        this.mbNickName = mbNickName;
         this.mbProfileUrl = mbProfileUrl;
         this.mbStatusMessage = mbStatusMessage;
         this.mbJoinDate = mbJoinDate;
@@ -98,22 +104,38 @@ public class User {
 
     }
 
+
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return mbAct == user.mbAct && mbReportCnt == user.mbReportCnt && Objects.equals(mbId, user.mbId) && Objects.equals(mbNickname, user.mbNickname) && Objects.equals(mbProfileUrl, user.mbProfileUrl) && Objects.equals(mbStatusMessage, user.mbStatusMessage) && Objects.equals(mbJoinDate, user.mbJoinDate) && mbRole == user.mbRole && Objects.equals(mbPosts, user.mbPosts) && Objects.equals(comments, user.comments) && Objects.equals(userScores, user.userScores) && Objects.equals(userLoginInfo, user.userLoginInfo) && Objects.equals(games, user.games) && Objects.equals(userAuth, user.userAuth) && Objects.equals(userPrivate, user.userPrivate);
+        return mbAct == user.mbAct &&
+                mbReportCnt == user.mbReportCnt &&
+                Objects.equals(mbId, user.mbId) &&
+                Objects.equals(mbNickName, user.mbNickName) &&
+                Objects.equals(mbProfileUrl, user.mbProfileUrl) &&
+                Objects.equals(mbStatusMessage, user.mbStatusMessage) &&
+                Objects.equals(mbJoinDate, user.mbJoinDate) &&
+                mbRole == user.mbRole &&
+                Objects.equals(mbPosts, user.mbPosts) &&
+                Objects.equals(comments, user.comments) &&
+                Objects.equals(userScores, user.userScores) &&
+                Objects.equals(userLoginInfo, user.userLoginInfo) &&
+                Objects.equals(games, user.games) &&
+                Objects.equals(userAuth, user.userAuth) &&
+                Objects.equals(userPrivate, user.userPrivate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mbId, mbNickname, mbProfileUrl, mbStatusMessage, mbJoinDate, mbAct, mbRole, mbReportCnt, mbPosts, comments, userScores, userLoginInfo, games, userAuth, userPrivate);
+        return Objects.hash(mbId, mbNickName, mbProfileUrl, mbStatusMessage, mbJoinDate, mbAct, mbRole, mbReportCnt, mbPosts, comments, userScores, userLoginInfo, games, userAuth, userPrivate);
     }
 
     //닉네임 변경
-    public void changeMbNickName(String mbNickname) {
-        this.mbNickname = mbNickname;
+    public void changeMbNickName(MbNickName mbNickName) {
+        this.mbNickName = mbNickName;
     }
 
     //프로필 사진 변경

@@ -34,7 +34,7 @@ public class PostGamesDetailVmServiceImpl implements PostGamesDetailVmService {
         return new PostGamesDetailVM(
                 user,
                 isAdmin,
-                user.getMbNickname(),        // 올바른 닉네임
+                user.getMbNickName().getMbNickName(),        // 올바른 닉네임
                 user.getMbProfileUrl() != null ? user.getMbProfileUrl() : replaceProfileUrl, // 프로필 URL 로직
                 replaceProfileUrl,           // 기본 프로필 URL
                 result

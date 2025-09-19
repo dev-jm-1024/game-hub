@@ -1,9 +1,9 @@
-package kr.plusb3b.games.gamehub.application.board.viewmodel;
+package kr.plusb3b.games.gamehub.application.admin.viewmodel;
 
 import kr.plusb3b.games.gamehub.domain.board.entity.Posts;
 import kr.plusb3b.games.gamehub.domain.board.service.BoardService;
 import kr.plusb3b.games.gamehub.domain.board.service.PostsService;
-import kr.plusb3b.games.gamehub.domain.board.service.viewmodel.AdminSummaryPostVmService;
+import kr.plusb3b.games.gamehub.domain.admin.service.viewmodel.AdminSummaryPostVmService;
 import kr.plusb3b.games.gamehub.view.admin.AdminSummaryPostVM;
 import org.springframework.stereotype.Service;
 

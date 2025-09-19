@@ -3,9 +3,12 @@ package kr.plusb3b.games.gamehub.application.board;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import kr.plusb3b.games.gamehub.domain.board.repository.PostFilesRepository;
+import kr.plusb3b.games.gamehub.domain.board.service.BoardService;
 import kr.plusb3b.games.gamehub.domain.board.service.PostFilesService;
 import kr.plusb3b.games.gamehub.domain.board.service.PostsService;
 import kr.plusb3b.games.gamehub.domain.board.vo.CreateNoticeVO;
+import kr.plusb3b.games.gamehub.domain.board.vo.business.PostContent;
+import kr.plusb3b.games.gamehub.domain.board.vo.business.PostTitle;
 import kr.plusb3b.games.gamehub.domain.user.entity.User;
 import kr.plusb3b.games.gamehub.domain.board.dto.*;
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
@@ -34,132 +37,46 @@ public class PostsServiceImpl implements PostsService {
     private final PostFilesRepository postFilesRepo;
     private final PostFilesService postFilesService;
 
+
+    private final BoardService boardService;
+
     public PostsServiceImpl(BoardRepository boardRepo, PostsRepository postsRepo, AccessControlService access,
                             FileUpload fileUpload, PostFilesRepository postFilesRepo,
-                            PostFilesService postFilesService) {
+                            PostFilesService postFilesService,
+                            BoardService boardService) {
         this.boardRepo = boardRepo;
         this.postsRepo = postsRepo;
         this.access = access;
         this.fileUpload = fileUpload;
         this.postFilesRepo = postFilesRepo;
         this.postFilesService = postFilesService;
+        this.boardService = boardService;
     }
 
     @Override
-    public Posts createPost(PostRequestDto postRequestDto, CreatePostsVO createPostsVO,
+    public Posts createPost(PostRequestDto postRequestDto,
                             String boardId, HttpServletRequest request) {
 
         Board board = boardRepo.findById(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
 
         User user = access.getAuthenticatedUser(request);
+        CreatePostsVO vo = new CreatePostsVO();
 
-        Posts posts = new Posts(
+        return postsRepo.save( new Posts(
                 board,
                 user,
-                postRequestDto.getPostTitle(),
-                postRequestDto.getPostContent(),
-                createPostsVO.getViewCount(),
+                PostTitle.of(postRequestDto.getPostTitle()),
+                PostContent.of(postRequestDto.getPostContent()),
+                vo.getViewCount(),
                 LocalDate.now(),
-                createPostsVO.getUpdatedAt(),
-                createPostsVO.getPostAct(),
-                createPostsVO.getImportantAct()
+                vo.getUpdatedAt(),
+                vo.getPostAct(),
+                vo.getImportantAct()
+            )
         );
-
-        return postsRepo.save(posts);
     }
 
-    @Override
-    public Posts createNotice(CreateNoticeDto createNoticeDto, CreateNoticeVO createNoticeVO,
-                              String boardId, HttpServletRequest request) {
-
-        Board board = boardRepo.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 게시판이 존재하지 않습니다."));
-
-        User user = access.getAuthenticatedUser(request);
-
-        Posts posts = new Posts(
-                board,
-                user,
-                createNoticeDto.getPostTitle(),
-                createNoticeDto.getPostContent(),
-                createNoticeVO.getViewCount(),
-                LocalDate.now(),
-                createNoticeVO.getUpdatedAt(),
-                createNoticeVO.getPostAct(),
-                createNoticeDto.getImportantAct()
-        );
-
-        return postsRepo.save(posts);
-    }
-
-    @Override
-    public boolean updatePost(PostRequestDto postRequestDto, String boardId, Long postId){
-
-        int result =  postsRepo.updatePostsByPostIdAndBoardId(
-                postRequestDto.getPostTitle(),
-                postRequestDto.getPostContent(),
-                LocalDate.now(),
-                postId,
-                boardId
-        );
-
-        return result > 0;
-    }
-
-    @Override
-    @Transactional
-    public Posts updateNotice(UpdateNoticeDto dto) {
-
-        // 1. 기본 정보 업데이트
-        int updateCount = postsRepo.updateNoticeByPostId(  // int로 받음
-                dto.getPostTitle(),
-                dto.getPostContent(),
-                dto.getImportantAct(),
-                dto.getPostId()
-        );
-
-        if (updateCount > 0) {
-            // 업데이트 성공 시 게시물 조회
-            Posts savedPosts = postsRepo.findById(dto.getPostId())
-                    .orElseThrow(() -> new EntityNotFoundException("게시물을 찾을 수 없습니다."));
-
-            // 2. 파일 처리 로직
-            handleFileUpdates(savedPosts, dto);
-
-            return savedPosts;
-        }
-
-        return null;
-    }
-
-    private void handleFileUpdates(Posts savedPosts, UpdateNoticeDto dto) {
-        boolean hasOldFiles = dto.getOldFileUrl() != null && !dto.getOldFileUrl().isEmpty();
-        boolean hasNewFiles = dto.getFiles() != null && !dto.getFiles().isEmpty();
-
-        if (!hasOldFiles && hasNewFiles) {
-            // 시나리오 1: 기존 파일 모두 삭제 + 새 파일 업로드
-            postFilesRepo.deletePostFilesByPostId(savedPosts.getPostId());
-            Map<String, String> fileUrlMap = fileUpload.getFileUrlAndType(dto.getFiles());
-            postFilesService.uploadPostFile(savedPosts, fileUrlMap);
-
-        } else if (hasOldFiles && !hasNewFiles) {
-            // 시나리오 2: 기존 파일 유지 (아무것도 안함)
-            // 기존 파일은 그대로 유지
-
-        } else if (hasOldFiles && hasNewFiles) {
-            // 시나리오 3: 기존 파일 일부 유지 + 새 파일 추가
-            // 제거된 파일들 삭제
-            postFilesService.deleteRemovedFiles(savedPosts.getPostId(), dto.getOldFileUrl());
-            // 새 파일 업로드
-            Map<String, String> fileUrlMap = fileUpload.getFileUrlAndType(dto.getFiles());
-            postFilesService.uploadPostFile(savedPosts, fileUrlMap);
-
-        } else if (!hasOldFiles && !hasNewFiles) {
-            // 시나리오 4: 모든 파일 삭제
-            postFilesRepo.deletePostFilesByPostId(savedPosts.getPostId());
-        }
-    }
 
     @Override
     public List<SummaryPostDto> summaryPosts(String boardId) {
@@ -169,7 +86,7 @@ public class PostsServiceImpl implements PostsService {
                 .map(post -> new SummaryPostDto(
                         post.getBoard().getBoardId(),
                         post.getPostId(),
-                        post.getUser().getMbNickname(),
+                        post.getUser().getMbNickName().getMbNickName(),
                         post.getPostTitle(),
                         post.getCreatedAt()
                         //post.getViewCount()
@@ -192,15 +109,28 @@ public class PostsServiceImpl implements PostsService {
 
 
     @Override
-    public boolean deactivatePost(Long postId) {
+    @Transactional
+    public boolean updatePost(PostRequestDto postRequestDto, String boardId, Long postId) {
+        Board board = boardRepo.findById(boardId)
+                .orElseThrow(() -> new IllegalArgumentException("게시판이 존재하지 않음"));
 
-        int deactivatePosts = postsRepo.deletePostsByPostId(postId);
-        return deactivatePosts > 0;
+        Posts posts = postsRepo.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시물이 존재하지 않음"));
+
+        // 제목 & 내용 업데이트 (Dirty Checking)
+        posts.changeTitle(PostTitle.of(postRequestDto.getPostTitle()));
+        posts.changeContent(PostContent.of(postRequestDto.getPostContent()));
+        posts.setUpdatedAt(LocalDate.now());
+
+        //파일 업데이트
+        handleFileUpdates(posts, postRequestDto);
+
+        return true;
     }
 
     @Override
     public void increaseViewCount(Long postId) {
-
+        //TODO: 조회수 증가 구현해야함 - 25.09.18
     }
 
     @Override
@@ -220,67 +150,20 @@ public class PostsServiceImpl implements PostsService {
         return postsRepo.existsById(postId);
     }
 
-    //총 게시글 (totalPosts): 모든 게시판의 전체 게시글 수
-    //활성 게시판 (totalBoards): 현재 활성화된 게시판 수
-    //오늘 작성 (todayPosts): 오늘 작성된 게시글 수
-    @Override
-    public List<Integer> statsBoard(){
-        List<Integer> result = new ArrayList<>();
-
-        int totalPosts = postsRepo.findAll().stream()
-                .filter(Posts::isActivatePosts)
-                .collect(Collectors.toList()).size();
-
-        int totalBoards = boardRepo.findAll().stream()
-                .filter(Board::isActivateBoard)
-                .collect(Collectors.toList()).size();
-
-        int todayPosts = postsRepo.findAll().stream()
-                .filter(Posts::isActivatePosts)
-                .filter(p -> p.getCreatedAt().equals(LocalDate.now()))
-                .collect(Collectors.toList()).size();
-
-        result.add(totalPosts);   // 인덱스 0
-        result.add(totalBoards);  // 인덱스 1
-        result.add(todayPosts);   // 인덱스 2
-
-        return result;
-    }
 
     @Override
     @Transactional
-    public boolean markPostAsImportant(Long postId) {
-        // 입력값 검증
-        if (postId == null || postId <= 0) {
-            throw new IllegalArgumentException("유효하지 않은 게시물 ID입니다.");
-        }
+    public boolean deactivatePost(String boardId ,Long postId) {
 
-        int result = postsRepo.updateImportantActByPostId(postId);
+        Board board = boardRepo.findById(boardId)
+                .orElseThrow(() -> new IllegalArgumentException("게시판이 존재하지 않음"));
 
-        // 업데이트 결과 확인
-        if (result == 0) {
-            throw new RuntimeException("게시물을 찾을 수 없습니다. ID: " + postId);
-        }
+        Posts posts = postsRepo.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시물이 존재하지 않음"));
 
-        return result > 0;
-    }
+        posts.changeDeactivatePost();
 
-    @Override
-    @Transactional
-    public boolean unsetPostImportant(Long postId) {
-        // 입력값 검증
-        if (postId == null || postId <= 0) {
-            throw new IllegalArgumentException("유효하지 않은 게시물 ID 입니다.");
-        }
-
-        int result = postsRepo.unsetImportantActByPostId(postId);
-
-        // 업데이트 결과 확인
-        if (result == 0) {
-            throw new RuntimeException("게시물을 찾을 수 없습니다. ID: " + postId);
-        }
-
-        return result > 0;
+        return true;
     }
 
     @Override
@@ -294,6 +177,18 @@ public class PostsServiceImpl implements PostsService {
                 .filter(p -> p.getBoard().getBoardId().equals(boardId))
                 .filter(Posts::isActivatePosts)
                 .collect(Collectors.toList());
+    }
+
+
+    private void handleFileUpdates(Posts savedPosts, PostRequestDto dto) {
+        // 기존 파일들 모두 삭제
+        postFilesRepo.deletePostFilesByPostId(savedPosts.getPostId());
+
+        // 새로운 파일이 있으면 업로드
+        if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
+            Map<String, String> fileUrlMap = fileUpload.getFileUrlAndType(dto.getFiles());
+            postFilesService.uploadPostFile(savedPosts, fileUrlMap);
+        }
     }
 
 }

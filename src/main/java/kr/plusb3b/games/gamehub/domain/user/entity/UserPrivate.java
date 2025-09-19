@@ -1,6 +1,10 @@
 package kr.plusb3b.games.gamehub.domain.user.entity;
 
 import jakarta.persistence.*;
+import kr.plusb3b.games.gamehub.domain.user.vo.business.MbNickName;
+import kr.plusb3b.games.gamehub.domain.user.vo.business.PriBirth;
+import kr.plusb3b.games.gamehub.domain.user.vo.business.PriEmail;
+import kr.plusb3b.games.gamehub.domain.user.vo.business.PriGender;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,7 +17,7 @@ import java.time.LocalDate;
 @Table(name="user_private")
 public class UserPrivate {
 
-    // PK이자 FK인 필드
+    // PK
     @Id
     @Column(name = "pri_mb_id")
     private Long priMbId;
@@ -23,14 +27,26 @@ public class UserPrivate {
     @JoinColumn(name = "mb_id")
     private User user;
 
-    //사용자 이메일
-    private String priEmail;
-    //사용자 생년월일
-    private LocalDate priBirth;
-    //사용자 성별
-    private String priGender;
+    @Embedded
+    @AttributeOverride(name = "priEmail",
+            column = @Column(name = "pri_email", nullable = false))
+    private PriEmail priEmail;
 
-    public UserPrivate(Long priMbId, User user, String priEmail, LocalDate priBirth, String priGender) {
+
+    @Embedded
+    @AttributeOverride(name = "priBirth",
+            column = @Column(name = "pri_birth", nullable = false))
+    private PriBirth priBirth;
+
+
+    @Embedded
+    @AttributeOverride(name = "priGender",
+            column = @Column(name = "pri_gender", nullable = false))
+    private PriGender priGender;
+
+
+
+    public UserPrivate(Long priMbId, User user, PriEmail priEmail, PriBirth priBirth, PriGender priGender) {
         this.priMbId = priMbId;
         this.user = user;
         this.priEmail = priEmail;
@@ -55,17 +71,17 @@ public class UserPrivate {
     public UserPrivate() {}
 
     //이메일 변경
-    public void changeEmail(String email) {
+    public void changeEmail(PriEmail email) {
         this.priEmail = email;
     }
 
     //생년월일
-    public void changeBirth(LocalDate birth) {
-        this.priBirth = birth;
+    public void changeBirth(PriBirth priBirth) {
+        this.priBirth = priBirth;
     }
 
     //성별 변경
-    public void changeGender(String gender) {
+    public void changeGender(PriGender gender) {
         this.priGender = gender;
     }
 

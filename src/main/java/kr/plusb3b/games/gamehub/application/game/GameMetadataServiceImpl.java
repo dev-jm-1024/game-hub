@@ -1,10 +1,7 @@
 package kr.plusb3b.games.gamehub.application.game;
 
 import kr.plusb3b.games.gamehub.domain.board.entity.Board;
-import kr.plusb3b.games.gamehub.domain.game.dto.GameDetailDto;
-import kr.plusb3b.games.gamehub.domain.game.dto.GameUploadDto;
-import kr.plusb3b.games.gamehub.domain.game.dto.GamesInfoDto;
-import kr.plusb3b.games.gamehub.domain.game.dto.SummaryGamesDto;
+import kr.plusb3b.games.gamehub.domain.game.dto.*;
 import kr.plusb3b.games.gamehub.domain.game.entity.Games;
 import kr.plusb3b.games.gamehub.domain.game.entity.GamesFile;
 import kr.plusb3b.games.gamehub.domain.game.exception.GameUploadException;
@@ -219,5 +216,22 @@ public class GameMetadataServiceImpl implements GameMetadataService {
                 })
                 .findFirst()
                 .orElse(null);
+    }
+
+    @Override
+    public GameUploadResponseDto responseGameUploadResult(Games savedGame, GamesFile savedGamesFile){
+
+        GameUploadResponseDto responseDto = GameUploadResponseDto.builder()
+                .gameId(savedGame.getGameId())
+                .gameName(savedGame.getGameName())
+                .teamName(savedGame.getTeamName())
+                .status(savedGame.getStatus().name())
+                .fileUrl(savedGamesFile.getGameUrl())
+                .uploadedAt(savedGamesFile.getUploadedAt())
+                .message("성공적으로 업로드되었습니다. 관리자의 승인을 기다리세요.")
+                .success(true)
+                .build();
+
+        return responseDto;
     }
 }

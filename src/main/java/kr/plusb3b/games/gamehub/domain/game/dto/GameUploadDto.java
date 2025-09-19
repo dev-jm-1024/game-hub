@@ -40,6 +40,6 @@ public class GameUploadDto {
     @NotBlank(message = "플랫폼 선택은 필수입니다")
     private String platform;
 
-    // 파일 관련 필드들 (MultipartFile은 Controller에서 별도 처리)
+    // 파일 관련 필드들 (MultipartFile은 Controller 에서 별도 처리)
     private MultipartFile gameFile;
 }

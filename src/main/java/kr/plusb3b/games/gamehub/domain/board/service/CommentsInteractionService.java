@@ -11,19 +11,19 @@ public interface CommentsInteractionService {
     boolean saveCommentsReactionCount(Long commentId, CommentsReactionCountVO crcVO);
 
     // 좋아요 누르기
-    boolean likeComment(User user, Comments comment);
+    boolean likeComment(User user, Long commentId);
 
     // 좋아요 취소
-    boolean likeCommentCancel(User user, Comments comment);
+    boolean likeCommentCancel(User user, Long commentId);
 
     // 싫어요 누르기
-    boolean dislikeComment(User user, Comments comment);
+    boolean dislikeComment(User user, Long commentId);
 
     // 싫어요 취소
-    boolean dislikeCommentCancel(User user, Comments comment);
+    boolean dislikeCommentCancel(User user, Long commentId);
 
     // 댓글 신고하기
-    boolean reportComment(User user, Comments comment);
+    boolean reportComment(User user, Long commentId);
 
     // 댓글 신고 취소
     boolean reportCommentCancel(User user, Comments comment);

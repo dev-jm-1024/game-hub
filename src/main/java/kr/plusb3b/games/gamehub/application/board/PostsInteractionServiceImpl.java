@@ -138,6 +138,37 @@ public class PostsInteractionServiceImpl implements PostsInteractionService {
         }
     }
 
+    @Override
+    @Transactional
+    public boolean likePostCancel(User user, Long postId) {
+        return likePost(user, postId);
+    }
+
+    @Override
+    @Transactional
+    public boolean dislikePostCancel(User user, Long postId) {
+        return dislikePost(user, postId);
+    }
+
+    @Override
+    public boolean reportPostCancel(User user, Posts posts) {
+        // TODO: 신고 취소 기능 구현 필요
+        return false;
+    }
+
+    @Override
+    public boolean increaseViewCount(Long postId, HttpServletRequest request) {
+        // TODO: 조회수 증가 기능 구현 필요
+        return false;
+    }
+
+    @Override
+    public PostsReactionCount getPostsReactionCount(Long postId) {
+        return postsRepo.findById(postId)
+                .map(Posts::getReactionCount)
+                .orElse(null);
+    }
+
     // === 헬퍼 메소드들 ===
 
     //사용자의 리액션이 없는 경우 진행해주는 메소드 - 좋아요 ver
@@ -220,34 +251,5 @@ public class PostsInteractionServiceImpl implements PostsInteractionService {
         return true;
     }
 
-    @Override
-    @Transactional
-    public boolean likePostCancel(User user, Long postId) {
-        return likePost(user, postId);
-    }
 
-    @Override
-    @Transactional
-    public boolean dislikePostCancel(User user, Long postId) {
-        return dislikePost(user, postId);
-    }
-
-    @Override
-    public boolean reportPostCancel(User user, Posts posts) {
-        // TODO: 신고 취소 기능 구현 필요
-        return false;
-    }
-
-    @Override
-    public boolean increaseViewCount(Long postId, HttpServletRequest request) {
-        // TODO: 조회수 증가 기능 구현 필요
-        return false;
-    }
-
-    @Override
-    public PostsReactionCount getPostsReactionCount(Long postId) {
-        return postsRepo.findById(postId)
-                .map(Posts::getReactionCount)
-                .orElse(null);
-    }
 }

@@ -54,6 +54,10 @@ dependencies {
 	// 또는 MariaDB
 	// runtimeOnly("org.mariadb.jdbc:mariadb-java-client:3.1.4")
 
+
+	//google cloud 의존성 추가
+	implementation("com.google.cloud:google-cloud-storage")
+
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 
@@ -67,6 +71,7 @@ dependencies {
 dependencyManagement {
 	imports {
 		mavenBom("com.vaadin:vaadin-bom:${property("vaadinVersion")}")
+		mavenBom("com.google.cloud:libraries-bom:26.32.0") //추가
 	}
 }
 

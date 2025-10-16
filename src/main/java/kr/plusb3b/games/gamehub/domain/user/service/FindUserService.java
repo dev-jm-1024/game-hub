@@ -8,4 +8,6 @@ public interface FindUserService {
 
     Optional<FindUserDto> findUserAuth(FindUserDto dto);
 
+    Optional<String> getUserAuthId(FindUserDto dto);
+
 }

@@ -106,8 +106,9 @@
                 <li class="dropdown-item" role="none" th:if="${isLoggedIn == false}"><!-- 권한으로 분리해야할 듯 -->
                     <a href="/game-hub/join-prod" class="dropdown-link" role="menuitem">👥 팀 회원가입</a>
                 </li>
+
                 <li class="dropdown-item" role="none" th:if="${isLoggedIn == true}">
-                    <a href="/game-hub/join-prod" class="dropdown-link" role="menuitem">계정 설정</a>
+                    <a href="/my-page/edit-profile" class="dropdown-link" role="menuitem">계정 설정</a>
                 </li>
                 <li class="dropdown-item" role="none" th:if="${isLoggedIn == true}">
                     <a href="/logout" class="dropdown-link" role="menuitem">로그아웃</a>

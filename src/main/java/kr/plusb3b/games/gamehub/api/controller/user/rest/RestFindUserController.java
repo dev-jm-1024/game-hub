@@ -23,12 +23,15 @@ public class RestFindUserController {
 
 
     @GetMapping("/find/id")
-    public ResponseEntity<?> findUserLoginId(@ModelAttribute FindUserDto dto){
+    public ResponseEntity<?> findUserLoginId(@ModelAttribute FindUserDto dto) {
 
-        //해당 데이터가 사용자 데이터에 존재하는 지 확인
-        Optional<FindUserDto> result = findUserService.findUserAuth(dto);
+        Optional<String> authUserId = findUserService.getUserAuthId(dto);
 
-
-        return ResponseEntity.status(HttpStatus.OK).body("result");
+        return authUserId
+                .map(ResponseEntity::ok)  // 있으면 → 200 OK + 아이디
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("조회된 회원이 없습니다."));  // 없으면 → 404
     }
+
+
 }

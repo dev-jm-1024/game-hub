@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>비밀번호 찾기 - GameHub</title>
-    
-    <link rel="stylesheet" href="../../static/find-skin/find-pw.css">
+
+    <link rel="stylesheet" th:href="@{/find-skin/find-pw.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         body {
-            background: url('https://plusb3b.kr/gamehub-img/main-bg.png') center/cover no-repeat fixed;
+            background: url('https://plusb3b.kr/gamehub-img/bg.png') center/cover no-repeat fixed;
             background-attachment: fixed;
             min-height: 100vh;
             position: relative;
@@ -389,6 +389,6 @@
         </div>
     </div>
 
-    <script src="../../static/find-skin/find-pw.js"></script>
+    <script th:src="@{/find-skin/find-pw.js}" defer></script>
 </body>
 </html>

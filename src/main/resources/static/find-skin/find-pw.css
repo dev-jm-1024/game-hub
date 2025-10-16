@@ -1,0 +1,1312 @@
+/* ===== 비밀번호 찾기 페이지 - 글래스모피즘 디자인 ===== */
+
+/* ===== 기본 설정 및 리셋 ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    color: #ffffff;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* ===== CSS 변수 정의 ===== */
+:root {
+    --glass-bg-light: rgba(255, 255, 255, 0.15);
+    --glass-bg-dark: rgba(255, 255, 255, 0.08);
+    --glass-border: rgba(255, 255, 255, 0.25);
+    --glass-shadow-strong: rgba(0, 0, 0, 0.2);
+    --glass-shadow-light: rgba(255, 255, 255, 0.1);
+    --primary-color-light: #64b5f6;
+    --primary-color-mid: #42a5f5;
+    --primary-color-dark: #2196f3;
+    --text-color-light: #e0e0e0;
+    --text-color-dark: #bbdefb;
+    --error-color: #ef5350;
+    --success-color: #66bb6a;
+    --warning-color: #ffca28;
+    --info-color: #29b6f6;
+    --spacing-unit: 20px;
+}
+
+/* ===== 키프레임 애니메이션 ===== */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-5px);
+    }
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 
+            0 0 20px rgba(100, 181, 246, 0.3),
+            0 0 40px rgba(100, 181, 246, 0.1),
+            0 0 60px rgba(100, 181, 246, 0.05);
+    }
+    50% {
+        box-shadow: 
+            0 0 30px rgba(100, 181, 246, 0.5),
+            0 0 60px rgba(100, 181, 246, 0.2),
+            0 0 90px rgba(100, 181, 246, 0.1);
+    }
+}
+
+/* ===== 메인 컨테이너 ===== */
+.find-pw-container {
+    background: linear-gradient(135deg, var(--glass-bg-light) 0%, var(--glass-bg-dark) 100%);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    border-left: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 24px;
+    padding: calc(var(--spacing-unit) * 2);
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    animation: slideInUp 0.8s ease-out 0.2s both;
+    position: relative;
+    overflow: hidden;
+    margin: var(--spacing-unit);
+    box-shadow: 
+        0 8px 32px 0 rgba(0, 0, 0, 0.37),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+.find-pw-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.4), 
+        transparent);
+}
+
+.find-pw-container::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, 
+        rgba(100, 181, 246, 0.08) 0%, 
+        transparent 70%);
+    animation: float 8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ===== 폼 헤더 ===== */
+.form-header {
+    text-align: center;
+    margin-bottom: calc(var(--spacing-unit) * 1.5);
+    position: relative;
+    z-index: 2;
+}
+
+.header-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 
+        0 15px 35px rgba(255, 152, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+    animation: pulse 3s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+.header-icon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.5), 
+        transparent);
+}
+
+.header-icon i {
+    font-size: 32px;
+    color: white;
+    z-index: 1;
+}
+
+.form-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #ffffff, #ff9800);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.form-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* ===== 탭 네비게이션 ===== */
+.tab-navigation {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 4px;
+    margin-bottom: var(--spacing-unit);
+    position: relative;
+    z-index: 2;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    padding: 16px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+}
+
+.tab-btn i {
+    font-size: 16px;
+}
+
+.tab-btn:hover:not(.active) {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    color: white;
+    box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.tab-btn.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.5), 
+        transparent);
+}
+
+.tab-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent);
+    transition: left 0.5s ease;
+    z-index: 1;
+}
+
+.tab-btn:hover::after {
+    left: 100%;
+}
+
+.tab-btn:focus-visible {
+    box-shadow: 0 0 0 3px var(--primary-color-light), 0 0 0 6px rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+}
+
+/* ===== 탭 콘텐츠 ===== */
+.tab-content {
+    display: none;
+    animation: fadeIn 0.5s ease-out;
+    position: relative;
+    z-index: 2;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ===== 폼 스타일 ===== */
+.find-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+}
+
+.input-label {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.input-label i {
+    color: #ff9800;
+    width: 16px;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.form-input {
+    width: 100%;
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.05) 100%);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 16px 50px 16px 20px;
+    color: white;
+    font-size: 16px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    box-shadow: 
+        0 4px 15px 0 rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.1) inset;
+    position: relative;
+}
+
+.form-input::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.3), 
+        transparent);
+}
+
+.form-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    border-color: rgba(255, 152, 0, 0.6);
+    border-top-color: rgba(255, 255, 255, 0.3);
+    border-left-color: rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.15) 0%, 
+        rgba(255, 255, 255, 0.08) 100%);
+    backdrop-filter: blur(25px) saturate(150%);
+    -webkit-backdrop-filter: blur(25px) saturate(150%);
+    box-shadow: 
+        0 8px 25px 0 rgba(0, 0, 0, 0.15),
+        0 0 20px rgba(255, 152, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.15) inset;
+    transform: translateY(-2px);
+}
+
+.form-input:focus::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+    transform: translateX(5px);
+}
+
+.input-icon {
+    position: absolute;
+    right: 16px;
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.form-input:focus + .input-icon {
+    color: #ff9800;
+    transform: scale(1.1);
+}
+
+.error-message {
+    color: var(--error-color);
+    font-size: 13px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    min-height: 18px;
+}
+
+.error-message.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.error-message::before {
+    content: '⚠️';
+    font-size: 12px;
+}
+
+/* 입력 오류 상태 */
+.form-input.error {
+    border-color: rgba(239, 83, 80, 0.6);
+    background: linear-gradient(135deg, 
+        rgba(239, 83, 80, 0.1) 0%, 
+        rgba(239, 83, 80, 0.05) 100%);
+    animation: shake 0.5s ease-out;
+}
+
+/* ===== 인증번호 입력 스타일 ===== */
+.verification-input {
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-align: center;
+}
+
+.verification-timer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.timer-text {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.timer-countdown {
+    color: #ff9800;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+}
+
+.resend-btn {
+    background: none;
+    border: 1px solid rgba(255, 152, 0, 0.3);
+    color: #ff9800;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.resend-btn:hover:not(:disabled) {
+    background: rgba(255, 152, 0, 0.1);
+    border-color: rgba(255, 152, 0, 0.5);
+}
+
+.resend-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== 제출 버튼 ===== */
+.submit-btn {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 16px;
+    padding: 18px 32px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    margin-top: 8px;
+    box-shadow: 
+        0 8px 25px rgba(255, 152, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.2) inset;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.submit-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.5), 
+        transparent);
+}
+
+.submit-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.3), 
+        transparent);
+    transition: left 0.5s ease;
+    z-index: 1;
+}
+
+.submit-btn:hover::after {
+    left: 100%;
+}
+
+.submit-btn:hover {
+    transform: translateY(-3px);
+    background: linear-gradient(135deg, #ffb74d, #ff9800);
+    backdrop-filter: blur(25px) saturate(160%);
+    -webkit-backdrop-filter: blur(25px) saturate(160%);
+    box-shadow: 
+        0 15px 35px rgba(255, 152, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.25) inset;
+    border-top-color: rgba(255, 255, 255, 0.4);
+    border-left-color: rgba(255, 255, 255, 0.4);
+}
+
+.submit-btn:active {
+    transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-loading i {
+    font-size: 14px;
+}
+
+/* ===== 인증 섹션 ===== */
+.verification-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: var(--spacing-unit);
+    padding-top: var(--spacing-unit);
+    animation: slideInUp 0.6s ease-out;
+    position: relative;
+    z-index: 2;
+}
+
+.verification-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.verification-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    box-shadow: 
+        0 10px 25px rgba(76, 175, 80, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+    position: relative;
+    overflow: hidden;
+}
+
+.verification-icon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.5), 
+        transparent);
+}
+
+.verification-icon i {
+    font-size: 24px;
+    color: white;
+    z-index: 1;
+}
+
+.verification-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 8px;
+}
+
+.verification-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+}
+
+/* ===== 결과 컨테이너 ===== */
+.result-container {
+    text-align: center;
+    padding: 32px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 32px;
+    animation: slideInUp 0.6s ease-out;
+    position: relative;
+    z-index: 2;
+}
+
+.result-header {
+    margin-bottom: 24px;
+}
+
+.result-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    animation: glow 2s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+.result-icon.success {
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    box-shadow: 
+        0 15px 35px rgba(76, 175, 80, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.result-icon.success::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.5), 
+        transparent);
+}
+
+.result-icon i {
+    font-size: 32px;
+    color: white;
+    z-index: 1;
+}
+
+.result-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 8px;
+}
+
+.result-content {
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.05) 100%);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        0 4px 15px 0 rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+.result-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.3), 
+        transparent);
+}
+
+.result-info {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.info-text {
+    font-size: 1rem;
+    color: var(--text-color-light);
+    line-height: 1.6;
+}
+
+.info-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    padding: 12px;
+    background: rgba(255, 152, 0, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 152, 0, 0.2);
+}
+
+.info-note i {
+    color: #ff9800;
+    font-size: 14px;
+}
+
+.result-actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-unit);
+    margin-bottom: var(--spacing-unit);
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    padding: 12px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: none;
+    font-size: 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn.primary {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 
+        0 6px 20px rgba(255, 152, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.2) inset;
+}
+
+.action-btn.primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.5), 
+        transparent);
+}
+
+.action-btn.primary:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #ffb74d, #ff9800);
+    box-shadow: 
+        0 8px 25px rgba(255, 152, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.25) inset;
+    border-top-color: rgba(255, 255, 255, 0.4);
+    border-left-color: rgba(255, 255, 255, 0.4);
+}
+
+.action-btn.secondary {
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.05) 100%);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    border-left: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 
+        0 4px 15px 0 rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+.action-btn.secondary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.3), 
+        transparent);
+}
+
+.action-btn.secondary:hover {
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.15) 0%, 
+        rgba(255, 255, 255, 0.08) 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+        0 8px 25px 0 rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.15) inset;
+    border-top-color: rgba(255, 255, 255, 0.35);
+    border-left-color: rgba(255, 255, 255, 0.35);
+}
+
+/* ===== 추가 옵션 ===== */
+.additional-options {
+    text-align: center;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    z-index: 2;
+}
+
+.option-links {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.option-link {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.option-link:hover {
+    color: #ff9800;
+    background: rgba(255, 152, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.option-link i {
+    font-size: 12px;
+}
+
+/* ===== 도움말 섹션 ===== */
+.help-section {
+    width: 100%;
+    max-width: 600px;
+    margin-top: 40px;
+    animation: slideInUp 0.8s ease-out 0.4s both;
+}
+
+.help-container {
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.08) 0%, 
+        rgba(255, 255, 255, 0.04) 100%);
+    backdrop-filter: blur(25px) saturate(140%);
+    -webkit-backdrop-filter: blur(25px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        0 8px 25px 0 rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+.help-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.3), 
+        transparent);
+}
+
+.help-title {
+    color: white;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.help-title i {
+    color: #ff9800;
+    font-size: 1.2rem;
+}
+
+.help-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.help-item {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.help-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 
+        0 8px 20px rgba(255, 152, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+    position: relative;
+    overflow: hidden;
+}
+
+.help-icon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.5), 
+        transparent);
+}
+
+.help-icon i {
+    color: white;
+    font-size: 16px;
+    z-index: 1;
+}
+
+.help-text strong {
+    color: white;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.help-text p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* ===== 반응형 디자인 ===== */
+@media screen and (max-width: 768px) {
+    .find-pw-container {
+        padding: 30px 24px;
+        margin: 20px 16px;
+        max-width: calc(100% - 32px);
+    }
+    
+    .form-title {
+        font-size: 1.6rem;
+        margin-bottom: 16px;
+    }
+    
+    .form-subtitle {
+        font-size: 0.9rem;
+    }
+    
+    .header-icon {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 16px;
+    }
+    
+    .header-icon i {
+        font-size: 24px;
+    }
+    
+    .tab-btn {
+        padding: 12px 16px;
+        font-size: 13px;
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .tab-btn span {
+        font-size: 12px;
+    }
+    
+    .form-input {
+        padding: 14px 45px 14px 16px;
+        font-size: 15px;
+    }
+    
+    .submit-btn {
+        padding: 16px 28px;
+        font-size: 15px;
+    }
+    
+    .result-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .action-btn {
+        justify-content: center;
+    }
+    
+    .option-links {
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+    }
+    
+    .help-container {
+        padding: 24px;
+    }
+    
+    .help-title {
+        font-size: 1.1rem;
+    }
+    
+    .help-item {
+        gap: 12px;
+    }
+    
+    .help-icon {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .help-icon i {
+        font-size: 14px;
+    }
+    
+    .verification-timer {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .find-pw-container {
+        padding: 24px 20px;
+    }
+    
+    .form-title {
+        font-size: 1.4rem;
+    }
+    
+    .tab-navigation {
+        padding: 3px;
+    }
+    
+    .tab-btn {
+        padding: 10px 12px;
+        gap: 3px;
+    }
+    
+    .tab-btn i {
+        font-size: 14px;
+    }
+    
+    .form-input {
+        padding: 12px 40px 12px 14px;
+        font-size: 14px;
+    }
+    
+    .submit-btn {
+        padding: 14px 24px;
+        font-size: 14px;
+    }
+    
+    .help-text p {
+        font-size: 13px;
+    }
+    
+    .verification-input {
+        font-size: 16px;
+        letter-spacing: 2px;
+    }
+}
+
+@media screen and (max-width: 320px) {
+    .find-pw-container {
+        padding: 20px 16px;
+        margin: 16px 8px;
+    }
+    
+    .header-icon {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .header-icon i {
+        font-size: 20px;
+    }
+    
+    .help-container {
+        padding: 20px;
+    }
+    
+    .help-item {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 8px;
+    }
+}
+
+/* ===== 스크롤바 스타일링 ===== */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 152, 0, 0.5);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 152, 0, 0.7);
+}
+
+/* ===== 포커스 접근성 ===== */
+*:focus {
+    outline: 2px solid #ff9800;
+    outline-offset: 2px;
+}
+
+/* ===== 선택 텍스트 스타일 ===== */
+::selection {
+    background: rgba(255, 152, 0, 0.3);
+    color: white;
+}
+
+::-moz-selection {
+    background: rgba(255, 152, 0, 0.3);
+    color: white;
+}
+
+/* ===== 로딩 상태 ===== */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* ===== 성공/오류 상태 ===== */
+.success-state {
+    border-color: rgba(76, 175, 80, 0.6) !important;
+    background: linear-gradient(135deg, 
+        rgba(76, 175, 80, 0.1) 0%, 
+        rgba(76, 175, 80, 0.05) 100%) !important;
+}
+
+.success-state + .input-icon {
+    color: #4caf50 !important;
+}
+
+/* ===== 추가 유틸리티 클래스 ===== */
+.hidden {
+    display: none !important;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.slide-up {
+    animation: slideInUp 0.5s ease-out;
+}
+
+.pulse-animation {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.glow-animation {
+    animation: glow 2s ease-in-out infinite;
+}
+
+/* ===== 스핀 애니메이션 ===== */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.fa-spin {
+    animation: spin 1s linear infinite;
+}

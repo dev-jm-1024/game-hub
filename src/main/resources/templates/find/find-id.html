@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>아이디 찾기 - GameHub</title>
-    
-    <link rel="stylesheet" href="../../static/find-skin/find-id.css">
+
+    <link rel="stylesheet" th:href="@{/find-skin/find-id.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         body {
-            background: url('https://plusb3b.kr/gamehub-img/main-bg.png') center/cover no-repeat fixed;
+            background: url('https://plusb3b.kr/gamehub-img/bg.png') center/cover no-repeat fixed;
             background-attachment: fixed;
             min-height: 100vh;
             position: relative;
@@ -80,6 +80,7 @@
 
             <!-- 이메일로 찾기 탭 -->
             <div class="tab-content active" id="email-tab">
+
                 <form class="find-form" id="email-form" novalidate>
                     <div class="input-group">
                         <label for="user-name" class="input-label">
@@ -135,6 +136,7 @@
                         </div>
                     </button>
                 </form>
+
             </div>
 
             <!-- 휴대폰으로 찾기 탭 -->
@@ -243,6 +245,7 @@
     </main>
 
 
-    <script src="../../static/find-skin/find-id.js"></script>
+    <script th:src="@{/find-skin/find-id.js}" defer></script>
+    <script th:src="@{/find-skin/find-id-api.js}" defer></script>
 </body>
 </html>

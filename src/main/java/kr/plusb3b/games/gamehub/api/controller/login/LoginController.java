@@ -19,5 +19,4 @@ public class LoginController {
         return "/find/find-pw";
     }
 
-
 }
